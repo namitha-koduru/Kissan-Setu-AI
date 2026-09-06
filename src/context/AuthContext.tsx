@@ -2,17 +2,30 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from "re
 import { demoUsers } from "../data/demo";
 import type { User, UserRole } from "../types";
 
+export interface RegisterInput {
+  name: string;
+  email?: string;
+  mobile?: string;
+  password: string;
+  role: UserRole;
+  organizationName?: string;
+  contactPerson?: string;
+  location?: string;
+  district?: string;
+  state?: string;
+}
+
+interface StoredUserWithCred extends User {
+  passwordHash?: string;
+  registeredPassword?: string;
+}
+
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<string | null>;
-  register: (input: {
-    name: string;
-    email: string;
-    password: string;
-    role: UserRole;
-    location: string;
-  }) => Promise<string | null>;
+  login: (emailOrMobile: string, password: string) => Promise<string | null>;
+  register: (input: RegisterInput) => Promise<string | null>;
+  updateUserProfile: (updates: Partial<User>) => void;
   logout: () => void;
 }
 
@@ -29,10 +42,10 @@ function readStored(): User | null {
   }
 }
 
-function readRegisteredUsers(): User[] {
+function readRegisteredUsers(): StoredUserWithCred[] {
   try {
     const raw = localStorage.getItem(REGISTERED_USERS_KEY);
-    return raw ? (JSON.parse(raw) as User[]) : [];
+    return raw ? (JSON.parse(raw) as StoredUserWithCred[]) : [];
   } catch {
     return [];
   }
@@ -46,43 +59,113 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       loading,
-      async login(email, password) {
-        if (!email?.trim() || !password?.trim()) {
+      async login(emailOrMobile, password) {
+        if (!emailOrMobile?.trim() || !password?.trim()) {
           return "Please provide both email/mobile and password.";
         }
-        const cleanEmail = email.trim().toLowerCase();
+        const cleanIdentifier = emailOrMobile.trim().toLowerCase();
+        const cleanDigits = emailOrMobile.replace(/\D/g, "");
         const registered = readRegisteredUsers();
-        const allKnown = [...registered, ...demoUsers];
-        const found = allKnown.find(
-          (u) =>
-            u.email?.toLowerCase() === cleanEmail ||
-            (u.mobile && u.mobile.replace(/\s+/g, "") === cleanEmail.replace(/\s+/g, ""))
-        );
+        
+        // 1. Check registered users first
+        const registeredMatch = registered.find((u) => {
+          const matchEmail = u.email && u.email.toLowerCase() === cleanIdentifier;
+          const userDigits = u.mobile ? u.mobile.replace(/\D/g, "") : "";
+          const matchMobile = cleanDigits && userDigits && (userDigits === cleanDigits || userDigits.endsWith(cleanDigits) || cleanDigits.endsWith(userDigits));
+          return matchEmail || matchMobile;
+        });
 
-        if (!found) {
-          return "Invalid credentials. Please verify your email/mobile and password.";
+        if (registeredMatch) {
+          if (registeredMatch.registeredPassword && registeredMatch.registeredPassword !== password) {
+            return "Invalid credentials. Please verify your password.";
+          }
+          const safeUser: User = { ...registeredMatch };
+          delete (safeUser as any).passwordHash;
+          delete (safeUser as any).registeredPassword;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(safeUser));
+          setUser(safeUser);
+          return null;
         }
 
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(found));
-        setUser(found);
-        return null;
+        // 2. Check demo users fixture (for SIH evaluations/tests)
+        const demoMatch = demoUsers.find((u) => {
+          const matchEmail = u.email?.toLowerCase() === cleanIdentifier;
+          const userDigits = u.mobile ? u.mobile.replace(/\D/g, "") : "";
+          const matchMobile = cleanDigits && userDigits && (userDigits === cleanDigits || userDigits.endsWith(cleanDigits) || cleanDigits.endsWith(userDigits));
+          return matchEmail || matchMobile;
+        });
+
+        if (demoMatch) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(demoMatch));
+          setUser(demoMatch);
+          return null;
+        }
+
+        return "Invalid credentials. Please verify your email/mobile and password.";
       },
       async register(input) {
-        const created: User = {
+        const initials = input.name
+          .split(" ")
+          .map((n) => n[0])
+          .slice(0, 2)
+          .join("")
+          .toUpperCase() || "KS";
+
+        const primaryEmail = input.email?.trim() || `${input.mobile?.replace(/\D/g, "") || Date.now()}@kisansetu.in`;
+        
+        const createdUser: StoredUserWithCred = {
           id: `u-${Date.now()}`,
-          name: input.name,
-          email: input.email,
+          name: input.name.trim(),
+          email: primaryEmail,
           role: input.role,
-          location: input.location,
-          district: input.location.split(",")[0]?.trim() || "Nashik",
-          state: "Maharashtra",
+          location: input.location || "",
+          district: input.district || "",
+          state: input.state || "",
+          initials,
+          mobile: input.mobile?.trim(),
+          organizationName: input.organizationName?.trim(),
+          contactPerson: input.contactPerson?.trim(),
+          registeredPassword: input.password,
+          verificationStatus: input.role === "buyer" ? "UNVERIFIED" : "VERIFIED",
+          onboarded: false,
         };
+
         const currentRegistered = readRegisteredUsers();
-        const updated = [...currentRegistered.filter((u) => u.email?.toLowerCase() !== input.email.toLowerCase()), created];
+        const updated = [
+          ...currentRegistered.filter(
+            (u) =>
+              (input.email && u.email?.toLowerCase() !== input.email.toLowerCase()) ||
+              (input.mobile && u.mobile?.replace(/\D/g, "") !== input.mobile.replace(/\D/g, ""))
+          ),
+          createdUser,
+        ];
         localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(updated));
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(created));
-        setUser(created);
+
+        const safeUser: User = { ...createdUser };
+        delete (safeUser as any).passwordHash;
+        delete (safeUser as any).registeredPassword;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(safeUser));
+        setUser(safeUser);
         return null;
+      },
+      updateUserProfile(updates: Partial<User>) {
+        setUser((prev) => {
+          if (!prev) return prev;
+          const updated: User = { ...prev, ...updates };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+
+          // Also update in registered list
+          const currentRegistered = readRegisteredUsers();
+          const listUpdated = currentRegistered.map((u) => {
+            if (u.id === prev.id || (prev.email && u.email?.toLowerCase() === prev.email.toLowerCase())) {
+              return { ...u, ...updates };
+            }
+            return u;
+          });
+          localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(listUpdated));
+
+          return updated;
+        });
       },
       logout() {
         localStorage.removeItem(STORAGE_KEY);

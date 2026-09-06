@@ -35,7 +35,7 @@ export function LandingPage() {
               KisanSetu AI combines weather risk, crop maturity, mandi prices, buyer demand, and logistics into one explainable recommendation.
             </p>
             <div className="hero-actions">
-              <Link className="btn btn-saffron" to="/onboarding">
+              <Link className="btn btn-saffron" to="/register">
                 Get Started Free <ArrowRight size={16} />
               </Link>
               <a className="btn btn-outline" href="#how" style={{ color: "#fff", borderColor: "rgba(255,255,255,0.4)" }}>
@@ -263,7 +263,7 @@ export function LandingPage() {
           <p style={{ color: "rgba(255,255,255,0.8)", maxWidth: 500, margin: "0 auto 24px" }}>
             Join Maharashtra farmers and FPOs transforming price discovery and market linkages.
           </p>
-          <Link className="btn btn-saffron" to="/onboarding" style={{ padding: "14px 32px", fontSize: "16px" }}>
+          <Link className="btn btn-saffron" to="/register" style={{ padding: "14px 32px", fontSize: "16px" }}>
             Start Decision Analysis Now
           </Link>
         </div>

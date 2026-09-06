@@ -37,6 +37,11 @@ def create_farmer(farmer_in: FarmerCreate, db: Session = Depends(get_db)):
         )
     
     farmer_data = farmer_in.model_dump()
+    password = farmer_data.pop("password", None)
+    if password:
+        import hashlib
+        farmer_data["hashed_password"] = hashlib.sha256(password.encode("utf-8")).hexdigest()
+    
     farmer = Farmer(**farmer_data)
     db.add(farmer)
     db.commit()

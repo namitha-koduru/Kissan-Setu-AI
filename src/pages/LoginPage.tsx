@@ -17,6 +17,7 @@ export function LoginPage() {
 
   if (user) {
     if (user.role === "fpo") return <Navigate to="/fpo" replace />;
+    if (user.role === "buyer") return <Navigate to="/buyers" replace />;
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -34,6 +35,7 @@ export function LoginPage() {
       setError(msg);
     } else {
       if (selectedRole === "fpo") nav("/fpo");
+      else if (selectedRole === "buyer") nav("/buyers");
       else nav("/dashboard");
     }
   }
@@ -126,8 +128,8 @@ export function LoginPage() {
 
           <div style={{ textAlign: "center", marginTop: "20px", fontSize: "13.5px", color: "var(--ink-soft)" }}>
             New to KisanSetu AI?{" "}
-            <Link to="/onboarding" style={{ color: "var(--green-deep)", fontWeight: 700 }}>
-              Create Account (4-Step Setup)
+            <Link to="/register" style={{ color: "var(--green-deep)", fontWeight: 700 }}>
+              Create Account
             </Link>
           </div>
         </div>

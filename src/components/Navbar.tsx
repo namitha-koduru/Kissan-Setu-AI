@@ -117,7 +117,7 @@ export function PublicNav() {
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <LanguageSelector />
           <Link className="btn btn-outline btn-sm" to="/login">Sign In</Link>
-          <Link className="btn btn-primary btn-sm" to="/onboarding">Get Started</Link>
+          <Link className="btn btn-primary btn-sm" to="/register">Get Started</Link>
         </div>
       </div>
     </header>

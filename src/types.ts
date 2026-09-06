@@ -24,9 +24,18 @@ export interface User {
   location: string;
   district: string;
   state: string;
+  village?: string;
   initials?: string;
   landAcreage?: string;
   mobile?: string;
+  organizationName?: string;
+  contactPerson?: string;
+  businessType?: string;
+  verificationStatus?: "VERIFIED" | "PENDING" | "UNVERIFIED";
+  preferredCrops?: string[];
+  procurementRadiusKm?: number;
+  memberFarmerCount?: number;
+  onboarded?: boolean;
 }
 
 export interface CropRecord {
@@ -158,10 +167,28 @@ export interface OnboardingData {
   village: string;
   district: string;
   state: string;
+  country?: string;
   crops: string[];
   quantity: string;
+  quantityUnit?: string;
   land: string;
+  landUnit?: string;
   markets: string[];
+  sellingChannels?: string[];
+  // Buyer specifics
+  businessType?: string;
+  minQuantityQtl?: number;
+  maxQuantityQtl?: number;
+  preferredQuality?: string;
+  indicativePricePerKg?: number;
+  procurementRadiusKm?: number;
+  gstOrFssai?: string;
+  // FPO specifics
+  registrationNumber?: string;
+  memberFarmerCount?: number;
+  pooledAcreage?: number;
+  annualAggregationCapacityTonnes?: number;
+  storageAvailable?: boolean;
 }
 
 export interface RecommendationResult {
