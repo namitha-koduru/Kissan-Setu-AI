@@ -62,8 +62,6 @@ export const demoUsers: User[] = [
   },
 ];
 
-export const demoPassword = "demo123";
-
 export const initialCrops: CropRecord[] = [
   {
     id: "crop-tomato",

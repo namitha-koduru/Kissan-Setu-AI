@@ -4,9 +4,9 @@ from app.schemas.farmer import FarmerResponse
 
 
 class LoginRequest(BaseModel):
-    phone: Optional[str] = "+91 98765 43210"
+    phone: Optional[str] = None
     username_or_phone: Optional[str] = None
-    password: Optional[str] = "demo123"
+    password: Optional[str] = None
     role: Optional[str] = "farmer"
 
 

@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
-import { demoPassword, demoUsers } from "../data/demo";
+import { demoUsers } from "../data/demo";
 import type { User, UserRole } from "../types";
 
 interface AuthContextValue {
@@ -18,6 +18,7 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 const STORAGE_KEY = "kisansetu-user";
+const REGISTERED_USERS_KEY = "kisansetu-registered-users";
 
 function readStored(): User | null {
   try {
@@ -25,6 +26,15 @@ function readStored(): User | null {
     return raw ? (JSON.parse(raw) as User) : null;
   } catch {
     return null;
+  }
+}
+
+function readRegisteredUsers(): User[] {
+  try {
+    const raw = localStorage.getItem(REGISTERED_USERS_KEY);
+    return raw ? (JSON.parse(raw) as User[]) : [];
+  } catch {
+    return [];
   }
 }
 
@@ -37,10 +47,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       loading,
       async login(email, password) {
-        const found = demoUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
-        if (!found || password !== demoPassword) {
-          return "Use a demo account. Password for all demo users is demo123.";
+        if (!email?.trim() || !password?.trim()) {
+          return "Please provide both email/mobile and password.";
         }
+        const cleanEmail = email.trim().toLowerCase();
+        const registered = readRegisteredUsers();
+        const allKnown = [...registered, ...demoUsers];
+        const found = allKnown.find(
+          (u) =>
+            u.email?.toLowerCase() === cleanEmail ||
+            (u.mobile && u.mobile.replace(/\s+/g, "") === cleanEmail.replace(/\s+/g, ""))
+        );
+
+        if (!found) {
+          return "Invalid credentials. Please verify your email/mobile and password.";
+        }
+
         localStorage.setItem(STORAGE_KEY, JSON.stringify(found));
         setUser(found);
         return null;
@@ -55,6 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           district: input.location.split(",")[0]?.trim() || "Nashik",
           state: "Maharashtra",
         };
+        const currentRegistered = readRegisteredUsers();
+        const updated = [...currentRegistered.filter((u) => u.email?.toLowerCase() !== input.email.toLowerCase()), created];
+        localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(updated));
         localStorage.setItem(STORAGE_KEY, JSON.stringify(created));
         setUser(created);
         return null;

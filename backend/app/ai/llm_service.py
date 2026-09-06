@@ -79,7 +79,7 @@ class LLMService:
             }
         }
 
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(self.timeout, connect=2.0)) as client:
             response = await client.post(url, json=payload)
             if response.status_code != 200:
                 raise Exception(f"Ollama API returned status {response.status_code}: {response.text}")

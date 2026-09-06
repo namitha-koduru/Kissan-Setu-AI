@@ -10,8 +10,8 @@ export function LoginPage() {
   const { lang, setLang } = useLanguage();
   const nav = useNavigate();
   const [selectedRole, setSelectedRole] = useState<UserRole>("farmer");
-  const [email, setEmail] = useState("farmer@kisansetu.in");
-  const [password, setPassword] = useState("demo123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -22,10 +22,6 @@ export function LoginPage() {
 
   const handleRoleSelect = (role: UserRole) => {
     setSelectedRole(role);
-    if (role === "farmer") setEmail("farmer@kisansetu.in");
-    else if (role === "fpo") setEmail("fpo@kisansetu.in");
-    else if (role === "buyer") setEmail("buyer@kisansetu.in");
-    else setEmail("admin@kisansetu.in");
   };
 
   async function onSubmit(e: FormEvent) {
