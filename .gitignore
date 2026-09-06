@@ -3,4 +3,16 @@ dist
 .DS_Store
 *.local
 .env
+.env.*
+!.env.example
 .tsbuildinfo
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+backend/.env
+backend/.env.*
+!backend/.env.example
+backend/kisansetu.db
+
