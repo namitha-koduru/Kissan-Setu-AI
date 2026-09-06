@@ -1,49 +1,53 @@
+import { Clock } from "lucide-react";
+
 export function HarvestTimeline({
   windowLabel,
   stage,
-  risk,
   action,
 }: {
   windowLabel: string;
   stage: string;
-  risk: string;
+  risk?: string;
   action: string;
 }) {
   return (
-    <article className="card">
-      <div className="section-label">AI-assisted harvest window</div>
-      <h3>Estimated suitable window: {windowLabel}</h3>
-      <p className="small">Decision support only — not a guaranteed harvest prediction.</p>
-      <div className="timeline" style={{ marginTop: 12 }}>
-        {[
-          "Today",
-          `Crop ${stage.toLowerCase()}`,
-          "Best harvest window",
-          "Increasing weather risk",
-        ].map((item, i) => (
-          <div key={item}>
-            <div className="tl-item">
-              <span className="tl-dot" />
-              <strong>{item}</strong>
-            </div>
-            {i < 3 && <div className="tl-line" />}
-          </div>
-        ))}
+    <div className="card card-pad">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <h3 style={{ fontSize: "15px", fontWeight: 800 }}>AI-Assisted Harvest & Selling Window</h3>
+        <span className="demo-tag">{windowLabel}</span>
       </div>
-      <div className="grid-3" style={{ marginTop: 16 }}>
-        <div>
-          <div className="small muted">Weather risk</div>
-          <strong>{risk}</strong>
+
+      <div className="hl-timeline">
+        <div className="hl-node done">
+          <div className="bar" />
+          <div className="lbl">Sowing & Germination</div>
         </div>
-        <div>
-          <div className="small muted">Crop stage</div>
-          <strong>{stage}</strong>
+        <div className="hl-node done">
+          <div className="bar" />
+          <div className="lbl">Vegetative Growth</div>
         </div>
-        <div>
-          <div className="small muted">Recommended action</div>
-          <strong>{action}</strong>
+        <div className={`hl-node ${stage.toLowerCase().includes("near") || stage.toLowerCase().includes("ready") ? "done" : "window"}`}>
+          <div className="bar" />
+          <div className="lbl">Near Maturity</div>
+        </div>
+        <div className="hl-node window">
+          <div className="bar" />
+          <div className="lbl">Optimal Harvest Window</div>
+        </div>
+        <div className="hl-node risk">
+          <div className="bar" />
+          <div className="lbl">Elevated Weather Risk</div>
         </div>
       </div>
-    </article>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, fontSize: "13px", color: "var(--ink-soft)" }}>
+        <Clock size={16} color="#176B45" />
+        <span>Current Action Strategy: <strong>{action}</strong></span>
+      </div>
+
+      <p className="disclaimer">
+        ℹ️ This is an AI-assisted decision estimate combining crop growth stage with predictive meteorological trends. Field conditions and micro-climates may vary.
+      </p>
+    </div>
   );
 }

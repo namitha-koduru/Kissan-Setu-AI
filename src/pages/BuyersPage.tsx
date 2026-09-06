@@ -1,71 +1,85 @@
-import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useState } from "react";
+import { CheckCircle2, MapPin, SlidersHorizontal } from "lucide-react";
 import { BuyerCard } from "../components/BuyerCard";
-import { EmptyState, LoadingState } from "../components/States";
-import { buyerService } from "../services/buyerService";
-import { cropOptions } from "../data/demo";
-import type { BuyerListing } from "../types";
+import { buyers, cropOptions } from "../data/demo";
 
 export function BuyersPage() {
-  const [params] = useSearchParams();
-  const [crop, setCrop] = useState("");
-  const [list, setList] = useState<BuyerListing[]>([]);
-  const [loading, setLoading] = useState(true);
-  const selected = params.get("id");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCrop, setSelectedCrop] = useState("All");
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
 
-  useEffect(() => {
-    let alive = true;
-    async function load() {
-      setLoading(true);
-      const data = await buyerService.list(crop || undefined);
-      if (!alive) return;
-      setList(data);
-      setLoading(false);
-    }
-    void load();
-    return () => {
-      alive = false;
-    };
-  }, [crop]);
-
-  const detail = list.find((b) => b.id === selected);
+  const filteredBuyers = buyers.filter((b) => {
+    const matchesCrop = selectedCrop === "All" || b.crop.toLowerCase() === selectedCrop.toLowerCase();
+    const matchesSearch =
+      b.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      b.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      b.crop.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesVerified = !verifiedOnly || b.verified;
+    return matchesCrop && matchesSearch && matchesVerified;
+  });
 
   return (
-    <div className="page">
-      <h1 className="page-title">Buyer marketplace</h1>
-      <p className="page-sub">Verified demand with quality, distance and offer windows. Demo listings.</p>
-      <div className="field" style={{ maxWidth: 280 }}>
-        <label htmlFor="crop">Crop needed</label>
-        <select id="crop" value={crop} onChange={(e) => setCrop(e.target.value)}>
-          <option value="">All crops</option>
+    <div className="wrap">
+      <div className="page-header" style={{ padding: "20px 0 14px" }}>
+        <h1 style={{ fontSize: "24px", fontWeight: 800 }}>Buyer Marketplace</h1>
+        <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 2 }}>
+          Discover verified institutional procurers, food processors, and retail chains actively purchasing in Maharashtra.
+        </p>
+      </div>
+
+      {/* Search and Filters */}
+      <div className="search-bar">
+        <div style={{ position: "relative", flex: 1 }}>
+          <input
+            type="text"
+            placeholder="Search by buyer name, crop, or district (e.g. FreshFarm, Tomato, Pune)..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <select
+          value={selectedCrop}
+          onChange={(e) => setSelectedCrop(e.target.value)}
+          style={{ padding: "10px 14px", borderRadius: 8, border: "1px solid var(--line-strong)", fontWeight: 600 }}
+        >
+          <option value="All">All Crops</option>
           {cropOptions.map((c) => (
-            <option key={c}>{c}</option>
+            <option key={c} value={c}>
+              {c}
+            </option>
           ))}
         </select>
       </div>
-      {detail && (
-        <article className="card" style={{ marginBottom: 16 }}>
-          <div className="section-label">Buyer details</div>
-          <h2>{detail.name}</h2>
-          <p>
-            {detail.crop} · {detail.quantityKg.toLocaleString("en-IN")} kg · {detail.quality} · ₹{detail.offeredPrice}/kg
-          </p>
-          <p className="small">
-            {detail.distanceKm} km from farm · Valid {detail.deadlineDays} days · {detail.verified ? "Verified buyer" : "Verification pending"}
-          </p>
-        </article>
-      )}
-      {loading ? (
-        <LoadingState />
-      ) : list.length === 0 ? (
-        <EmptyState title="No nearby buyers found" text="Try another crop or widen your search later when live APIs are connected." />
-      ) : (
-        <div className="grid-2">
-          {list.map((b) => (
-            <BuyerCard key={b.id} buyer={b} />
-          ))}
+
+      <div className="filter-row">
+        <div
+          className={`filter-chip ${verifiedOnly ? "active" : ""}`}
+          onClick={() => setVerifiedOnly((prev) => !prev)}
+        >
+          <CheckCircle2 size={15} color={verifiedOnly ? "#176B45" : "inherit"} />
+          Verified Enterprise Buyers Only
         </div>
-      )}
+        <div className="filter-chip">
+          <MapPin size={15} /> Within 100 km
+        </div>
+        <div className="filter-chip">
+          <SlidersHorizontal size={15} /> Grade A Quality
+        </div>
+      </div>
+
+      {/* Buyer Cards List */}
+      <div>
+        {filteredBuyers.length === 0 ? (
+          <div className="card card-pad" style={{ textAlign: "center", padding: "40px 20px" }}>
+            <h3 style={{ fontSize: "16px" }}>No buyers found matching this search</h3>
+            <p style={{ color: "var(--ink-soft)", marginTop: 4 }}>
+              Try removing the filter or searching for another crop like Tomato, Onion, or Chilli.
+            </p>
+          </div>
+        ) : (
+          filteredBuyers.map((b) => <BuyerCard key={b.id} buyer={b} />)
+        )}
+      </div>
     </div>
   );
 }

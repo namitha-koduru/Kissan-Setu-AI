@@ -1,26 +1,159 @@
+import { useState } from "react";
+import { LogOut, Check } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { LanguageSelector } from "../components/LanguageSelector";
+import { useLanguage } from "../context/LanguageContext";
+import { useAppState } from "../context/AppStateContext";
+import type { LanguageCode } from "../types";
 
 export function ProfilePage() {
   const { user, logout } = useAuth();
+  const { lang, setLang } = useLanguage();
+  const { onboardData, showToast } = useAppState();
+
+  const [priceAlerts, setPriceAlerts] = useState(true);
+  const [weatherAlerts, setWeatherAlerts] = useState(true);
+  const [offerAlerts, setOfferAlerts] = useState(true);
+
+  const languages: { code: LanguageCode; label: string }[] = [
+    { code: "en", label: "English" },
+    { code: "hi", label: "हिन्दी (Hindi)" },
+    { code: "mr", label: "मराठी (Marathi)" },
+    { code: "te", label: "తెలుగు (Telugu)" },
+  ];
+
+  const handleLanguageChange = (code: LanguageCode) => {
+    setLang(code);
+    showToast(`Language switched to ${languages.find((l) => l.code === code)?.label}`);
+  };
+
   return (
-    <div className="page">
-      <h1 className="page-title">Profile</h1>
-      <p className="page-sub">Account details for this prototype session.</p>
-      <article className="card" style={{ maxWidth: 520 }}>
-        <p><strong>Name:</strong> {user?.name}</p>
-        <p><strong>Email:</strong> {user?.email}</p>
-        <p><strong>Role:</strong> {user?.role}</p>
-        <p><strong>Location:</strong> {user?.location}</p>
-        <div className="field">
-          <label>Language</label>
-          <LanguageSelector />
+    <div className="wrap" style={{ maxWidth: 720 }}>
+      <div className="page-header" style={{ padding: "20px 0 16px" }}>
+        <h1 style={{ fontSize: "24px", fontWeight: 800 }}>Profile & Farm Settings</h1>
+        <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 2 }}>
+          Manage your personal account, farm parcel details, language preferences, and notification triggers.
+        </p>
+      </div>
+
+      {/* Account Info Card */}
+      <div className="card card-pad" style={{ marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
+          <div
+            className="avatar"
+            style={{ width: 56, height: 56, fontSize: "20px", fontWeight: 800, background: "var(--green-leaf)", color: "#fff" }}
+          >
+            {user?.initials || "RP"}
+          </div>
+          <div>
+            <h2 style={{ fontSize: "20px", fontWeight: 800 }}>{user?.name || "Ramesh Patil"}</h2>
+            <p style={{ color: "var(--ink-soft)", fontSize: "13.5px" }}>
+              Registered Role: <strong>{user?.role?.toUpperCase() || "FARMER"}</strong> · {user?.location || "Nashik, Maharashtra"}
+            </p>
+          </div>
         </div>
-        <p className="small">Translations are prepared for English, Hindi, Marathi and Telugu navigation labels.</p>
-        <button className="btn btn-secondary" type="button" onClick={logout}>
-          Sign out
-        </button>
-      </article>
+
+        <div className="pf-row">
+          <span className="l">Registered Mobile Number</span>
+          <span className="v">{user?.mobile || "98765 43210"}</span>
+        </div>
+        <div className="pf-row">
+          <span className="l">Email Address</span>
+          <span className="v">{user?.email || "farmer@kisansetu.in"}</span>
+        </div>
+        <div className="pf-row">
+          <span className="l">Farm Parcel Location</span>
+          <span className="v">{onboardData.village || "Niphad"}, {onboardData.district || "Nashik"}, Maharashtra</span>
+        </div>
+        <div className="pf-row">
+          <span className="l">Land Under Cultivation</span>
+          <span className="v">{user?.landAcreage || onboardData.land || "2.5 acres"}</span>
+        </div>
+      </div>
+
+      {/* Crops & Preferred Markets */}
+      <div className="card card-pad" style={{ marginBottom: 20 }}>
+        <h3 style={{ fontSize: "16px", fontWeight: 800, marginBottom: 14 }}>
+          Crops & Preferred Mandis
+        </h3>
+        <div className="pf-row">
+          <span className="l">Registered Crops</span>
+          <span className="v">{onboardData.crops.join(", ") || "Tomato, Onion, Potato"}</span>
+        </div>
+        <div className="pf-row">
+          <span className="l">Tracked Mandi Hubs</span>
+          <span className="v">{onboardData.markets.join(", ") || "Nashik, Ahmednagar, Pune"}</span>
+        </div>
+      </div>
+
+      {/* Language Selection Grid */}
+      <div className="card card-pad" style={{ marginBottom: 20 }}>
+        <h3 style={{ fontSize: "16px", fontWeight: 800, marginBottom: 14 }}>
+          Application Language Preference
+        </h3>
+        <div className="lang-grid">
+          {languages.map((l) => {
+            const isSelected = lang === l.code;
+            return (
+              <div
+                key={l.code}
+                className={`lang-opt ${isSelected ? "selected" : ""}`}
+                onClick={() => handleLanguageChange(l.code)}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span>{l.label}</span>
+                  {isSelected && <Check size={16} color="#176B45" />}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Notification Preferences */}
+      <div className="card card-pad" style={{ marginBottom: 24 }}>
+        <h3 style={{ fontSize: "16px", fontWeight: 800, marginBottom: 14 }}>
+          Notification & Alert Preferences
+        </h3>
+        <div className="pf-row">
+          <span className="l">Real-time Mandi Price Surge Alerts</span>
+          <button
+            type="button"
+            className={`btn btn-sm ${priceAlerts ? "btn-primary" : "btn-secondary"}`}
+            onClick={() => setPriceAlerts(!priceAlerts)}
+          >
+            {priceAlerts ? "Enabled" : "Disabled"}
+          </button>
+        </div>
+        <div className="pf-row">
+          <span className="l">Severe Weather Risk & Harvest Window Warnings</span>
+          <button
+            type="button"
+            className={`btn btn-sm ${weatherAlerts ? "btn-primary" : "btn-secondary"}`}
+            onClick={() => setWeatherAlerts(!weatherAlerts)}
+          >
+            {weatherAlerts ? "Enabled" : "Disabled"}
+          </button>
+        </div>
+        <div className="pf-row">
+          <span className="l">Instant Direct Buyer Procurement Offers</span>
+          <button
+            type="button"
+            className={`btn btn-sm ${offerAlerts ? "btn-primary" : "btn-secondary"}`}
+            onClick={() => setOfferAlerts(!offerAlerts)}
+          >
+            {offerAlerts ? "Enabled" : "Disabled"}
+          </button>
+        </div>
+      </div>
+
+      <button
+        className="btn btn-secondary btn-block"
+        type="button"
+        onClick={logout}
+        style={{ color: "var(--danger)", borderColor: "#F5C6C2", marginBottom: 30 }}
+      >
+        <LogOut size={16} /> Sign Out of Session
+      </button>
     </div>
   );
 }

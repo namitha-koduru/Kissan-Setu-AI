@@ -1,103 +1,127 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
+import { MapPin, TrendingUp, Store } from "lucide-react";
 import { MarketCard } from "../components/MarketCard";
 import { MarketComparison } from "../components/MarketComparison";
 import { PriceChart } from "../components/PriceChart";
-import { EmptyState, LoadingState } from "../components/States";
-import { cropOptions, locationOptions } from "../data/demo";
-import { marketService } from "../services/marketService";
-import { rankMarkets } from "../engine/recommendation";
-import type { MarketQuote, PricePoint } from "../types";
+import { cropOptions, marketsByCrop, tomatoTrend7, tomatoTrend30 } from "../data/demo";
+import type { MarketQuote } from "../types";
 
 export function MarketPage() {
-  const [crop, setCrop] = useState("Tomato");
-  const [location, setLocation] = useState("Nashik");
-  const [distance, setDistance] = useState(200);
-  const [minPrice, setMinPrice] = useState(0);
-  const [range, setRange] = useState<"7d" | "30d">("7d");
-  const [markets, setMarkets] = useState<MarketQuote[]>([]);
-  const [trend, setTrend] = useState<PricePoint[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [selectedCrop, setSelectedCrop] = useState<string>("Tomato");
+  const [timeRange, setTimeRange] = useState<"7d" | "30d">("7d");
+  const [activeFilter, setActiveFilter] = useState<"distance" | "price" | "demand" | "net">("net");
 
-  useEffect(() => {
-    let alive = true;
-    async function load() {
-      setLoading(true);
-      const [m, t] = await Promise.all([marketService.list(crop), marketService.trend(range)]);
-      if (!alive) return;
-      setMarkets(rankMarkets(m, 500));
-      setTrend(t);
-      setLoading(false);
-    }
-    void load();
-    return () => {
-      alive = false;
-    };
-  }, [crop, range]);
+  const cropMarkets: MarketQuote[] = (marketsByCrop as Record<string, MarketQuote[]>)[selectedCrop] || marketsByCrop.Tomato;
 
-  const filtered = useMemo(
-    () => markets.filter((m) => m.distanceKm <= distance && m.pricePerKg >= minPrice),
-    [markets, distance, minPrice],
-  );
+  const sortedMarkets = [...cropMarkets].sort((a, b) => {
+    if (activeFilter === "net") return b.netPerKg - a.netPerKg;
+    if (activeFilter === "price") return b.pricePerKg - a.pricePerKg;
+    if (activeFilter === "distance") return a.distanceKm - b.distanceKm;
+    return 0;
+  });
+
+  const chartData = timeRange === "7d" ? tomatoTrend7 : tomatoTrend30;
 
   return (
-    <div className="page">
-      <h1 className="page-title">Market intelligence</h1>
-      <p className="page-sub">
-        Compare listed price with expected net realization around {location}. Demo mandi data — not live prices.
-      </p>
-      <div className="card" style={{ marginBottom: 16 }}>
-        <div className="grid-4">
-          <div className="field">
-            <label htmlFor="crop">Search crop</label>
-            <select id="crop" value={crop} onChange={(e) => setCrop(e.target.value)}>
-              {cropOptions.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor="loc">Location</label>
-            <select id="loc" value={location} onChange={(e) => setLocation(e.target.value)}>
-              {locationOptions.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor="dist">Max distance (km)</label>
-            <input id="dist" type="number" value={distance} onChange={(e) => setDistance(Number(e.target.value))} />
-          </div>
-          <div className="field">
-            <label htmlFor="price">Min listed price</label>
-            <input id="price" type="number" value={minPrice} onChange={(e) => setMinPrice(Number(e.target.value))} />
-          </div>
+    <div className="wrap">
+      <div
+        className="page-header"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 12,
+          padding: "20px 0 14px",
+        }}
+      >
+        <div>
+          <h1 style={{ fontSize: "24px", fontWeight: 800 }}>Market Intelligence</h1>
+          <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 2 }}>
+            Real-time style mandi comparison highlighting transport deduction and farmer net realization.
+          </p>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <label style={{ fontSize: "13px", fontWeight: 700, color: "var(--ink-soft)" }}>Crop:</label>
+          <select
+            value={selectedCrop}
+            onChange={(e) => setSelectedCrop(e.target.value)}
+            style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid var(--line-strong)", fontWeight: 700 }}
+          >
+            {cropOptions.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
-      {loading ? (
-        <LoadingState label="Market data is being updated…" />
-      ) : filtered.length === 0 ? (
-        <EmptyState title="No markets in this filter" text="Widen distance or lower the minimum price." />
-      ) : (
-        <>
-          <div className="grid-3">
-            {filtered.map((m) => (
-              <MarketCard key={m.id} market={m} />
-            ))}
+
+      {/* Filter Row */}
+      <div className="filter-row">
+        <div
+          className={`filter-chip ${activeFilter === "net" ? "active" : ""}`}
+          onClick={() => setActiveFilter("net")}
+        >
+          <TrendingUp size={15} /> Sort by Highest Net Realization
+        </div>
+        <div
+          className={`filter-chip ${activeFilter === "distance" ? "active" : ""}`}
+          onClick={() => setActiveFilter("distance")}
+        >
+          <MapPin size={15} /> Shortest Distance
+        </div>
+        <div
+          className={`filter-chip ${activeFilter === "price" ? "active" : ""}`}
+          onClick={() => setActiveFilter("price")}
+        >
+          <Store size={15} /> Highest Mandi Price
+        </div>
+      </div>
+
+      {/* Interactive Price Trend Chart */}
+      <div className="card card-pad" style={{ marginBottom: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
+          <div style={{ fontWeight: 800, fontSize: "16px" }}>
+            Price Trend — {selectedCrop} (Nashik Mandi)
           </div>
-          <div className="row" style={{ margin: "16px 0" }}>
-            <button className={`btn ${range === "7d" ? "btn-primary" : "btn-secondary"}`} type="button" onClick={() => setRange("7d")}>
-              7-day
-            </button>
-            <button className={`btn ${range === "30d" ? "btn-primary" : "btn-secondary"}`} type="button" onClick={() => setRange("30d")}>
-              30-day
-            </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div className="tabs-row">
+              <div
+                className={`tab-btn ${timeRange === "7d" ? "active" : ""}`}
+                onClick={() => setTimeRange("7d")}
+              >
+                7 Days
+              </div>
+              <div
+                className={`tab-btn ${timeRange === "30d" ? "active" : ""}`}
+                onClick={() => setTimeRange("30d")}
+              >
+                30 Days
+              </div>
+            </div>
+            <span className="demo-tag">DEMO MANDI DATA</span>
           </div>
-          <PriceChart data={trend} title={`${crop} price trend`} />
-          <div style={{ marginTop: 16 }}>
-            <MarketComparison markets={filtered} />
-          </div>
-        </>
-      )}
+        </div>
+        <PriceChart data={chartData} title="" />
+      </div>
+
+      {/* Nearby Mandi Cards */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <h3 style={{ fontSize: "17px", fontWeight: 800 }}>Nearby Mandi Listings ({selectedCrop})</h3>
+          <span style={{ fontSize: "12.5px", color: "var(--ink-soft)" }}>
+            Ranked by: <strong>{activeFilter.toUpperCase()}</strong>
+          </span>
+        </div>
+        {sortedMarkets.map((m) => (
+          <MarketCard key={m.id} market={m} />
+        ))}
+      </div>
+
+      {/* Full Comparison Table */}
+      <MarketComparison markets={sortedMarkets} />
     </div>
   );
 }

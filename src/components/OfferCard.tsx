@@ -1,3 +1,4 @@
+import { CheckCircle2 } from "lucide-react";
 import type { OfferRecord } from "../types";
 
 export function OfferCard({
@@ -12,30 +13,86 @@ export function OfferCard({
   onCounter: () => void;
 }) {
   return (
-    <article className="offer-card">
-      <div className="row space">
-        <h3 style={{ margin: 0 }}>{offer.buyerName}</h3>
-        <span className={`badge ${offer.status === "Accepted" ? "badge-green" : offer.status === "Rejected" ? "badge-gray" : "badge-orange"}`}>
-          {offer.status}
-        </span>
+    <div className="offer-card">
+      <div className="buyer-top">
+        <div>
+          <h3 style={{ fontSize: "16px", fontWeight: 700 }}>{offer.buyerName}</h3>
+          {offer.verified ? (
+            <span className="verified-tag">
+              <CheckCircle2 size={13} color="#176B45" /> Verified Buyer
+            </span>
+          ) : (
+            <span style={{ fontSize: "11.5px", color: "var(--ink-soft)" }}>Unverified Buyer</span>
+          )}
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <span className="badge-pill badge-high" style={{ fontSize: "15px", fontWeight: 800 }}>
+            ₹{offer.pricePerKg}/kg
+          </span>
+          <div style={{ fontSize: "11px", color: "var(--ink-soft)", marginTop: 2 }}>
+            Total Value: ₹{(offer.pricePerKg * offer.quantityKg).toLocaleString("en-IN")}
+          </div>
+        </div>
       </div>
-      <p>
-        ₹{offer.pricePerKg}/kg · {offer.quantityKg.toLocaleString("en-IN")} kg · {offer.quality}
-      </p>
-      <p className="small">Lot {offer.lotId} · Expires in {offer.expiresInDays} days</p>
+
+      <div className="buyer-facts">
+        <div>
+          <div className="l">Lot ID</div>
+          <div className="v">{offer.lotId}</div>
+        </div>
+        <div>
+          <div className="l">Quantity Accepted</div>
+          <div className="v">{offer.quantityKg.toLocaleString("en-IN")} kg</div>
+        </div>
+        <div>
+          <div className="l">Quality Requirement</div>
+          <div className="v">{offer.quality}</div>
+        </div>
+        <div>
+          <div className="l">Offer Expiry</div>
+          <div className="v" style={{ color: "var(--terracotta)" }}>
+            {offer.expiresInDays}
+          </div>
+        </div>
+        <div>
+          <div className="l">Status</div>
+          <div className="v">
+            <span
+              className={`badge-pill ${
+                offer.status === "Accepted"
+                  ? "badge-high"
+                  : offer.status === "Pending"
+                  ? "badge-medium"
+                  : "badge-low"
+              }`}
+            >
+              {offer.status}
+            </span>
+          </div>
+        </div>
+      </div>
+
       {offer.status === "Pending" && (
-        <div className="row" style={{ marginTop: 10 }}>
-          <button className="btn btn-primary" type="button" onClick={onAccept}>
-            Accept
+        <div className="buyer-foot">
+          <button className="btn btn-danger-outline btn-sm" type="button" onClick={onReject}>
+            Reject Offer
           </button>
-          <button className="btn btn-danger" type="button" onClick={onReject}>
-            Reject
-          </button>
-          <button className="btn btn-secondary" type="button" onClick={onCounter}>
-            Counter offer
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="btn btn-outline btn-sm" type="button" onClick={onCounter}>
+              Counter Offer
+            </button>
+            <button className="btn btn-primary btn-sm" type="button" onClick={onAccept}>
+              Accept Offer
+            </button>
+          </div>
         </div>
       )}
-    </article>
+
+      {offer.status === "Accepted" && (
+        <div className="buyer-foot" style={{ color: "var(--green-deep)", fontWeight: 700, fontSize: "13.5px" }}>
+          ✓ Offer accepted. Ready for pickup and transaction settlement.
+        </div>
+      )}
+    </div>
   );
 }

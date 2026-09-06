@@ -1,4 +1,4 @@
-import { MapPin, TrendingUp, Truck } from "lucide-react";
+import { MapPin } from "lucide-react";
 import type { MarketQuote } from "../types";
 
 export function MarketCard({ market }: { market: MarketQuote }) {

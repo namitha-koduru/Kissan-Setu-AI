@@ -95,7 +95,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
 
           <Link className="profile-chip" to="/profile">
             <span className="avatar">{user?.initials || user?.name?.slice(0, 2).toUpperCase() || "RP"}</span>
-            <span style={{ display: "none", md: "inline" }}>{user?.name?.split(" ")[0] || "Farmer"}</span>
+            <span>{user?.name?.split(" ")[0] || "Farmer"}</span>
           </Link>
         </div>
       </div>
