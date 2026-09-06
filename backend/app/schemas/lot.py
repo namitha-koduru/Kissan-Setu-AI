@@ -5,11 +5,16 @@ from pydantic import BaseModel, ConfigDict
 
 class LotBase(BaseModel):
     quantity: float
+    unit: Optional[str] = "kg"
     asking_price: float
     quality: Optional[str] = "Grade A"
+    quality_description: Optional[str] = None
     harvest_date: Optional[str] = None
+    harvest_window: Optional[str] = None
     location: Optional[str] = "Nashik, Maharashtra"
     status: Optional[str] = "Open for Offers"
+    image_id: Optional[str] = None
+    preferred_buyer_id: Optional[int] = None
 
 
 class LotCreate(LotBase):
@@ -20,10 +25,17 @@ class LotCreate(LotBase):
 
 class LotUpdate(BaseModel):
     quantity: Optional[float] = None
+    unit: Optional[str] = None
     asking_price: Optional[float] = None
     quality: Optional[str] = None
+    quality_description: Optional[str] = None
+    harvest_date: Optional[str] = None
+    harvest_window: Optional[str] = None
+    location: Optional[str] = None
     status: Optional[str] = None
     buyer_id: Optional[int] = None
+    image_id: Optional[str] = None
+    preferred_buyer_id: Optional[int] = None
 
 
 class LotResponse(LotBase):

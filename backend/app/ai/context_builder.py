@@ -138,23 +138,48 @@ class FarmContextBuilder:
                     f"- Best Institutional Buyer Opportunity: {market_overview.best_buyer.name} (Indicative Offer: ₹{market_overview.best_buyer.indicative_offer_qtl}/Qtl, {market_overview.best_buyer.verification_status})"
                 )
         except Exception:
-            # Fallback basic Mandi Market Price Snapshot
-            try:
-                mandi_prices = (
-                    db.query(MarketPrice, Market)
-                    .join(Market, MarketPrice.market_id == Market.id)
-                    .filter(Market.district.ilike(f"%{location_district}%"))
-                    .limit(3)
-                    .all()
+            pass
+
+        # 7. Phase 6: Smart Buyer Matching & Direct vs Mandi Advantage
+        try:
+            from app.services.buyer_matching_service import buyer_matching_service
+            matching_resp = buyer_matching_service.match_buyers_for_lot(
+                db=db,
+                crop_name=primary_crop_name,
+                quantity_qtl=20.0,
+                farmer_location=location_district,
+            )
+            if matching_resp.buyers:
+                top_b = matching_resp.buyers[0]
+                adv_text = ""
+                if top_b.comparison:
+                    adv_text = f", Net Advantage: +₹{top_b.comparison.net_advantage_total:,.0f} (+₹{top_b.comparison.net_advantage_per_kg:.2f}/kg vs mandi)"
+                parts.append(
+                    f"- Top Matched Buyer (Phase 6): {top_b.buyer_name} (Match Score: {top_b.match_score}/100, {top_b.verification_status}, Indicative Rate: ₹{top_b.indicative_price_per_kg:.2f}/kg{adv_text})"
                 )
-                if mandi_prices:
-                    price_strs = [
-                        f"{p.MarketPrice.crop_name} at {p.Market.name}: ₹{p.MarketPrice.price}/{p.MarketPrice.unit}"
-                        for p in mandi_prices
-                    ]
-                    parts.append(f"- Nearby Mandi Benchmarks: {'; '.join(price_strs)}")
-            except Exception:
-                pass
+                if top_b.reasons:
+                    parts.append(f"- Why This Buyer: {'; '.join(top_b.reasons[:2])}")
+        except Exception:
+            pass
+
+        # 8. Phase 6: Active Negotiation & Transaction Status
+        try:
+            if farmer:
+                from app.database.models import Lot, Offer, Transaction
+                active_lots = db.query(Lot).filter(Lot.farmer_id == farmer.id).all()
+                lot_ids = [l.id for l in active_lots]
+                if lot_ids:
+                    pending_offers = db.query(Offer).filter(Offer.lot_id.in_(lot_ids), Offer.status.in_(["Pending", "Countered"])).all()
+                    if pending_offers:
+                        offer_summaries = [f"Offer #{o.id}: ₹{o.offered_price:.2f}/kg (Status: {o.status})" for o in pending_offers[:2]]
+                        parts.append(f"- Active Marketplace Offers Awaiting Response: {'; '.join(offer_summaries)}")
+
+                active_txs = db.query(Transaction).filter(Transaction.farmer_id == farmer.id).order_by(Transaction.created_at.desc()).limit(2).all()
+                if active_txs:
+                    tx_summaries = [f"Tx #{t.id}: ₹{t.total_amount:,.0f} (Status: {t.status}, Logistics: {t.logistics_status}, Payment: {t.payment_status})" for t in active_txs]
+                    parts.append(f"- Active Digital Transactions: {'; '.join(tx_summaries)}")
+        except Exception:
+            pass
 
         return "\n".join(parts) if parts else "General Indian Agronomic Context."
 

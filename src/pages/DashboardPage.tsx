@@ -275,6 +275,38 @@ export function DashboardPage() {
             <div style={{ fontWeight: 800, fontSize: "15px", marginBottom: 14 }}>
               Quick Farm-to-Market Actions
             </div>
+
+            {/* Smart Buyer Match Highlight */}
+            <div
+              style={{
+                background: "#E6F4EA",
+                border: "1px solid #CEEAD6",
+                borderRadius: 8,
+                padding: "10px 12px",
+                marginBottom: 12,
+                fontSize: "12.5px",
+              }}
+            >
+              <div style={{ fontWeight: 800, color: "#137333", display: "flex", alignItems: "center", gap: 6 }}>
+                <Users size={14} /> 3 Verified Buyers Active
+              </div>
+              <div style={{ color: "var(--ink)", marginTop: 2 }}>
+                Sahyadri FPO & Reliance Fresh demanding Tomato at <strong>₹32.00/kg</strong> (+₹3.50/kg vs mandi).
+              </div>
+              <Link
+                to="/buyers?crop=Tomato"
+                style={{
+                  display: "inline-block",
+                  color: "var(--green-deep)",
+                  fontWeight: 800,
+                  fontSize: "12px",
+                  marginTop: 6,
+                }}
+              >
+                View Matched Buyers →
+              </Link>
+            </div>
+
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <Link className="btn btn-outline btn-block" to="/crops/add" style={{ justifyContent: "flex-start", gap: 10 }}>
                 <Sprout size={18} color="#176B45" /> Register New Crop

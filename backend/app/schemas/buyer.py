@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List, Any
 from pydantic import BaseModel, ConfigDict
 
 
@@ -10,7 +10,16 @@ class BuyerBase(BaseModel):
     phone: Optional[str] = None
     email: Optional[str] = None
     verified: Optional[bool] = False
+    verification_status: Optional[str] = "UNVERIFIED"
     rating: Optional[float] = 4.5
+    preferred_crops: Optional[List[str]] = None
+    min_quantity_qtl: Optional[float] = None
+    max_quantity_qtl: Optional[float] = None
+    preferred_quality: Optional[str] = "Grade A"
+    indicative_price_per_kg: Optional[float] = None
+    payment_reliability_score: Optional[float] = 90.0
+    procurement_radius_km: Optional[float] = 100.0
+    business_type: Optional[str] = "Enterprise Buyer"
 
 
 class BuyerCreate(BuyerBase):

@@ -167,12 +167,97 @@ def seed_database(db: Session):
 
     # 4. Buyers
     if db.query(Buyer).count() == 0:
-        print("[Seeder] Seeding institutional buyers & FPCs...")
-        b1 = Buyer(name="Sahyadri Farms FPC", organization="Sahyadri Farmers Producer Co. Ltd.", location="Nashik, Maharashtra", phone="+91 98220 11223", email="procurement@sahyadrifarms.com", verified=True, rating=4.9)
-        b2 = Buyer(name="FreshToHome Supply", organization="FreshToHome Direct Ltd.", location="Mumbai / Nashik Hub", phone="+91 98330 44556", email="agri-desk@freshtohome.com", verified=True, rating=4.7)
-        b3 = Buyer(name="Reliance Fresh Procurement", organization="Reliance Retail Agri Hub", location="Pune, Maharashtra", phone="+91 98440 77889", email="kisanops@ril.com", verified=True, rating=4.8)
-        b4 = Buyer(name="BigBasket Direct Mandi Hub", organization="Innovative Retail Concepts", location="Nashik, Maharashtra", phone="+91 98110 33445", email="mandi@bigbasket.com", verified=True, rating=4.6)
-        b5 = Buyer(name="Mahaveer Agro Traders", organization="APMC Licensed Trader #412", location="Lasalgaon, Maharashtra", phone="+91 98550 99001", email="mahaveertraders@agrimandi.in", verified=True, rating=4.4)
+        print("[Seeder] Seeding institutional buyers & FPCs with Phase 6 attributes...")
+        b1 = Buyer(
+            name="Sahyadri Farms FPC",
+            organization="Sahyadri Farmers Producer Co. Ltd.",
+            location="Nashik, Maharashtra",
+            phone="+91 98220 11223",
+            email="procurement@sahyadrifarms.com",
+            verified=True,
+            verification_status="VERIFIED",
+            rating=4.9,
+            preferred_crops=["Tomato", "Grapes", "Pomegranate"],
+            min_quantity_qtl=10.0,
+            max_quantity_qtl=150.0,
+            preferred_quality="Grade A",
+            indicative_price_per_kg=29.00,
+            payment_reliability_score=98.0,
+            procurement_radius_km=120.0,
+            business_type="Farmer Producer Company (FPC)"
+        )
+        b2 = Buyer(
+            name="FreshToHome Supply",
+            organization="FreshToHome Direct Ltd.",
+            location="Mumbai / Nashik Hub",
+            phone="+91 98330 44556",
+            email="agri-desk@freshtohome.com",
+            verified=True,
+            verification_status="VERIFIED",
+            rating=4.7,
+            preferred_crops=["Tomato", "Onion", "Chilli"],
+            min_quantity_qtl=5.0,
+            max_quantity_qtl=80.0,
+            preferred_quality="Grade A",
+            indicative_price_per_kg=28.50,
+            payment_reliability_score=95.0,
+            procurement_radius_km=150.0,
+            business_type="Direct-to-Consumer Retailer"
+        )
+        b3 = Buyer(
+            name="Reliance Fresh Procurement",
+            organization="Reliance Retail Agri Hub",
+            location="Pune, Maharashtra",
+            phone="+91 98440 77889",
+            email="kisanops@ril.com",
+            verified=True,
+            verification_status="VERIFIED",
+            rating=4.8,
+            preferred_crops=["Onion", "Potato", "Tomato"],
+            min_quantity_qtl=20.0,
+            max_quantity_qtl=300.0,
+            preferred_quality="Grade A",
+            indicative_price_per_kg=21.00,
+            payment_reliability_score=97.0,
+            procurement_radius_km=200.0,
+            business_type="Organized Retail Chain"
+        )
+        b4 = Buyer(
+            name="BigBasket Direct Mandi Hub",
+            organization="Innovative Retail Concepts",
+            location="Nashik, Maharashtra",
+            phone="+91 98110 33445",
+            email="mandi@bigbasket.com",
+            verified=True,
+            verification_status="VERIFIED",
+            rating=4.6,
+            preferred_crops=["Tomato", "Onion", "Capsicum"],
+            min_quantity_qtl=10.0,
+            max_quantity_qtl=100.0,
+            preferred_quality="Grade A",
+            indicative_price_per_kg=28.20,
+            payment_reliability_score=94.0,
+            procurement_radius_km=80.0,
+            business_type="E-Grocery Procurement Hub"
+        )
+        b5 = Buyer(
+            name="Mahaveer Agro Traders",
+            organization="APMC Licensed Trader #412",
+            location="Lasalgaon, Maharashtra",
+            phone="+91 98550 99001",
+            email="mahaveertraders@agrimandi.in",
+            verified=False,
+            verification_status="PENDING",
+            rating=4.4,
+            preferred_crops=["Onion", "Soybean", "Wheat"],
+            min_quantity_qtl=15.0,
+            max_quantity_qtl=200.0,
+            preferred_quality="Grade B+",
+            indicative_price_per_kg=19.80,
+            payment_reliability_score=88.0,
+            procurement_radius_km=60.0,
+            business_type="APMC Commission Agent"
+        )
 
         db.add_all([b1, b2, b3, b4, b5])
         db.commit()
@@ -185,6 +270,8 @@ def seed_database(db: Session):
         b1 = db.query(Buyer).filter(Buyer.name.ilike("%Sahyadri%")).first()
         b2 = db.query(Buyer).filter(Buyer.name.ilike("%FreshToHome%")).first()
         b3 = db.query(Buyer).filter(Buyer.name.ilike("%Reliance%")).first()
+        b4 = db.query(Buyer).filter(Buyer.name.ilike("%BigBasket%")).first()
+        b5 = db.query(Buyer).filter(Buyer.name.ilike("%Mahaveer%")).first()
 
     # 5. Lots
     if db.query(Lot).count() == 0:
@@ -192,10 +279,13 @@ def seed_database(db: Session):
         lot1 = Lot(
             farmer_id=farmer.id,
             crop_id=crop_tomato.id,
-            quantity=2400.0,
-            asking_price=24.00,
-            quality="Grade A (Firm, 75% red)",
+            quantity=2000.0,
+            unit="kg",
+            asking_price=29.00,
+            quality="Grade A",
+            quality_description="Firm table quality, 80% red color, 55-65mm diameter, zero pest puncture",
             harvest_date="2026-09-08",
+            harvest_window="Within 2-3 days",
             location="Nashik (Dindori Aggregation Center)",
             status="Open for Offers",
             created_at=datetime.utcnow()
@@ -205,11 +295,14 @@ def seed_database(db: Session):
             crop_id=crop_onion.id,
             buyer_id=b3.id if b3 else None,
             quantity=4000.0,
-            asking_price=19.00,
-            quality="Grade A (Uniform Cured)",
+            unit="kg",
+            asking_price=20.00,
+            quality="Grade A",
+            quality_description="Uniform cured red onions, 45-55mm diameter, dry outer skin",
             harvest_date="2026-09-04",
+            harvest_window="Immediate delivery",
             location="Lasalgaon Mandi Yard Gate #2",
-            status="In Transit",
+            status="IN_TRANSIT",
             created_at=datetime.utcnow()
         )
         lot3 = Lot(
@@ -217,11 +310,14 @@ def seed_database(db: Session):
             crop_id=crop_grapes.id,
             buyer_id=b1.id if b1 else None,
             quantity=1500.0,
-            asking_price=55.00,
-            quality="Export Grade (Brix > 17°)",
+            unit="kg",
+            asking_price=65.00,
+            quality="Grade A",
+            quality_description="Export Grade Thompson Seedless, Brix > 17°, berry size 18mm+",
             harvest_date="2026-09-02",
+            harvest_window="Completed",
             location="Nashik Cold Chain Hub #3",
-            status="Settled",
+            status="COMPLETED",
             created_at=datetime.utcnow()
         )
         db.add_all([lot1, lot2, lot3])
@@ -231,18 +327,100 @@ def seed_database(db: Session):
         db.refresh(lot3)
 
         # 6. Offers
-        print("[Seeder] Seeding buyer bids and offers...")
-        offer1 = Offer(lot_id=lot1.id, buyer_id=b1.id if b1 else 1, offered_price=24.50, status="Pending")
-        offer2 = Offer(lot_id=lot1.id, buyer_id=b2.id if b2 else 2, offered_price=23.80, status="Countered")
-        offer3 = Offer(lot_id=lot2.id, buyer_id=b3.id if b3 else 3, offered_price=19.50, status="Accepted")
+        print("[Seeder] Seeding buyer bids and offers with negotiation history...")
+        offer1 = Offer(
+            lot_id=lot1.id,
+            buyer_id=b1.id if b1 else 1,
+            offered_price=29.00,
+            quantity_kg=2000.0,
+            quality_grade="Grade A",
+            message="We can pick up from your farm gate on Wednesday morning. Immediate payment upon quality inspection.",
+            status="Pending",
+            created_at=datetime.utcnow()
+        )
+        offer2 = Offer(
+            lot_id=lot1.id,
+            buyer_id=b2.id if b2 else 2,
+            offered_price=28.50,
+            counter_price=29.50,
+            quantity_kg=2000.0,
+            quality_grade="Grade A",
+            message="Initial offer ₹28.50/kg. Farmer countered with ₹29.50/kg.",
+            status="Countered",
+            created_at=datetime.utcnow()
+        )
+        offer3 = Offer(
+            lot_id=lot2.id,
+            buyer_id=b3.id if b3 else 3,
+            offered_price=20.00,
+            quantity_kg=4000.0,
+            quality_grade="Grade A",
+            message="Procurement confirmed for Reliance Fresh Pune Distribution Hub.",
+            status="Accepted",
+            created_at=datetime.utcnow()
+        )
         db.add_all([offer1, offer2, offer3])
         db.commit()
+        db.refresh(offer1)
+        db.refresh(offer2)
+        db.refresh(offer3)
 
         # 7. Transactions
-        print("[Seeder] Seeding completed transactions & escrow settlements...")
-        tx1 = Transaction(lot_id=lot2.id, final_price=19.50 * 4000.0, status="Escrow Locked - In Transit")
-        tx2 = Transaction(lot_id=lot3.id, final_price=56.00 * 1500.0, status="Settled - Credited to Bank")
+        print("[Seeder] Seeding completed transactions, logistics, and audit timeline...")
+        tx1 = Transaction(
+            lot_id=lot2.id,
+            farmer_id=farmer.id,
+            buyer_id=b3.id if b3 else 3,
+            offer_id=offer3.id,
+            quantity_kg=4000.0,
+            final_price=20.00,
+            total_amount=80000.0,
+            status="IN_TRANSIT",
+            logistics_status="IN_TRANSIT",
+            pickup_date="2026-09-05 08:30 AM",
+            pickup_location="Lasalgaon Yard Gate #2",
+            delivery_location="Reliance Fresh Pune Hub, Hadapsar",
+            transport_cost_actual=3200.0,
+            payment_status="PENDING",
+            expected_amount=80000.0,
+            paid_amount=0.0
+        )
+        tx2 = Transaction(
+            lot_id=lot3.id,
+            farmer_id=farmer.id,
+            buyer_id=b1.id if b1 else 1,
+            quantity_kg=1500.0,
+            final_price=65.00,
+            total_amount=97500.0,
+            status="COMPLETED",
+            logistics_status="DELIVERED",
+            pickup_date="2026-09-02 09:00 AM",
+            pickup_location="Nashik Farm Gate",
+            delivery_location="Sahyadri Cold Chain Hub #3",
+            transport_cost_actual=1200.0,
+            payment_status="RECEIVED",
+            expected_amount=97500.0,
+            paid_amount=97500.0,
+            payment_date="2026-09-03",
+            payment_reference="NEFT-KISSAN-78921"
+        )
         db.add_all([tx1, tx2])
+        db.commit()
+        db.refresh(tx1)
+        db.refresh(tx2)
+
+        # Transaction Events Audit Trail
+        ev1 = TransactionEvent(transaction_id=tx1.id, stage_label="Offer Accepted", description="Farmer accepted Reliance Fresh offer at ₹20.00/kg", done=True)
+        ev2 = TransactionEvent(transaction_id=tx1.id, stage_label="Transaction Confirmed", description="Contract generated for 4,000 kg cured onion", done=True)
+        ev3 = TransactionEvent(transaction_id=tx1.id, stage_label="Pickup Scheduled", description="Logistics truck MH-15-EG-4412 scheduled for Sep 5, 8:30 AM", done=True)
+        ev4 = TransactionEvent(transaction_id=tx1.id, stage_label="Produce Picked Up", description="Produce loaded at Lasalgaon Mandi Yard Gate #2", done=True)
+        ev5 = TransactionEvent(transaction_id=tx1.id, stage_label="In Transit", description="Truck in transit to Pune Distribution Hub", done=True)
+
+        ev_c1 = TransactionEvent(transaction_id=tx2.id, stage_label="Offer Accepted", description="Accepted Sahyadri Farms FPC offer at ₹65.00/kg", done=True)
+        ev_c2 = TransactionEvent(transaction_id=tx2.id, stage_label="Delivered & Verified", description="Delivered to Cold Chain Hub; Brix test passed at 17.8°", done=True)
+        ev_c3 = TransactionEvent(transaction_id=tx2.id, stage_label="Payment Settled", description="₹97,500 direct bank transfer recorded (Ref: NEFT-KISSAN-78921)", done=True)
+
+        db.add_all([ev1, ev2, ev3, ev4, ev5, ev_c1, ev_c2, ev_c3])
         db.commit()
 
     print("[Seeder] Database successfully populated with realistic Indian agricultural demo data!")

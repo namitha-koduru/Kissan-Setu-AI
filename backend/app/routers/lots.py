@@ -2,7 +2,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database.connection import get_db
-from app.database.models import Lot, Farmer, Crop
+from app.database.models import Lot, Farmer, Crop, CropImage, Buyer
 from app.schemas.lot import LotCreate, LotUpdate, LotResponse
 
 router = APIRouter(tags=["Lots"])
@@ -16,12 +16,13 @@ def get_farmer_lots(farmer_id: int, db: Session = Depends(get_db)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Farmer with ID {farmer_id} not found"
         )
-    return db.query(Lot).filter(Lot.farmer_id == farmer_id).all()
+    return db.query(Lot).filter(Lot.farmer_id == farmer_id).order_by(Lot.created_at.desc()).all()
 
 
 @router.get("/lots", response_model=List[LotResponse])
 def get_all_lots(
     status_filter: Optional[str] = None,
+    crop_id: Optional[int] = None,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db)
@@ -29,7 +30,9 @@ def get_all_lots(
     query = db.query(Lot)
     if status_filter:
         query = query.filter(Lot.status == status_filter)
-    return query.offset(skip).limit(limit).all()
+    if crop_id:
+        query = query.filter(Lot.crop_id == crop_id)
+    return query.order_by(Lot.created_at.desc()).offset(skip).limit(limit).all()
 
 
 @router.get("/lots/{lot_id}", response_model=LotResponse)
@@ -59,6 +62,12 @@ def create_lot(lot_in: LotCreate, db: Session = Depends(get_db)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Crop with ID {lot_in.crop_id} not found"
         )
+
+    # If image_id is provided, verify it exists
+    if lot_in.image_id:
+        img = db.query(CropImage).filter(CropImage.id == lot_in.image_id).first()
+        if not img:
+            lot_in.image_id = None  # Graceful fallback
 
     lot = Lot(**lot_in.model_dump())
     db.add(lot)

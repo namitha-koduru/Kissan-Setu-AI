@@ -37,6 +37,7 @@ class Farmer(Base):
     conversations = relationship("Conversation", back_populates="farmer", cascade="all, delete-orphan")
     images = relationship("CropImage", back_populates="farmer", cascade="all, delete-orphan")
     soil_profile = relationship("SoilProfile", back_populates="farmer", uselist=False, cascade="all, delete-orphan")
+    transactions = relationship("Transaction", foreign_keys="[Transaction.farmer_id]", back_populates="farmer", cascade="all, delete-orphan")
 
 
 class Crop(Base):
@@ -94,7 +95,6 @@ class MarketPrice(Base):
     market = relationship("Market", back_populates="prices")
 
 
-
 class Buyer(Base):
     __tablename__ = "buyers"
 
@@ -105,12 +105,22 @@ class Buyer(Base):
     phone = Column(String(50), nullable=True)
     email = Column(String(255), nullable=True)
     verified = Column(Boolean, default=False)
+    verification_status = Column(String(50), default="UNVERIFIED")  # "VERIFIED", "PENDING", "UNVERIFIED"
     rating = Column(Float, default=4.5)
+    preferred_crops = Column(JSON, nullable=True)  # List of crop names e.g. ["Tomato", "Onion"]
+    min_quantity_qtl = Column(Float, nullable=True)
+    max_quantity_qtl = Column(Float, nullable=True)
+    preferred_quality = Column(String(50), default="Grade A")
+    indicative_price_per_kg = Column(Float, nullable=True)
+    payment_reliability_score = Column(Float, default=90.0)
+    procurement_radius_km = Column(Float, default=100.0)
+    business_type = Column(String(100), default="Enterprise Buyer")
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
-    lots = relationship("Lot", back_populates="buyer")
+    lots = relationship("Lot", foreign_keys="[Lot.buyer_id]", back_populates="buyer")
     offers = relationship("Offer", back_populates="buyer", cascade="all, delete-orphan")
+    transactions = relationship("Transaction", foreign_keys="[Transaction.buyer_id]", back_populates="buyer")
 
 
 class Lot(Base):
@@ -120,10 +130,15 @@ class Lot(Base):
     farmer_id = Column(Integer, ForeignKey("farmers.id", ondelete="CASCADE"), nullable=False)
     crop_id = Column(Integer, ForeignKey("crops.id", ondelete="CASCADE"), nullable=False)
     buyer_id = Column(Integer, ForeignKey("buyers.id", ondelete="SET NULL"), nullable=True)
+    image_id = Column(String(50), ForeignKey("crop_images.id", ondelete="SET NULL"), nullable=True)
+    preferred_buyer_id = Column(Integer, ForeignKey("buyers.id", ondelete="SET NULL"), nullable=True)
     quantity = Column(Float, nullable=False)
+    unit = Column(String(20), default="kg")
     asking_price = Column(Float, nullable=False)
     quality = Column(String(50), default="Grade A")
+    quality_description = Column(Text, nullable=True)
     harvest_date = Column(String(50), nullable=True)
+    harvest_window = Column(String(100), nullable=True)
     location = Column(String(255), default="Nashik, Maharashtra")
     status = Column(String(50), default="Open for Offers")
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -131,7 +146,9 @@ class Lot(Base):
     # Relationships
     farmer = relationship("Farmer", back_populates="lots")
     crop = relationship("Crop", back_populates="lots")
-    buyer = relationship("Buyer", back_populates="lots")
+    buyer = relationship("Buyer", foreign_keys=[buyer_id], back_populates="lots")
+    preferred_buyer = relationship("Buyer", foreign_keys=[preferred_buyer_id])
+    image = relationship("CropImage")
     offers = relationship("Offer", back_populates="lot", cascade="all, delete-orphan")
     transaction = relationship("Transaction", back_populates="lot", uselist=False, cascade="all, delete-orphan")
 
@@ -143,8 +160,15 @@ class Offer(Base):
     lot_id = Column(Integer, ForeignKey("lots.id", ondelete="CASCADE"), nullable=False)
     buyer_id = Column(Integer, ForeignKey("buyers.id", ondelete="CASCADE"), nullable=False)
     offered_price = Column(Float, nullable=False)
-    status = Column(String(50), default="Pending")
+    counter_price = Column(Float, nullable=True)
+    quantity_kg = Column(Float, nullable=True)
+    quality_grade = Column(String(50), default="Grade A")
+    message = Column(Text, nullable=True)
+    parent_offer_id = Column(Integer, ForeignKey("offers.id", ondelete="SET NULL"), nullable=True)
+    status = Column(String(50), default="Pending")  # Pending, Countered, Accepted, Rejected, Expired
+    expires_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
     lot = relationship("Lot", back_populates="offers")
@@ -156,12 +180,70 @@ class Transaction(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     lot_id = Column(Integer, ForeignKey("lots.id", ondelete="CASCADE"), unique=True, nullable=False)
+    farmer_id = Column(Integer, ForeignKey("farmers.id", ondelete="CASCADE"), nullable=True, index=True)
+    buyer_id = Column(Integer, ForeignKey("buyers.id", ondelete="CASCADE"), nullable=True, index=True)
+    offer_id = Column(Integer, ForeignKey("offers.id", ondelete="SET NULL"), nullable=True, index=True)
+    quantity_kg = Column(Float, nullable=True)
     final_price = Column(Float, nullable=False)
-    status = Column(String(50), default="Offer Accepted")
+    total_amount = Column(Float, nullable=True)
+    status = Column(String(50), default="CREATED")  # CREATED, CONFIRMED, PICKUP_SCHEDULED, IN_TRANSIT, DELIVERED, PAYMENT_PENDING, PAYMENT_RECEIVED, COMPLETED, DISPUTED, CANCELLED
+    
+    # Logistics Tracking
+    logistics_status = Column(String(50), default="NOT_SCHEDULED")  # NOT_SCHEDULED, SCHEDULED, PICKED_UP, IN_TRANSIT, DELIVERED
+    pickup_date = Column(String(100), nullable=True)
+    pickup_location = Column(String(255), nullable=True)
+    delivery_location = Column(String(255), nullable=True)
+    transport_cost_actual = Column(Float, nullable=True)
+    
+    # Payment Tracking (Tracking Only)
+    payment_status = Column(String(50), default="PENDING")  # PENDING, INITIATED, PARTIAL, RECEIVED, DISPUTED
+    expected_amount = Column(Float, nullable=True)
+    paid_amount = Column(Float, default=0.0)
+    payment_date = Column(String(100), nullable=True)
+    payment_reference = Column(String(100), nullable=True)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    lot = relationship("Lot", foreign_keys=[lot_id], back_populates="transaction")
+    farmer = relationship("Farmer", foreign_keys=[farmer_id], back_populates="transactions")
+    buyer = relationship("Buyer", foreign_keys=[buyer_id], back_populates="transactions")
+    offer = relationship("Offer", foreign_keys=[offer_id])
+    events = relationship("TransactionEvent", back_populates="transaction", cascade="all, delete-orphan", order_by="TransactionEvent.created_at")
+    disputes = relationship("Dispute", back_populates="transaction", cascade="all, delete-orphan", order_by="Dispute.created_at.desc()")
+
+
+class TransactionEvent(Base):
+    __tablename__ = "transaction_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    transaction_id = Column(Integer, ForeignKey("transactions.id", ondelete="CASCADE"), nullable=False, index=True)
+    stage_label = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+    done = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationship
-    lot = relationship("Lot", back_populates="transaction")
+    transaction = relationship("Transaction", back_populates="events")
+
+
+class Dispute(Base):
+    __tablename__ = "disputes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    transaction_id = Column(Integer, ForeignKey("transactions.id", ondelete="CASCADE"), nullable=False, index=True)
+    raised_by_role = Column(String(20), default="farmer")  # "farmer" or "buyer"
+    raised_by_id = Column(Integer, nullable=True)
+    category = Column(String(50), default="payment")  # payment, quantity, quality, delivery, other
+    description = Column(Text, nullable=False)
+    status = Column(String(50), default="OPEN")  # OPEN, UNDER_REVIEW, RESOLVED, REJECTED
+    resolution_notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    resolved_at = Column(DateTime, nullable=True)
+
+    # Relationship
+    transaction = relationship("Transaction", back_populates="disputes")
 
 
 class Conversation(Base):
