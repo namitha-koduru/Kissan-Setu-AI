@@ -8,6 +8,7 @@ from app.schemas.farmer import FarmerCreate, FarmerUpdate, FarmerResponse
 router = APIRouter(prefix="/farmers", tags=["Farmers"])
 
 
+@router.get("", response_model=List[FarmerResponse])
 @router.get("/", response_model=List[FarmerResponse])
 def get_all_farmers(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return db.query(Farmer).offset(skip).limit(limit).all()
@@ -24,8 +25,10 @@ def get_farmer(farmer_id: int, db: Session = Depends(get_db)):
     return farmer
 
 
+@router.post("", response_model=FarmerResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=FarmerResponse, status_code=status.HTTP_201_CREATED)
 def create_farmer(farmer_in: FarmerCreate, db: Session = Depends(get_db)):
+
     existing = db.query(Farmer).filter(Farmer.phone == farmer_in.phone).first()
     if existing:
         raise HTTPException(

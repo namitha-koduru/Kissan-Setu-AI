@@ -15,6 +15,7 @@ from app.schemas.chat import (
 )
 from app.schemas.image import CropImageResponse, ImageAnalysisResponse, VisionAnalysisResult
 from app.services.cloudinary_service import cloudinary_service
+from app.services.rag_service import rag_service
 from app.ai.vision_service import vision_service
 from app.ai.llm_service import llm_service
 from app.ai.context_builder import context_builder
@@ -32,7 +33,7 @@ async def chat_with_assistant(
     """
     Multilingual AI Farmer Assistant Endpoint.
     Maintains conversation context, queries live farm/crop/weather/mandi intelligence,
-    and returns tailored agronomic guidance.
+    retrieves verified agricultural knowledge (RAG), and returns tailored agronomic guidance.
     """
     user_text = request.message.strip()
     if not user_text:
@@ -97,11 +98,30 @@ async def chat_with_assistant(
     )
     llm_messages = [{"role": msg.role, "content": msg.content} for msg in history_records]
 
-    # 4. Assemble Farmer & Farm Context
-    farm_context = context_builder.build_context(db, farmer_id=request.farmer_id)
-    system_prompt = get_system_prompt(language_code=lang, farm_context=farm_context)
+    # 4. Determine crop hint for RAG if farmer has crops
+    crop_hint = None
+    farmer_crop = db.query(Crop).filter(Crop.farmer_id == request.farmer_id).first()
+    if farmer_crop:
+        crop_hint = farmer_crop.crop_name
 
-    # 5. Generate Response via LLM Service
+    # 5. Retrieve Grounded Research & Evidence (RAG Layer)
+    rag_context, sources = await rag_service.get_grounded_context(
+        db=db,
+        query=user_text,
+        crop_hint=crop_hint,
+        language=lang,
+        has_image=False
+    )
+
+    # 6. Assemble Farmer & Farm Context
+    farm_context = context_builder.build_context(db, farmer_id=request.farmer_id)
+    system_prompt = get_system_prompt(
+        language_code=lang,
+        farm_context=farm_context,
+        rag_context=rag_context
+    )
+
+    # 7. Generate Response via LLM Service
     try:
         reply_text = await llm_service.generate_response(
             messages=llm_messages,
@@ -111,7 +131,7 @@ async def chat_with_assistant(
     except Exception as exc:
         reply_text = "I apologize, but I am having trouble connecting to the advisory server. Please try asking again in a moment."
 
-    # 6. Save Assistant Response
+    # 8. Save Assistant Response
     asst_msg = ChatMessage(
         conversation_id=conversation.id,
         role="assistant",
@@ -126,7 +146,7 @@ async def chat_with_assistant(
         reply=reply_text,
         language=lang,
         conversation_id=conversation.id,
-        sources=[]  # Prepared for future RAG knowledge citation
+        sources=sources
     )
 
 
@@ -144,9 +164,10 @@ async def analyze_crop_image_chat(
     Multimodal Crop Image Analysis Chat Endpoint.
     1. Validates & uploads image via Cloudinary (or local fallback).
     2. Runs Vision AI inspection (symptoms, crop, possible issues, confidence).
-    3. Merges vision findings with farm/crop/weather/market context.
-    4. Generates a natural multilingual LLM explanation in the selected language.
-    5. Saves conversation history with image attachment and structured analysis.
+    3. Retrieves verified RAG agronomic evidence for detected symptoms & crop.
+    4. Merges vision findings with farm/crop/weather/market context.
+    5. Generates a natural multilingual LLM explanation in the selected language.
+    6. Saves conversation history with image attachment and structured analysis.
     """
     # 1. Read file bytes for validation & processing
     file_bytes = await image.read()
@@ -264,14 +285,23 @@ async def analyze_crop_image_chat(
     db.add(user_msg)
     db.commit()
 
-    # 9. Build Farm & Agronomic Context
+    # 9. Build Farm & Agronomic Context & Retrieve RAG Grounding
     farm_context = context_builder.build_context(db, farmer_id=farmer_id)
+    rag_query = f"{vision_result.detected_crop or ''} {' '.join(vision_result.observed_symptoms)} {user_text}"
+    rag_context, sources = await rag_service.get_grounded_context(
+        db=db,
+        query=rag_query,
+        crop_hint=vision_result.detected_crop or crop_hint,
+        language=lang,
+        has_image=True
+    )
 
     # 10. Generate Multilingual Farmer Explanation via LLM
     explanation_system_prompt = get_vision_explanation_prompt(
         vision_result=vision_result.model_dump(),
         language_code=lang,
         farm_context=farm_context,
+        rag_context=rag_context,
         user_question=message
     )
 
@@ -314,7 +344,7 @@ async def analyze_crop_image_chat(
         conversation_id=conv_id,
         image=CropImageResponse.model_validate(crop_image),
         analysis=ImageAnalysisResponse.model_validate(image_analysis),
-        sources=[]
+        sources=sources
     )
 
 

@@ -138,64 +138,56 @@ STRUCTURED DATA (Soil + Weather + Crop Growth Stage + Location + Season)
 
 ---
 
+## 📚 Phase 8 — Verified Agricultural Knowledge + RAG Layer
+
+KissanSetuAI integrates an authoritative **Verified Agricultural Knowledge + RAG (Retrieval-Augmented Generation)** layer grounded in trusted national and state research sources:
+
+```
+Farmer Query / Spoken Voice / Leaf Image
+                 │
+                 ▼
+      RAG Decision Layer (Intent Classifier)
+   ├── Pure Live Mandi Price / Order Status ──► Direct Structured PostgreSQL Engine
+   └── Agronomic / Disease / Soil / Storage ──► Semantic Retrieval Engine (Cosine Sim)
+                                                       │
+                                                       ▼
+                          Authoritative Knowledge Base (ICAR / SAU / IMD / Dept of Agri)
+                                                       │
+                                                       ▼
+                          System Prompt Grounding + Provenance Metadata
+                                                       │
+                                                       ▼
+                          Grounded LLM Response with Verified Research Citations
+```
+
+### Key Capabilities:
+- **Authoritative Provenance**: Grounded in ICAR (IIHR, IARI, DOGR, NRCG), State Agricultural Universities (MPKV Rahuri), IMD Agromet, and Government Agriculture Departments.
+- **Strict Anti-Hallucination Boundaries**: RAG does NOT replace real-time market data or invent transaction state.
+- **Multilingual Semantic Retrieval**: 128-dimensional dense concept embeddings supporting queries in 8 Indian languages (EN, HI, TE, MR, TA, KN, BN, ML).
+- **Collapsible Source Citations**: Assistant responses feature expandable verified research cards with authority badges (`🏛 ICAR-IARI`, `🏛 MPKV Rahuri`), verification year, and direct official reference links.
+- **Multimodal Grounding**: Visual crop leaf symptom assessments automatically retrieve and cite relevant pathological and IPM research.
+
+---
+
 ## 🧪 Testing
 
-### Backend Test Suite (36 Automated Tests)
+### Backend Automated Pytest Suite (84 Passing Tests)
 ```bash
 cd backend
-pytest -v
+python -m pytest tests/ -v
 ```
+**Test Breakdown**:
+- `test_rag.py`: 13 passed (Seeding, Search, Filters, RAG Decision Engine, Multilingual Chat, Voice RAG, Vision RAG, Authority citations)
+- `test_voice_ai.py`: 10 passed (STT, Multilingual Voice Chat, TTS, Audio Streaming, Multimodal Voice)
+- `test_buyer_matching_and_transactions.py`: 10 passed
+- `test_market_intelligence.py`: 15 passed
+- `test_farm_intelligence.py`: 13 passed
+- `test_image_ai.py`: 7 passed
+- `test_chat.py`: 5 passed
+- `test_api.py`: 11 passed
 
 ### Frontend Production Build
 ```bash
 npm run build
 ```
-
----
-
-## 🔑 Demo Credentials
-
-| Role | Email / Phone | Password | Location |
-|---|---|---|---|
-| **Farmer** | `farmer@kisansetu.in` / `+91 98765 43210` | `demo123` | Nashik, Maharashtra |
-| **FPO / Aggregator** | `fpo@kisansetu.in` | `demo123` | Godavari FPC, Nashik |
-| **Institutional Buyer** | `buyer@kisansetu.in` | `demo123` | FreshFarm Foods, Pune |
-| **Admin** | `admin@kisansetu.in` | `demo123` | Mumbai HQ |
-
----
-
-## 🗄 Database Models & Schema (PostgreSQL)
-
-- **`Farmer`**: ID, Name, Phone, Email, Preferred Language, State, District, Village, Coordinates
-- **`Crop`**: ID, Farmer ID, Crop Name, Variety, Acreage, Quantity, Sowing Date, Harvest Date, Growth Stage, Soil Type
-- **`Market`**: ID, Name, District, State, Coordinates
-- **`MarketPrice`**: ID, Market ID, Crop Name, Price, Unit (kg/qtl), Date
-- **`Buyer`**: ID, Name, Organization, Location, Phone, Email, Verified Badge, Rating
-- **`Lot`**: ID, Farmer ID, Crop ID, Buyer ID, Quantity, Asking Price, Quality Grade, Harvest Date, Location, Status
-- **`Offer`**: ID, Lot ID, Buyer ID, Offered Price, Status (Pending, Accepted, Rejected, Countered)
-- **`Transaction`**: ID, Lot ID, Final Price, Status (Deal Locked, In Transit, Settled)
-
----
-
-## 🌾 Phase 3: Vision AI & Leaf Symptom Assessment
-
-KissanSetuAI integrates end-to-end multimodal Vision AI:
-1. **Camera / Gallery Upload**: Farmers can capture or select a leaf/crop image directly from Chat or from the Crop Details page.
-2. **Cloudinary Backend Storage**: Images are validated (Pillow integrity, MIME type, max 10MB limit) and stored in organized Cloudinary folders (with local dev fallback).
-3. **Vision AI Inspection**: Gemini 1.5 Flash multimodal inspection extracts structured visual findings (detected crop, visible symptoms, possible issues + confidence, image quality check, and safety disclaimer).
-4. **Contextual LLM Explanation**: Merges the vision findings with the farmer's registered crops, active growth stage, 7-day weather forecast, and mandi price trends, explaining findings in the farmer's selected language (Telugu, Hindi, Marathi, Tamil, Kannada, Bengali, Malayalam, English).
-5. **Interactive Chat Integration**: Displays the uploaded leaf photo with full-screen zoom, loading stages (`"Uploading..."` → `"Analyzing symptoms with Vision AI..."` → `"Preparing guidance..."`), and structured actionable guidance.
-
----
-
-## 🧪 Testing
-
-```bash
-# Run backend pytest suite (23 unit & integration tests)
-cd backend
-python -m pytest tests/ -v
-
-# Run frontend TypeScript typecheck and production build
-cd ..
-npm run build
-```
+**Result**: Built cleanly in ~10s with 0 errors.

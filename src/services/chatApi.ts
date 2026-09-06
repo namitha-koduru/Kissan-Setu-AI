@@ -1,19 +1,29 @@
 import apiClient from "./api";
 import type { CropImageItem, ImageAnalysisItem } from "./imageApi";
 
+export interface ChatSourceItem {
+  title: string;
+  source_name?: string;
+  authority?: string;
+  url?: string | null;
+  category?: string;
+  crop?: string | null;
+  last_verified_at?: string | null;
+  confidence_score?: number | null;
+  reference?: string;
+}
+
 export interface ChatMessageItem {
   id: string | number;
   role: "user" | "assistant" | "system";
   content: string;
   image_url?: string | null;
   image_id?: number | null;
+  audio_url?: string | null;
+  sources?: ChatSourceItem[];
   created_at?: string;
 }
 
-export interface ChatSourceItem {
-  title: string;
-  reference?: string;
-}
 
 export interface ChatSendRequest {
   message: string;

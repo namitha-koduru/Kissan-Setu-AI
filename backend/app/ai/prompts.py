@@ -79,24 +79,46 @@ RULES:
 """
 
 
-def get_system_prompt(language_code: str = "en", farm_context: str = "") -> str:
+VOICE_MODE_INSTRUCTIONS = """
+VOICE MODE ACTIVE (NATURAL SPOKEN ADVISORY):
+- You are speaking aloud directly to the farmer via Text-to-Speech audio.
+- Keep your answer short, clear, and punchy (2 to 4 sentences maximum).
+- Avoid bullet lists, markdown asterisks, or tables which sound awkward when spoken.
+- State the direct answer first, give the single most important reason, and state the exact next action.
+- Speak prices and units clearly (e.g. "Thirty-two rupees per kilogram" or "₹32 per kg").
+"""
+
+
+def get_system_prompt(
+    language_code: str = "en",
+    farm_context: str = "",
+    rag_context: str = "",
+    voice_mode: bool = False
+) -> str:
     lang_name = LANGUAGE_NAMES.get(language_code, "English")
     context_str = farm_context if farm_context else "No specific farm profile context provided."
-    return BASE_AGRICULTURAL_PROMPT.format(
+    base = BASE_AGRICULTURAL_PROMPT.format(
         language_name=lang_name,
         farm_context=context_str
     )
+    if rag_context:
+        base += f"\n\n{rag_context}\n\nGROUNDING INSTRUCTION:\nWhen addressing agronomic, disease, soil health, irrigation, or crop protection topics, ground your factual advice directly in the verified agricultural research evidence above. Mention the trusted authority (e.g. ICAR, MPKV Rahuri, IMD) if citing specific findings or guidelines."
+    if voice_mode:
+        base += "\n\n" + VOICE_MODE_INSTRUCTIONS
+    return base
 
 
 def get_vision_explanation_prompt(
     vision_result: Dict[str, Any],
     language_code: str = "en",
     farm_context: str = "",
+    rag_context: str = "",
     user_query: str = "",
     user_question: Optional[str] = None
 ) -> str:
     lang_name = LANGUAGE_NAMES.get(language_code, "English")
     query_text = user_question or user_query or "What is the visual issue on my crop and what should I do?"
+    evidence_block = f"\nVERIFIED AGRICULTURAL EVIDENCE:\n{rag_context}\n" if rag_context else ""
     return f"""You are the KissanSetuAI Agricultural Assistant.
 A farmer has uploaded a crop leaf photo for visual assessment. The Vision AI model produced the following structured observations:
 
@@ -105,7 +127,7 @@ A farmer has uploaded a crop leaf photo for visual assessment. The Vision AI mod
 - Observed Symptoms: {', '.join(vision_result.get('observed_symptoms', [])) if vision_result.get('observed_symptoms') else 'None observed'}
 - Possible Issues: {', '.join([f"{issue.get('name')} (approx. {int(issue.get('confidence', 0.8)*100)}% visual match)" for issue in vision_result.get('possible_issues', [])]) if vision_result.get('possible_issues') else 'Healthy foliage with no acute symptoms'}
 - Recommended Action Steps: {', '.join(vision_result.get('recommendations', []))}
-
+{evidence_block}
 FARM & WEATHER CONTEXT:
 {farm_context}
 
@@ -118,8 +140,9 @@ INSTRUCTIONS:
    - **Visual Observations:** What can be seen on the plant.
    - **Possible Issue & Risk:** What this visually suggests (emphasizing "possible cause", not 100% certainty).
    - **What to Inspect in Field:** Underside of leaves, stem nodes, neighboring plants.
-   - **Immediate Practical Steps:** Safe organic/cultural remedies (e.g. neem oil spray, pruning, moisture regulation).
+   - **Immediate Practical Steps:** Safe organic/cultural remedies (e.g. neem oil spray, pruning, moisture regulation grounded in verified ICAR/SAU practices).
    - **Local Verification:** Advise checking with local Krishi Vigyan Kendra (KVK) if symptoms persist.
 3. If relevant weather context exists (e.g. rain forecast), mention how it relates to foliar spraying or disease spread.
 4. Keep the tone empathetic, practical, and clear.
 """
+

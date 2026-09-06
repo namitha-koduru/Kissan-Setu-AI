@@ -61,6 +61,26 @@ export function DashboardPage() {
 
         <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
           <Link
+            to="/chat?mode=voice"
+            className="btn"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "8px 16px",
+              borderRadius: "12px",
+              background: "#FFFFFF",
+              color: "var(--green-deep)",
+              border: "1.5px solid var(--green-deep)",
+              fontWeight: 800,
+              boxShadow: "0 2px 8px rgba(23, 107, 69, 0.15)",
+            }}
+          >
+            <span>🎙</span>
+            <span>Speak to AI</span>
+          </Link>
+
+          <Link
             to="/chat"
             className="btn btn-primary"
             style={{

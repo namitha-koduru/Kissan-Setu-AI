@@ -6,6 +6,13 @@ from app.schemas.image import CropImageResponse, ImageAnalysisResponse, VisionAn
 
 class ChatSourceItem(BaseModel):
     title: str
+    source_name: Optional[str] = "ICAR / SAU Agricultural Research"
+    authority: Optional[str] = "Verified Government / Research"
+    url: Optional[str] = None
+    category: Optional[str] = "CROP_PRACTICES"
+    crop: Optional[str] = None
+    last_verified_at: Optional[str] = "2026"
+    confidence_score: Optional[float] = None
     reference: Optional[str] = None
 
 

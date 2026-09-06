@@ -62,6 +62,27 @@ class Settings(BaseSettings):
     VISION_PROVIDER: str = os.getenv("VISION_PROVIDER", "gemini")  # 'gemini', 'mock'
     VISION_MODEL: str = os.getenv("VISION_MODEL", "gemini-1.5-flash")
 
+    # Voice AI Settings (Phase 7)
+    VOICE_ENABLED: bool = True
+    STT_PROVIDER: str = os.getenv("STT_PROVIDER", "mock")  # 'whisper', 'google', 'mock'
+    STT_API_KEY: str = os.getenv("STT_API_KEY", "")
+    STT_MODEL: str = os.getenv("STT_MODEL", "whisper-1")
+    TTS_PROVIDER: str = os.getenv("TTS_PROVIDER", "mock")  # 'gtts', 'openai', 'mock'
+    TTS_API_KEY: str = os.getenv("TTS_API_KEY", "")
+    TTS_MODEL: str = os.getenv("TTS_MODEL", "tts-1")
+    MAX_AUDIO_SIZE_MB: int = 10
+    MAX_AUDIO_DURATION_SEC: int = 60
+
+    # RAG & Knowledge Settings (Phase 8)
+    RAG_ENABLED: bool = True
+    RAG_TOP_K: int = 4
+    RAG_MIN_SIMILARITY: float = 0.55
+    EMBEDDING_PROVIDER: str = os.getenv("EMBEDDING_PROVIDER", "mock")  # 'openai', 'mock'
+
+    EMBEDDING_API_KEY: str = os.getenv("EMBEDDING_API_KEY", "")
+    EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+    EMBEDDING_DIMENSION: int = 128
+
     # External Service Keys (Future phases)
     OPENWEATHER_API_KEY: str = ""
     GOV_MANDI_API_KEY: str = ""

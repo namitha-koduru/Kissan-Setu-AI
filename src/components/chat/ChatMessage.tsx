@@ -1,16 +1,27 @@
 import React, { useState } from "react";
 import type { ChatMessageItem } from "../../services/chatApi";
+import { VoicePlayback } from "./VoicePlayback";
+import { Mic, ShieldCheck, BookOpen, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
 
 interface ChatMessageProps {
   message: ChatMessageItem;
   isLatest?: boolean;
+  language?: string;
+  autoPlayVoice?: boolean;
 }
 
-export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
+export const ChatMessage: React.FC<ChatMessageProps> = ({
+  message,
+  isLatest = false,
+  language = "en",
+  autoPlayVoice = false,
+}) => {
   const isUser = message.role === "user";
   const [showFullImage, setShowFullImage] = useState(false);
+  const [sourcesOpen, setSourcesOpen] = useState(true);
 
   // Formatter for markdown, bold, lists, and agricultural inspection headers
+
   const formatContent = (text: string) => {
     const lines = text.split("\n");
     return lines.map((line, lIdx) => {
@@ -182,7 +193,156 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
         )}
 
         <div>{formatContent(message.content)}</div>
+
+        {/* Verified Knowledge & Research Sources (Phase 8 RAG Grounding) */}
+        {!isUser && message.sources && message.sources.length > 0 && (
+          <div
+            style={{
+              marginTop: "12px",
+              padding: "10px 12px",
+              borderRadius: "10px",
+              background: "linear-gradient(135deg, rgba(23, 107, 69, 0.05), rgba(46, 139, 87, 0.03))",
+              border: "1px solid rgba(23, 107, 69, 0.18)",
+            }}
+          >
+            <div
+              onClick={() => setSourcesOpen(!sourcesOpen)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                cursor: "pointer",
+                userSelect: "none",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <ShieldCheck size={16} color="var(--green-deep)" />
+                <span
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    color: "var(--green-deep)",
+                    letterSpacing: "0.2px",
+                  }}
+                >
+                  Verified Research Citations ({message.sources.length})
+                </span>
+              </div>
+              <div style={{ color: "var(--ink-soft)", display: "flex", alignItems: "center" }}>
+                {sourcesOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </div>
+            </div>
+
+            {sourcesOpen && (
+              <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                {message.sources.map((src, sIdx) => (
+                  <div
+                    key={sIdx}
+                    style={{
+                      padding: "8px 10px",
+                      borderRadius: "6px",
+                      background: "var(--white)",
+                      border: "1px solid var(--line-strong)",
+                      fontSize: "12px",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "3px",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "6px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "5px", fontWeight: 600, color: "var(--ink)" }}>
+                        <BookOpen size={13} color="var(--green-leaf)" />
+                        <span>{src.title}</span>
+                      </div>
+                      {src.url && (
+                        <a
+                          href={src.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Open official advisory link"
+                          style={{
+                            color: "var(--green-deep)",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "2px",
+                            fontSize: "11px",
+                            fontWeight: 600,
+                            textDecoration: "none",
+                            flexShrink: 0,
+                          }}
+                        >
+                          Official Link <ExternalLink size={11} />
+                        </a>
+                      )}
+                    </div>
+
+                    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", marginTop: "2px" }}>
+                      {src.authority && (
+                        <span
+                          style={{
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            color: "var(--green-deep)",
+                            background: "rgba(23, 107, 69, 0.1)",
+                            padding: "1px 6px",
+                            borderRadius: "4px",
+                          }}
+                        >
+                          🏛 {src.authority}
+                        </span>
+                      )}
+                      {src.category && (
+                        <span
+                          style={{
+                            fontSize: "10px",
+                            color: "var(--ink-soft)",
+                            background: "#f0f2f5",
+                            padding: "1px 6px",
+                            borderRadius: "4px",
+                          }}
+                        >
+                          {src.category.replace(/_/g, " ").toLowerCase()}
+                        </span>
+                      )}
+                      {src.crop && (
+                        <span
+                          style={{
+                            fontSize: "10px",
+                            color: "#8c5600",
+                            background: "#fff5e6",
+                            padding: "1px 6px",
+                            borderRadius: "4px",
+                          }}
+                        >
+                          🌱 {src.crop}
+                        </span>
+                      )}
+                      {src.last_verified_at && (
+                        <span style={{ fontSize: "10px", color: "var(--ink-soft)", marginLeft: "auto" }}>
+                          Verified: {src.last_verified_at}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Assistant Voice Playback */}
+        {!isUser && (
+          <div style={{ marginTop: "6px" }}>
+            <VoicePlayback
+              audioUrl={message.audio_url}
+              textToSpeak={message.content.replace(/[*_#•]/g, "")}
+              language={language}
+              autoPlay={isLatest && autoPlayVoice}
+            />
+          </div>
+        )}
       </div>
+
 
       {isUser && (
         <div
@@ -202,7 +362,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           }}
           title="Farmer Profile"
         >
-          👨‍🌾
+          {message.content.startsWith("🎙") ? <Mic size={18} color="#FFF" /> : "👨‍🌾"}
         </div>
       )}
 

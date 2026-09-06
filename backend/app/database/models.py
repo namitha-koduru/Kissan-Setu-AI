@@ -343,3 +343,50 @@ class SoilProfile(Base):
     # Relationships
     farmer = relationship("Farmer", back_populates="soil_profile")
 
+
+class KnowledgeDocument(Base):
+    """Authoritative Agricultural Knowledge Document (ICAR, SAU, Govt, IMD)."""
+    __tablename__ = "knowledge_documents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255), nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    source_name = Column(String(255), nullable=False)  # e.g., "ICAR-IARI", "MPKV Rahuri", "IMD Agromet"
+    source_type = Column(String(50), nullable=False, index=True)  # "ICAR", "AGRICULTURAL_UNIVERSITY", "OFFICIAL_GOVERNMENT", "IMD", "AGRICULTURAL_RESEARCH", "FPO_GUIDE"
+    source_url = Column(String(500), nullable=True)
+    authority = Column(String(100), default="National Agricultural Research")  # e.g., "High / Verified Government"
+    language = Column(String(10), default="en", index=True)
+    category = Column(String(50), nullable=False, index=True)  # CROP_PRACTICES, DISEASE_MANAGEMENT, PEST_MANAGEMENT, SOIL, NUTRIENTS, IRRIGATION, STORAGE, POST_HARVEST, MARKETING
+    crop = Column(String(100), nullable=True, index=True)  # "Tomato", "Onion", "Grapes", "Chilli", "Potato", "Pomegranate", "Wheat", "Cotton", "General"
+    region = Column(String(100), default="Maharashtra", index=True)
+    published_date = Column(String(50), nullable=True)
+    last_verified_at = Column(String(50), nullable=True)
+    content_hash = Column(String(64), nullable=True)
+    is_active = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationship
+    chunks = relationship("KnowledgeChunk", back_populates="document", cascade="all, delete-orphan")
+
+
+class KnowledgeChunk(Base):
+    """Semantic chunk with embedding vector and provenance metadata."""
+    __tablename__ = "knowledge_chunks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    document_id = Column(Integer, ForeignKey("knowledge_documents.id", ondelete="CASCADE"), nullable=False, index=True)
+    chunk_index = Column(Integer, default=0)
+    content = Column(Text, nullable=False)
+    language = Column(String(10), default="en", index=True)
+    category = Column(String(50), nullable=False, index=True)
+    crop = Column(String(100), nullable=True, index=True)
+    region = Column(String(100), default="Maharashtra")
+    embedding = Column(JSON, nullable=True)  # Float vector stored as JSON array (e.g. 128-dim or 384-dim)
+    metadata_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationship
+    document = relationship("KnowledgeDocument", back_populates="chunks")
+
+

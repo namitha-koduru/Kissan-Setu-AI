@@ -85,6 +85,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               key={msg.id || idx}
               message={msg}
               isLatest={idx === messages.length - 1}
+              language={language}
+              autoPlayVoice={true}
             />
           ))}
 

@@ -5,11 +5,14 @@ import ChatWindow from "../components/chat/ChatWindow";
 import ChatInput from "../components/chat/ChatInput";
 import SuggestedQuestions from "../components/chat/SuggestedQuestions";
 import chatApi, { type ChatMessageItem, type ConversationDetail } from "../services/chatApi";
+import voiceApi from "../services/voiceApi";
+import { Mic } from "lucide-react";
 
 export const ChatPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const cropIdParam = searchParams.get("crop_id");
   const cropNameParam = searchParams.get("crop_name");
+  const modeParam = searchParams.get("mode");
 
   const [messages, setMessages] = useState<ChatMessageItem[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -19,6 +22,7 @@ export const ChatPage: React.FC = () => {
   const [loadingStage, setLoadingStage] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [lastPrompt, setLastPrompt] = useState<{ text: string; image?: File | null }>({ text: "" });
+  const [voiceModeActive, setVoiceModeActive] = useState<boolean>(modeParam === "voice");
 
   // Load past conversations on mount
   useEffect(() => {
@@ -70,7 +74,6 @@ export const ChatPage: React.FC = () => {
       setLoadingStage("Uploading crop image...");
 
       try {
-        // Stage 2 indicator
         setTimeout(() => {
           setLoadingStage("Analyzing visible symptoms with Vision AI...");
         }, 1200);
@@ -98,6 +101,7 @@ export const ChatPage: React.FC = () => {
           id: `asst_${Date.now()}`,
           role: "assistant",
           content: response.reply,
+          sources: response.sources,
           created_at: new Date().toISOString(),
         };
 
@@ -141,6 +145,7 @@ export const ChatPage: React.FC = () => {
         id: `asst_${Date.now()}`,
         role: "assistant",
         content: response.reply,
+        sources: response.sources,
         created_at: new Date().toISOString(),
       };
 
@@ -153,6 +158,81 @@ export const ChatPage: React.FC = () => {
       setLoadingStage("");
     }
   };
+
+
+  const handleSendVoice = async (audioBlob: Blob, imageFile?: File | null) => {
+    if (isLoading) return;
+
+    setError(null);
+    const previewUrl = imageFile ? URL.createObjectURL(imageFile) : undefined;
+    const tempUserMsgId = `user_${Date.now()}`;
+
+    // Place temporary voice message in chat
+    const userMsg: ChatMessageItem = {
+      id: tempUserMsgId,
+      role: "user",
+      content: "🎙 Transcribing speech...",
+      image_url: previewUrl,
+      created_at: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
+    setIsLoading(true);
+    setLoadingStage("Transcribing spoken audio...");
+
+    try {
+      setTimeout(() => {
+        setLoadingStage("Querying farm intelligence & market data...");
+      }, 1000);
+
+      setTimeout(() => {
+        setLoadingStage("Generating voice advisory response...");
+      }, 2400);
+
+      const cropIdNum = cropIdParam ? parseInt(cropIdParam, 10) : undefined;
+      const res = await voiceApi.voiceChat({
+        audio: audioBlob,
+        image: imageFile,
+        language: selectedLanguage,
+        conversation_id: conversationId,
+        farmer_id: 1,
+        crop_id: cropIdNum,
+      });
+
+      // Update user message with transcript
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === tempUserMsgId
+            ? { ...m, content: `🎙 ${res.transcript}` }
+            : m
+        )
+      );
+
+      setConversationId(res.conversation_id);
+      if (res.language) {
+        setSelectedLanguage(res.language);
+      }
+
+      // Add assistant response with audio playback & verified knowledge citations
+      const asstMsg: ChatMessageItem = {
+        id: `asst_${Date.now()}`,
+        role: "assistant",
+        content: res.response,
+        audio_url: res.audio?.url,
+        sources: res.sources,
+        created_at: new Date().toISOString(),
+      };
+
+      setMessages((prev) => [...prev, asstMsg]);
+      loadConversations();
+    } catch (err: any) {
+      setError("Failed to process voice query. Please try speaking again or use text chat.");
+    } finally {
+      setIsLoading(false);
+      setLoadingStage("");
+    }
+  };
+
 
   const handleRetry = () => {
     if (lastPrompt.text || lastPrompt.image) {
@@ -190,21 +270,44 @@ export const ChatPage: React.FC = () => {
                 border: "1px solid rgba(23, 107, 69, 0.2)",
               }}
             >
-              Vision AI v3.0
+              Phase 7 Voice AI
             </span>
           </div>
           <p style={{ fontSize: "13px", color: "var(--ink-soft)", marginTop: "2px", margin: 0 }}>
             {cropNameParam
-              ? `Focused on ${cropNameParam} • Upload leaf photos for symptom inspection or ask agronomic queries`
-              : "Your AI farming companion for crop health, leaf inspection, weather risks, and mandi realization"}
+              ? `Focused on ${cropNameParam} • Speak naturally or upload leaf photos for comprehensive guidance`
+              : "Your multilingual AI farming companion with speech recognition, vision AI, and guaranteed in-hand market intelligence"}
           </p>
         </div>
 
-        <LanguageSelector
-          selectedLanguage={selectedLanguage}
-          onSelectLanguage={setSelectedLanguage}
-          disabled={isLoading}
-        />
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <button
+            type="button"
+            onClick={() => setVoiceModeActive(!voiceModeActive)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "7px 12px",
+              borderRadius: "10px",
+              background: voiceModeActive ? "var(--green-deep)" : "#FFFFFF",
+              color: voiceModeActive ? "#FFFFFF" : "var(--green-deep)",
+              border: "1.5px solid var(--green-deep)",
+              fontSize: "12.5px",
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            <Mic size={14} />
+            <span>{voiceModeActive ? "Voice Mode Active" : "Enable Voice Mode"}</span>
+          </button>
+
+          <LanguageSelector
+            selectedLanguage={selectedLanguage}
+            onSelectLanguage={setSelectedLanguage}
+            disabled={isLoading}
+          />
+        </div>
       </div>
 
       {/* Main Layout Card */}
@@ -263,11 +366,12 @@ export const ChatPage: React.FC = () => {
           <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "4px" }}>
             {conversations.length === 0 ? (
               <p style={{ fontSize: "12px", color: "var(--ink-soft)", padding: "10px", fontStyle: "italic" }}>
-                No past discussions yet. Start a new question or upload a leaf photo!
+                No past discussions yet. Tap the mic to speak your question!
               </p>
             ) : (
               conversations.map((conv) => {
                 const isActive = conversationId === conv.id;
+                const isVoice = conv.title?.includes("🎙");
                 const isVision = conv.title?.toLowerCase().includes("crop") || conv.title?.toLowerCase().includes("leaf") || conv.title?.toLowerCase().includes("inspection");
                 return (
                   <button
@@ -290,7 +394,7 @@ export const ChatPage: React.FC = () => {
                     }}
                   >
                     <span style={{ fontSize: "13px", fontWeight: isActive ? 600 : 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%" }}>
-                      {isVision ? "📷 " : "💬 "}{conv.title || "Farming Advisory"}
+                      {isVoice ? "🎙 " : isVision ? "📷 " : "💬 "}{conv.title || "Farming Advisory"}
                     </span>
                     <span style={{ fontSize: "10px", color: "var(--ink-soft)", marginTop: "2px" }}>
                       {conv.created_at ? conv.created_at.slice(0, 10) : "Today"} • {conv.language?.toUpperCase() || "EN"}
@@ -372,7 +476,7 @@ export const ChatPage: React.FC = () => {
             language={selectedLanguage}
           />
 
-          {/* Persistent Suggested Questions (if in an active chat) */}
+          {/* Persistent Suggested Questions */}
           {messages.length > 0 && (
             <div style={{ padding: "0 20px" }}>
               <SuggestedQuestions
@@ -387,6 +491,7 @@ export const ChatPage: React.FC = () => {
           <div style={{ padding: "16px 20px", background: "var(--white)", borderTop: "1px solid var(--line)" }}>
             <ChatInput
               onSendMessage={handleSendMessage}
+              onSendVoice={handleSendVoice}
               isLoading={isLoading}
               loadingStage={loadingStage}
               language={selectedLanguage}

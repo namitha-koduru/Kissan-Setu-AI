@@ -15,4 +15,7 @@ backend/.env
 backend/.env.*
 !backend/.env.example
 backend/kisansetu.db
+uploads/
+backend/uploads/
+
 

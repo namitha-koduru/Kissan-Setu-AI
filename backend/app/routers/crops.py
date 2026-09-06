@@ -20,6 +20,7 @@ def get_farmer_crops(farmer_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/crops", response_model=List[CropResponse])
+@router.get("/crops/", response_model=List[CropResponse])
 def get_all_crops(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return db.query(Crop).offset(skip).limit(limit).all()
 
@@ -36,7 +37,9 @@ def get_crop(crop_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/crops", response_model=CropResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/crops/", response_model=CropResponse, status_code=status.HTTP_201_CREATED)
 def create_crop(crop_in: CropCreate, db: Session = Depends(get_db)):
+
     farmer = db.query(Farmer).filter(Farmer.id == crop_in.farmer_id).first()
     if not farmer:
         raise HTTPException(
