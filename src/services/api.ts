@@ -85,6 +85,51 @@ class ApiClient {
     });
   }
 
+  async postFormData<T>(endpoint: string, formData: FormData, headers?: Record<string, string>): Promise<T> {
+    const url = `${this.baseUrl}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
+    
+    const reqHeaders: Record<string, string> = {
+      Accept: "application/json",
+      ...(headers || {}),
+    };
+
+    const token = localStorage.getItem("kissansetu_auth_token");
+    if (token) {
+      reqHeaders["Authorization"] = `Bearer ${token}`;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout for Vision/LLM analysis
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: reqHeaders,
+        body: formData,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        let errorDetail = `HTTP Error ${response.status}`;
+        try {
+          const errJson = await response.json();
+          if (errJson.detail) {
+            errorDetail = typeof errJson.detail === "string" ? errJson.detail : JSON.stringify(errJson.detail);
+          }
+        } catch {
+          // ignore json parse error
+        }
+        throw new Error(errorDetail);
+      }
+
+      return await response.json();
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+      throw err;
+    }
+  }
+
   async put<T>(endpoint: string, body?: any, headers?: Record<string, string>): Promise<T> {
     return this.request<T>(endpoint, {
       method: "PUT",

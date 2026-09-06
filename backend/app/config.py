@@ -45,6 +45,23 @@ class Settings(BaseSettings):
             return [i.strip() for i in self.CORS_ORIGINS.split(",") if i.strip()]
         return ["http://localhost:5173", "http://127.0.0.1:5173"]
 
+    # LLM Settings (Phase 2)
+    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "mock")  # 'gemini', 'openai', 'groq', 'mock'
+    LLM_API_KEY: str = os.getenv("LLM_API_KEY", "")
+    LLM_MODEL: str = os.getenv("LLM_MODEL", "gemini-1.5-flash")
+    LLM_MAX_TOKENS: int = 1000
+    LLM_TEMPERATURE: float = 0.3
+
+    # Cloudinary Settings (Phase 3)
+    CLOUDINARY_CLOUD_NAME: str = os.getenv("CLOUDINARY_CLOUD_NAME", "")
+    CLOUDINARY_API_KEY: str = os.getenv("CLOUDINARY_API_KEY", "")
+    CLOUDINARY_API_SECRET: str = os.getenv("CLOUDINARY_API_SECRET", "")
+    MAX_IMAGE_SIZE_MB: int = 10
+
+    # Vision AI Settings (Phase 3)
+    VISION_PROVIDER: str = os.getenv("VISION_PROVIDER", "gemini")  # 'gemini', 'mock'
+    VISION_MODEL: str = os.getenv("VISION_MODEL", "gemini-1.5-flash")
+
     # External Service Keys (Future phases)
     OPENWEATHER_API_KEY: str = ""
     GOV_MANDI_API_KEY: str = ""

@@ -111,6 +111,46 @@ npm run dev
 
 ---
 
+## 🧠 Phase 4 — Farm Intelligence Engine
+
+KissanSetuAI integrates a multi-factor **Farm Intelligence Engine** transforming structured field data into actionable, explainable agronomic advisories:
+
+```
+STRUCTURED DATA (Soil + Weather + Crop Growth Stage + Location + Season)
+                               ↓
+                   FARM INTELLIGENCE ENGINE
+  (Soil Interpretation + Weather Signals + Suitability Scoring + Risk Aggregation)
+                               ↓
+               EXPLAINABLE ADVISORIES & ACTION PLAN
+                               ↓
+         MULTILINGUAL LLM EXPLANATION & CHAT ADVISORY
+              (EN, HI, TE, MR, TA, KN, BN, ML)
+```
+
+### Key Modules:
+- **Soil Health Intelligence (`SoilProfile`, `SoilService`)**: Transparent interpretation of pH, N-P-K nutrient reserves, organic carbon, and crop-soil compatibility with graceful partial data handling.
+- **Weather-Aware Signals (`WeatherIntelligenceService`)**: Dynamic conversion of rain probability and wind into spraying windows, irrigation adjustment actions, and disease dissemination risks.
+- **Explainable Crop Suitability Engine (`CropSuitabilityEngine`)**: Multi-factor scoring (0-100) with transparent reasoning ("Why suitable"), risk alerts, and pluggable ML classifier architecture.
+- **Daily & Weekly Farm Action Plan (`FarmActionPlan`)**: Prioritized agronomic schedule displayed directly on the Dashboard and Decision Center.
+- **Multilingual AI Chat Integration**: Answers "What should I do today?", "Should I irrigate?", "Which crop is suitable for my soil?" accurately using verified farm context.
+
+---
+
+## 🧪 Testing
+
+### Backend Test Suite (36 Automated Tests)
+```bash
+cd backend
+pytest -v
+```
+
+### Frontend Production Build
+```bash
+npm run build
+```
+
+---
+
 ## 🔑 Demo Credentials
 
 | Role | Email / Phone | Password | Location |
@@ -135,14 +175,25 @@ npm run dev
 
 ---
 
+## 🌾 Phase 3: Vision AI & Leaf Symptom Assessment
+
+KissanSetuAI integrates end-to-end multimodal Vision AI:
+1. **Camera / Gallery Upload**: Farmers can capture or select a leaf/crop image directly from Chat or from the Crop Details page.
+2. **Cloudinary Backend Storage**: Images are validated (Pillow integrity, MIME type, max 10MB limit) and stored in organized Cloudinary folders (with local dev fallback).
+3. **Vision AI Inspection**: Gemini 1.5 Flash multimodal inspection extracts structured visual findings (detected crop, visible symptoms, possible issues + confidence, image quality check, and safety disclaimer).
+4. **Contextual LLM Explanation**: Merges the vision findings with the farmer's registered crops, active growth stage, 7-day weather forecast, and mandi price trends, explaining findings in the farmer's selected language (Telugu, Hindi, Marathi, Tamil, Kannada, Bengali, Malayalam, English).
+5. **Interactive Chat Integration**: Displays the uploaded leaf photo with full-screen zoom, loading stages (`"Uploading..."` → `"Analyzing symptoms with Vision AI..."` → `"Preparing guidance..."`), and structured actionable guidance.
+
+---
+
 ## 🧪 Testing
 
 ```bash
-# Run backend pytest suite
+# Run backend pytest suite (23 unit & integration tests)
 cd backend
-pytest tests/test_api.py -v
+python -m pytest tests/ -v
 
-# Run frontend TypeScript typecheck and build
+# Run frontend TypeScript typecheck and production build
 cd ..
 npm run build
 ```

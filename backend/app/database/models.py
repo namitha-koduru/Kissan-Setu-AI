@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 from sqlalchemy import (
     Boolean,
@@ -8,6 +9,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    JSON,
 )
 from sqlalchemy.orm import relationship
 from app.database.connection import Base
@@ -32,6 +34,9 @@ class Farmer(Base):
     # Relationships
     crops = relationship("Crop", back_populates="farmer", cascade="all, delete-orphan")
     lots = relationship("Lot", back_populates="farmer", cascade="all, delete-orphan")
+    conversations = relationship("Conversation", back_populates="farmer", cascade="all, delete-orphan")
+    images = relationship("CropImage", back_populates="farmer", cascade="all, delete-orphan")
+    soil_profile = relationship("SoilProfile", back_populates="farmer", uselist=False, cascade="all, delete-orphan")
 
 
 class Crop(Base):
@@ -52,6 +57,7 @@ class Crop(Base):
     # Relationships
     farmer = relationship("Farmer", back_populates="crops")
     lots = relationship("Lot", back_populates="crop", cascade="all, delete-orphan")
+    images = relationship("CropImage", back_populates="crop")
 
 
 class Market(Base):
@@ -150,3 +156,102 @@ class Transaction(Base):
 
     # Relationship
     lot = relationship("Lot", back_populates="transaction")
+
+
+class Conversation(Base):
+    __tablename__ = "conversations"
+
+    id = Column(String(50), primary_key=True, index=True)  # UUID string
+    farmer_id = Column(Integer, ForeignKey("farmers.id", ondelete="CASCADE"), nullable=True)
+    title = Column(String(255), default="New Farming Advisory")
+    language = Column(String(10), default="en")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    farmer = relationship("Farmer", back_populates="conversations")
+    messages = relationship(
+        "ChatMessage",
+        back_populates="conversation",
+        cascade="all, delete-orphan",
+        order_by="ChatMessage.created_at",
+    )
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    conversation_id = Column(String(50), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
+    role = Column(String(20), nullable=False)  # "user", "assistant", "system"
+    content = Column(Text, nullable=False)
+    image_url = Column(String(500), nullable=True)
+    image_id = Column(String(50), ForeignKey("crop_images.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    conversation = relationship("Conversation", back_populates="messages")
+    image = relationship("CropImage")
+
+
+class CropImage(Base):
+    __tablename__ = "crop_images"
+
+    id = Column(String(50), primary_key=True, default=lambda: f"img_{uuid.uuid4().hex[:12]}", index=True)
+    farmer_id = Column(Integer, ForeignKey("farmers.id", ondelete="CASCADE"), nullable=True, index=True)
+    crop_id = Column(Integer, ForeignKey("crops.id", ondelete="SET NULL"), nullable=True, index=True)
+    conversation_id = Column(String(50), ForeignKey("conversations.id", ondelete="SET NULL"), nullable=True, index=True)
+    image_url = Column(String(500), nullable=False)
+    cloudinary_public_id = Column(String(255), nullable=True)
+    original_filename = Column(String(255), nullable=True)
+    mime_type = Column(String(50), nullable=False)
+    file_size = Column(Integer, nullable=True)
+    width = Column(Integer, nullable=True)
+    height = Column(Integer, nullable=True)
+    uploaded_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    farmer = relationship("Farmer", back_populates="images")
+    crop = relationship("Crop", back_populates="images")
+    conversation = relationship("Conversation")
+    analyses = relationship("ImageAnalysis", back_populates="image", cascade="all, delete-orphan")
+
+
+class ImageAnalysis(Base):
+    __tablename__ = "image_analyses"
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    image_id = Column(String(50), ForeignKey("crop_images.id", ondelete="CASCADE"), nullable=False, index=True)
+    detected_crop = Column(String(100), nullable=True)
+    image_quality = Column(String(20), default="good")  # "good", "fair", "poor"
+    observed_symptoms = Column(JSON, nullable=True)      # JSON list of strings
+    possible_issues = Column(JSON, nullable=True)        # JSON list of {name, confidence}
+    confidence = Column(Float, nullable=True)
+    analysis_text = Column(Text, nullable=True)
+    recommendations = Column(JSON, nullable=True)        # JSON list of strings
+    model_name = Column(String(100), default="gemini-1.5-flash")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationship
+    image = relationship("CropImage", back_populates="analyses")
+
+
+class SoilProfile(Base):
+    __tablename__ = "soil_profiles"
+
+    id = Column(Integer, primary_key=True, index=True)
+    farmer_id = Column(Integer, ForeignKey("farmers.id", ondelete="CASCADE"), unique=True, nullable=False, index=True)
+    soil_type = Column(String(100), default="Black")  # Black, Red, Alluvial, Loamy, Sandy, Clay, Laterite, Other
+    ph = Column(Float, nullable=True)
+    nitrogen = Column(Float, nullable=True)       # kg/ha or rating
+    phosphorus = Column(Float, nullable=True)     # kg/ha or rating
+    potassium = Column(Float, nullable=True)      # kg/ha or rating
+    organic_carbon = Column(Float, nullable=True) # % (e.g. 0.55%)
+    moisture = Column(Float, nullable=True)       # % (e.g. 24.0%)
+    source = Column(String(100), default="Self Reported")  # e.g., "Soil Health Card", "Lab Test", "Self Reported"
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    farmer = relationship("Farmer", back_populates="soil_profile")
+

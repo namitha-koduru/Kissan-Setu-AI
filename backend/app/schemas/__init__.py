@@ -25,6 +25,20 @@ from app.schemas.recommendation import (
     MarketComparisonItem,
 )
 from app.schemas.auth import LoginRequest, LoginResponse, Token
+from app.schemas.chat import (
+    ChatRequest,
+    ChatResponse,
+    ChatMessageResponse,
+    ConversationResponse,
+    ChatSourceItem,
+    ChatAnalyzeImageResponse,
+)
+from app.schemas.image import (
+    CropImageResponse,
+    ImageAnalysisResponse,
+    VisionAnalysisResult,
+    PossibleIssue,
+)
 
 __all__ = [
     "FarmerBase",
@@ -65,4 +79,14 @@ __all__ = [
     "LoginRequest",
     "LoginResponse",
     "Token",
+    "ChatRequest",
+    "ChatResponse",
+    "ChatMessageResponse",
+    "ConversationResponse",
+    "ChatSourceItem",
+    "ChatAnalyzeImageResponse",
+    "CropImageResponse",
+    "ImageAnalysisResponse",
+    "VisionAnalysisResult",
+    "PossibleIssue",
 ]

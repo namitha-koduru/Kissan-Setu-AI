@@ -26,6 +26,7 @@ import { AnalyticsPage } from "./pages/AnalyticsPage";
 import { FPOPage } from "./pages/FPOPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { AdminPage } from "./pages/AdminPage";
+import { ChatPage } from "./pages/ChatPage";
 
 function AdminGate() {
   const { user } = useAuth();
@@ -63,6 +64,7 @@ export default function App() {
                 <Route path="/offers" element={<OffersPage />} />
                 <Route path="/transactions" element={<TransactionPage />} />
                 <Route path="/weather" element={<WeatherPage />} />
+                <Route path="/chat" element={<ChatPage />} />
                 <Route path="/analytics" element={<AnalyticsPage />} />
                 <Route path="/fpo" element={<FPOPage />} />
                 <Route path="/profile" element={<ProfilePage />} />

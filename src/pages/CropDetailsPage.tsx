@@ -143,6 +143,18 @@ export function CropDetailsPage() {
               <button className="btn btn-primary btn-block" type="button" onClick={handleOpenDecision}>
                 AI Decision Center
               </button>
+              <Link
+                className="btn btn-outline btn-block"
+                to={`/chat?crop_id=${crop.id}&crop_name=${encodeURIComponent(crop.name)}`}
+                style={{
+                  borderColor: "var(--green-deep)",
+                  color: "var(--green-deep)",
+                  background: "var(--green-light)",
+                  fontWeight: 700,
+                }}
+              >
+                📷 Analyze Leaf / Crop Photo
+              </Link>
               <Link className="btn btn-outline btn-block" to="/market">
                 <Store size={15} /> Compare Nearby Mandis
               </Link>

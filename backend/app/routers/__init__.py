@@ -8,6 +8,10 @@ from .offers import router as offers_router
 from .transactions import router as transactions_router
 from .weather import router as weather_router
 from .recommendations import router as recommendations_router
+from .chat import router as chat_router
+from .images import router as images_router
+from .soil import router as soil_router
+from .farm_intelligence import router as farm_intelligence_router
 
 __all__ = [
     "auth_router",
@@ -20,4 +24,9 @@ __all__ = [
     "transactions_router",
     "weather_router",
     "recommendations_router",
+    "chat_router",
+    "images_router",
+    "soil_router",
+    "farm_intelligence_router",
 ]
+

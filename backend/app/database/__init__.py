@@ -8,6 +8,10 @@ from app.database.models import (
     Lot,
     Offer,
     Transaction,
+    Conversation,
+    ChatMessage,
+    CropImage,
+    ImageAnalysis,
 )
 
 __all__ = [
@@ -23,4 +27,8 @@ __all__ = [
     "Lot",
     "Offer",
     "Transaction",
+    "Conversation",
+    "ChatMessage",
+    "CropImage",
+    "ImageAnalysis",
 ]

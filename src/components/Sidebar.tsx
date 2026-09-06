@@ -12,6 +12,7 @@ import {
   Building2,
   UserCheck,
   LogOut,
+  Sparkles,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { Logo } from "./Logo";
@@ -20,6 +21,7 @@ import { useLanguage } from "../context/LanguageContext";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", labelKey: "dashboard", icon: LayoutDashboard, roles: ["farmer", "fpo", "buyer", "admin"] },
+  { to: "/chat", label: "Ask KissanSetu AI", icon: Sparkles, roles: ["farmer", "fpo", "buyer", "admin"] },
   { to: "/crops", label: "My Crops", labelKey: "myCrops", icon: Sprout, roles: ["farmer", "fpo"] },
   { to: "/recommendation", label: "Decision Center", labelKey: "recommendations", icon: Lightbulb, roles: ["farmer", "fpo"] },
   { to: "/market", label: "Market Intel", labelKey: "market", icon: Store, roles: ["farmer", "fpo", "buyer", "admin"] },

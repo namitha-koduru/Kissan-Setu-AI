@@ -6,7 +6,7 @@ Populates realistic Indian agricultural demo data (Farmer, Crops, Markets, Price
 from datetime import datetime
 from sqlalchemy.orm import Session
 from app.database.connection import SessionLocal, engine, Base
-from app.database.models import Farmer, Crop, Market, MarketPrice, Buyer, Lot, Offer, Transaction
+from app.database.models import Farmer, Crop, Market, MarketPrice, Buyer, Lot, Offer, Transaction, SoilProfile
 
 
 def seed_database(db: Session):
@@ -34,6 +34,27 @@ def seed_database(db: Session):
         db.refresh(farmer)
     else:
         farmer = existing_farmer
+
+    # 1.1 Soil Profile for Farmer
+    existing_soil = db.query(SoilProfile).filter(SoilProfile.farmer_id == farmer.id).first()
+    if not existing_soil:
+        print("[Seeder] Seeding Soil Profile for Ramesh Kumar (Nashik Black Soil)...")
+        soil = SoilProfile(
+            farmer_id=farmer.id,
+            soil_type="Black",
+            ph=7.2,
+            nitrogen=240.0,      # Slightly low N (typical for intensive vegetable tracts)
+            phosphorus=18.5,     # Medium P
+            potassium=295.0,     # High K (rich in black cotton soil)
+            organic_carbon=0.58, # Medium OC %
+            moisture=26.0,       # Adequate moisture %
+            source="Soil Health Card (ICAR-Nashik)",
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        db.add(soil)
+        db.commit()
+
 
     # 2. Crops
     if db.query(Crop).filter(Crop.farmer_id == farmer.id).count() == 0:

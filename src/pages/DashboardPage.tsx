@@ -8,12 +8,15 @@ import {
   Package,
   ArrowRight,
   TrendingUp,
+  Sparkles,
 } from "lucide-react";
 import { CropCard } from "../components/CropCard";
 import { DecisionBadge } from "../components/DecisionBadge";
+import { FarmTodayCard } from "../components/FarmTodayCard";
 import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
 import { weatherByLocation, marketsByCrop } from "../data/demo";
+
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -55,31 +58,54 @@ export function DashboardPage() {
           </div>
         </div>
 
-        <Link
-          to="/weather"
-          className="card"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            padding: "8px 16px",
-            borderRadius: "12px",
-            background: "#fff",
-            border: "1px solid var(--line)",
-          }}
-        >
-          <CloudSun size={28} color="#2E8B57" />
-          <div>
-            <div style={{ fontSize: "18px", fontWeight: 800 }}>{weather.currentTempC}°C</div>
-            <div style={{ fontSize: "12px", color: "var(--ink-soft)" }}>
-              {weather.condition} · {weather.rainProbability}% rain risk
+        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <Link
+            to="/chat"
+            className="btn btn-primary"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "8px 16px",
+              borderRadius: "12px",
+              background: "linear-gradient(135deg, var(--green-deep), var(--green-leaf))",
+              boxShadow: "0 4px 12px rgba(23, 107, 69, 0.25)",
+            }}
+          >
+            <Sparkles size={18} color="#fff" />
+            <span>Ask KissanSetu AI</span>
+          </Link>
+
+          <Link
+            to="/weather"
+            className="card"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "8px 16px",
+              borderRadius: "12px",
+              background: "#fff",
+              border: "1px solid var(--line)",
+            }}
+          >
+            <CloudSun size={28} color="#2E8B57" />
+            <div>
+              <div style={{ fontSize: "18px", fontWeight: 800 }}>{weather.currentTempC}°C</div>
+              <div style={{ fontSize: "12px", color: "var(--ink-soft)" }}>
+                {weather.condition} · {weather.rainProbability}% rain risk
+              </div>
             </div>
-          </div>
-        </Link>
+          </Link>
+        </div>
       </div>
+
+      {/* Phase 4: Farm Intelligence Engine - Your Farm Today */}
+      <FarmTodayCard farmerId={user?.id ? Number(user.id) : 1} />
 
       {/* Main Grid: Decision + Crops on Left, Weather + Quick Actions on Right */}
       <div className="grid-2" style={{ gridTemplateColumns: "1.25fr 0.75fr", marginTop: 12 }}>
+
         <div>
           {/* Main Decision Highlight Card */}
           {focusCrop && (
