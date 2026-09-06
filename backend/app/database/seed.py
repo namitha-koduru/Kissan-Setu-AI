@@ -3,7 +3,7 @@ Database Seeding Script for KissanSetuAI
 Populates realistic Indian agricultural demo data (Farmer, Crops, Markets, Prices, Buyers, Lots, Offers, Transactions).
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from app.database.connection import SessionLocal, engine, Base
 from app.database.models import Farmer, Crop, Market, MarketPrice, Buyer, Lot, Offer, Transaction, SoilProfile
@@ -122,7 +122,15 @@ def seed_database(db: Session):
         db.refresh(m_pune)
         db.refresh(m_vashi)
         db.refresh(m_pimpalgaon)
+    else:
+        markets = db.query(Market).all()
+        m_lasalgaon = next((m for m in markets if "Lasalgaon" in m.name), markets[0])
+        m_nashik = next((m for m in markets if "Nashik" in m.name), markets[0])
+        m_pune = next((m for m in markets if "Pune" in m.name), markets[0])
+        m_vashi = next((m for m in markets if "Vashi" in m.name), markets[0])
+        m_pimpalgaon = next((m for m in markets if "Pimpalgaon" in m.name), markets[0])
 
+    if db.query(MarketPrice).count() == 0:
         # Market Prices (Seeding Current and Historical Series)
         print("[Seeder] Seeding mandi crop prices with historical series...")
         today = datetime.now()

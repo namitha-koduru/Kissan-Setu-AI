@@ -103,3 +103,71 @@ def test_get_conversations_and_history():
     roles = [m["role"] for m in hist["messages"]]
     assert "user" in roles
     assert "assistant" in roles
+
+
+@pytest.mark.anyio
+async def test_ollama_provider_direct_call(monkeypatch):
+    """Test OllamaProvider direct chat inference with mocked Ollama API response."""
+    from app.ai.llm_service import LLMService
+    import httpx
+
+    service = LLMService()
+    service.provider = "ollama"
+    service.model = "qwen3:4b"
+    service.ollama_base_url = "http://localhost:11434"
+
+    mock_response_data = {
+        "model": "qwen3:4b",
+        "message": {
+            "role": "assistant",
+            "content": "💧 Based on your Nashik soil profile and tomato crop stage, maintain 2.5L/plant daily drip irrigation."
+        },
+        "done": True
+    }
+
+    class MockResponse:
+        status_code = 200
+        def json(self):
+            return mock_response_data
+        @property
+        def text(self):
+            return str(mock_response_data)
+
+    async def mock_post(*args, **kwargs):
+        return MockResponse()
+
+    monkeypatch.setattr(httpx.AsyncClient, "post", mock_post)
+
+    reply = await service.generate_response(
+        messages=[{"role": "user", "content": "How much should I irrigate my tomato plants?"}],
+        system_prompt="You are an agricultural expert.",
+        language="en"
+    )
+
+    assert "2.5L/plant" in reply or "irrigation" in reply.lower()
+
+
+@pytest.mark.anyio
+async def test_ollama_provider_offline_graceful_fallback(monkeypatch):
+    """Test that if local Ollama daemon is unreachable, the system gracefully falls back to agronomic engine."""
+    from app.ai.llm_service import LLMService
+    import httpx
+
+    service = LLMService()
+    service.provider = "ollama"
+    service.model = "qwen3:4b"
+
+    async def mock_post_fail(*args, **kwargs):
+        raise httpx.ConnectError("Connection refused to http://localhost:11434")
+
+    monkeypatch.setattr(httpx.AsyncClient, "post", mock_post_fail)
+
+    reply = await service.generate_response(
+        messages=[{"role": "user", "content": "When should I water my tomato crop?"}],
+        system_prompt="You are an agricultural expert.",
+        language="en"
+    )
+
+    assert len(reply) > 20
+    assert "irrigation" in reply.lower() or "water" in reply.lower() or "drip" in reply.lower()
+

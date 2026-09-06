@@ -45,12 +45,17 @@ class Settings(BaseSettings):
             return [i.strip() for i in self.CORS_ORIGINS.split(",") if i.strip()]
         return ["http://localhost:5173", "http://127.0.0.1:5173"]
 
-    # LLM Settings (Phase 2)
-    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "mock")  # 'gemini', 'openai', 'groq', 'mock'
+    # LLM Settings (Phase 2 & Ollama Local Inference)
+    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "ollama")  # 'ollama', 'gemini', 'openai', 'groq', 'mock'
     LLM_API_KEY: str = os.getenv("LLM_API_KEY", "")
-    LLM_MODEL: str = os.getenv("LLM_MODEL", "gemini-1.5-flash")
+    LLM_MODEL: str = os.getenv("LLM_MODEL", "qwen3:4b")
     LLM_MAX_TOKENS: int = 1000
     LLM_TEMPERATURE: float = 0.3
+    
+    # Ollama Local LLM Settings
+    OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "qwen3:4b")
+
 
     # Cloudinary Settings (Phase 3)
     CLOUDINARY_CLOUD_NAME: str = os.getenv("CLOUDINARY_CLOUD_NAME", "")

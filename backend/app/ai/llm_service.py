@@ -1,6 +1,6 @@
 """
 LLM Provider Abstraction and Service for KissanSetuAI Farmer Assistant.
-Supports Google Gemini, OpenAI-compatible APIs (OpenAI/Groq/OpenRouter), and an Intelligent Fallback Dev Assistant.
+Supports Ollama (default local Qwen3 4B), Google Gemini, OpenAI-compatible APIs (OpenAI/Groq/OpenRouter), and an Intelligent Fallback Dev Assistant.
 """
 
 import json
@@ -14,9 +14,10 @@ logger = logging.getLogger("kissansetu.ai")
 
 class LLMService:
     def __init__(self):
-        self.provider = (settings.LLM_PROVIDER or "mock").lower()
+        self.provider = (settings.LLM_PROVIDER or "ollama").lower()
         self.api_key = settings.LLM_API_KEY
-        self.model = settings.LLM_MODEL or "gemini-1.5-flash"
+        self.model = settings.LLM_MODEL or getattr(settings, "OLLAMA_MODEL", "qwen3:4b") or "qwen3:4b"
+        self.ollama_base_url = (getattr(settings, "OLLAMA_BASE_URL", "http://localhost:11434") or "http://localhost:11434").rstrip("/")
         self.timeout = 25.0
 
     async def generate_response(
@@ -28,21 +29,72 @@ class LLMService:
         """
         Main interface to dispatch generation request to the configured LLM provider.
         """
-        # If no valid API key is present or provider is 'mock', use Intelligent Agronomic Fallback Engine
-        if not self.api_key or self.provider == "mock":
-            return self._generate_fallback_response(messages, language)
-
         try:
+            # 1. Ollama Local Provider (No API key required)
+            if self.provider == "ollama":
+                return await self._call_ollama(messages, system_prompt)
+
+            # 2. Cloud Providers (Require API key, fallback to local agronomic engine if missing)
             if self.provider in ["gemini", "google"]:
+                if not self.api_key:
+                    logger.info("No Gemini API key configured, using dev agronomic fallback engine.")
+                    return self._generate_fallback_response(messages, language)
                 return await self._call_gemini(messages, system_prompt)
+
             elif self.provider in ["openai", "groq", "openrouter"]:
+                if not self.api_key:
+                    logger.info("No OpenAI/Groq API key configured, using dev agronomic fallback engine.")
+                    return self._generate_fallback_response(messages, language)
                 return await self._call_openai_compatible(messages, system_prompt)
+
+            elif self.provider == "mock":
+                return self._generate_fallback_response(messages, language)
+
             else:
                 logger.warning(f"Unknown LLM provider '{self.provider}', using fallback assistant.")
                 return self._generate_fallback_response(messages, language)
+
         except Exception as exc:
-            logger.error(f"LLM Provider call failed ({exc}). Gracefully falling back to dev agronomic engine.")
+            logger.warning(f"LLM Provider '{self.provider}' call failed ({exc}). Gracefully falling back to dev agronomic engine.")
             return self._generate_fallback_response(messages, language, error_context=str(exc))
+
+    async def _call_ollama(self, messages: List[Dict[str, str]], system_prompt: str) -> str:
+        """
+        Calls local Ollama instance (default: Qwen3 4B via /api/chat).
+        Runs offline without requiring any API key.
+        """
+        url = f"{self.ollama_base_url}/api/chat"
+        
+        full_messages = [{"role": "system", "content": system_prompt}]
+        for msg in messages:
+            full_messages.append({"role": msg["role"], "content": msg["content"]})
+
+        payload = {
+            "model": self.model,
+            "messages": full_messages,
+            "stream": False,
+            "options": {
+                "temperature": settings.LLM_TEMPERATURE,
+                "num_predict": settings.LLM_MAX_TOKENS,
+            }
+        }
+
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            response = await client.post(url, json=payload)
+            if response.status_code != 200:
+                raise Exception(f"Ollama API returned status {response.status_code}: {response.text}")
+            
+            data = response.json()
+            msg_obj = data.get("message", {})
+            content = msg_obj.get("content", "")
+            if content:
+                return content
+            
+            if "response" in data:
+                return data["response"]
+            
+            raise Exception("No text content returned from Ollama API")
+
 
     async def _call_gemini(self, messages: List[Dict[str, str]], system_prompt: str) -> str:
         """
