@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>KisanSetu AI — Farm to Market Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+/* ============ DESIGN TOKENS ============ */
+:root{
+  --green-deep:#176B45;
+  --green-leaf:#2E8B57;
+  --saffron:#E88922;
+  --terracotta:#A85D35;
+  --cream:#FFF9EE;
+  --navy:#17324D;
+  --bg-soft:#F5F7F2;
+  --white:#FFFFFF;
+  --ink:#16211C;
+  --ink-soft:#4B5A52;
+  --line:#E2E7DE;
+  --line-strong:#C9D2C2;
+  --sell:#176B45;
+  --wait:#B4790C;
+  --switch:#17324D;
+  --radius-s:6px;
+  --radius-m:10px;
+  --shadow-1:0 1px 2px rgba(23,50,30,0.06), 0 1px 1px rgba(23,50,30,0.04);
+  --shadow-2:0 6px 20px rgba(23,50,30,0.10);
+  --font-head:'Manrope',sans-serif;
+  --font-body:'Inter',sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:var(--font-body);
+  background:var(--bg-soft);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  line-height:1.5;
+}
+h1,h2,h3,h4{font-family:var(--font-head);margin:0;color:var(--ink);letter-spacing:-0.01em;}
+p{margin:0;}
+a{color:inherit;text-decoration:none;}
+button{font-family:var(--font-body);cursor:pointer;}
+img{max-width:100%;display:block;}
+::selection{background:rgba(46,139,87,0.25);}
+:focus-visible{outline:2px solid var(--saffron);outline-offset:2px;}
+
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px;}
+@media(max-width:640px){.wrap{padding:0 16px;}}
+
+/* Buttons */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 22px;border-radius:var(--radius-s);border:1px solid transparent;
+  font-weight:600;font-size:14.5px;transition:background .15s ease, border-color .15s ease, transform .1s ease;
+  white-space:nowrap;
+}
+.btn:active{transform:scale(0.98);}
+.btn-primary{background:var(--green-deep);color:var(--white);}
+.btn-primary:hover{background:#125536;}
+.btn-saffron{background:var(--saffron);color:var(--white);}
+.btn-saffron:hover{background:#cf7714;}
+.btn-outline{background:transparent;color:var(--green-deep);border-color:var(--line-strong);}
+.btn-outline:hover{border-color:var(--green-deep);background:rgba(23,107,69,0.05);}
+.btn-ghost{background:transparent;color:var(--ink-soft);border-color:transparent;}
+.btn-ghost:hover{background:rgba(0,0,0,0.04);}
+.btn-danger-outline{background:transparent;color:#A3372B;border:1px solid #E3B3AB;}
+.btn-danger-outline:hover{background:#FBEDEB;}
+.btn-block{width:100%;}
+.btn-sm{padding:8px 14px;font-size:13px;}
+
+/* App shell */
+.app-shell{min-height:100vh;display:flex;flex-direction:column;}
+.topbar{
+  position:sticky;top:0;z-index:40;background:var(--white);border-bottom:1px solid var(--line);
+}
+.topbar-inner{max-width:1280px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between;gap:24px;}
+.logo{display:flex;align-items:center;gap:9px;font-family:var(--font-head);font-weight:800;font-size:19px;color:var(--green-deep);}
+.logo .tag{background:var(--saffron);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:0.04em;margin-left:2px;position:relative;top:-7px;}
+.nav-links{display:flex;align-items:center;gap:4px;flex:1;justify-content:center;}
+.nav-link{padding:9px 14px;border-radius:7px;font-size:14.5px;font-weight:600;color:var(--ink-soft);}
+.nav-link:hover{background:var(--bg-soft);color:var(--ink);}
+.nav-link.active{color:var(--green-deep);background:rgba(46,139,87,0.10);}
+.top-actions{display:flex;align-items:center;gap:6px;}
+.icon-btn{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;border:1px solid transparent;color:var(--ink-soft);background:transparent;position:relative;}
+.icon-btn:hover{background:var(--bg-soft);color:var(--ink);}
+.dot-badge{position:absolute;top:6px;right:7px;width:7px;height:7px;border-radius:50%;background:var(--saffron);border:1.5px solid #fff;}
+.profile-chip{display:flex;align-items:center;gap:8px;padding:5px 10px 5px 5px;border-radius:20px;border:1px solid var(--line);}
+.avatar{width:28px;height:28px;border-radius:50%;background:var(--green-leaf);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.hamburger{display:none;}
+@media(max-width:980px){
+  .nav-links{display:none;}
+  .hamburger{display:flex;}
+}
+
+.main-content{flex:1;padding-bottom:40px;}
+@media(max-width:980px){.main-content{padding-bottom:88px;}}
+
+/* Bottom nav (mobile) */
+.bottom-nav{
+  display:none;position:fixed;bottom:0;left:0;right:0;z-index:50;
+  background:var(--white);border-top:1px solid var(--line);
+  padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+}
+@media(max-width:980px){.bottom-nav{display:flex;justify-content:space-around;}}
+.bn-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;border-radius:8px;color:var(--ink-soft);font-size:10.5px;font-weight:600;min-width:56px;}
+.bn-item.active{color:var(--green-deep);}
+.bn-item svg{width:20px;height:20px;}
+
+/* Cards */
+.card{background:var(--white);border:1px solid var(--line);border-radius:var(--radius-m);box-shadow:var(--shadow-1);}
+.card-pad{padding:22px;}
+.section{padding:56px 0;}
+.section-sm{padding:32px 0;}
+.eyebrow{font-size:12.5px;font-weight:700;color:var(--green-deep);letter-spacing:0.02em;margin-bottom:10px;display:block;}
+.section-head{max-width:600px;margin-bottom:36px;}
+.section-head h2{font-size:30px;font-weight:800;margin-bottom:10px;}
+.section-head p{color:var(--ink-soft);font-size:15.5px;}
+
+/* Landing hero */
+.hero{
+  position:relative;overflow:hidden;
+  background:linear-gradient(180deg,#0F4A30 0%, var(--green-deep) 55%, #1A7A50 100%);
+  color:#fff;padding:64px 0 90px;
+}
+.hero-bg-pattern{position:absolute;inset:0;opacity:0.10;background-image:
+  repeating-linear-gradient(115deg, transparent, transparent 58px, rgba(255,255,255,0.6) 58px, rgba(255,255,255,0.6) 59px);
+  pointer-events:none;}
+.hero-inner{position:relative;display:grid;grid-template-columns:1.05fr 0.95fr;gap:52px;align-items:center;}
+@media(max-width:940px){.hero-inner{grid-template-columns:1fr;}}
+.hero h1{font-size:46px;line-height:1.08;font-weight:800;margin-bottom:18px;letter-spacing:-0.02em;}
+@media(max-width:640px){.hero h1{font-size:32px;}}
+.hero .lede{font-size:18px;color:rgba(255,255,255,0.88);max-width:480px;margin-bottom:14px;}
+.hero .sub{font-size:15px;color:rgba(255,255,255,0.68);max-width:500px;margin-bottom:30px;}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap;}
+.hero .btn-outline{background:transparent;border-color:rgba(255,255,255,0.45);color:#fff;}
+.hero .btn-outline:hover{background:rgba(255,255,255,0.1);border-color:#fff;}
+
+.flow-card{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);border-radius:14px;padding:22px;backdrop-filter:blur(2px);}
+.flow-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.flow-chip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);padding:8px 12px;border-radius:8px;font-size:12.5px;font-weight:700;color:#fff;}
+.flow-arrow{color:rgba(255,255,255,0.55);font-size:16px;}
+.flow-final{background:var(--saffron);border-color:var(--saffron);}
+
+/* Problem cards */
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;}
+@media(max-width:900px){.grid-3{grid-template-columns:1fr;}.grid-2{grid-template-columns:1fr;}}
+.num-card{padding:24px;border:1px solid var(--line);border-radius:var(--radius-m);background:#fff;}
+.num-card .n{font-family:var(--font-head);font-size:13px;font-weight:800;color:var(--saffron);margin-bottom:14px;}
+.num-card h3{font-size:17px;margin-bottom:8px;}
+.num-card p{color:var(--ink-soft);font-size:14px;}
+
+/* how it works */
+.steps-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;}
+@media(max-width:940px){.steps-row{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:560px){.steps-row{grid-template-columns:1fr;}}
+.step-card{padding:20px;border:1px solid var(--line);border-radius:var(--radius-m);background:#fff;position:relative;}
+.step-card .n{width:26px;height:26px;border-radius:50%;background:var(--green-deep);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+.step-card h4{font-size:14.5px;margin-bottom:4px;}
+.step-card p{font-size:12.5px;color:var(--ink-soft);}
+
+/* Decision badges */
+.decision-badge{display:inline-flex;align-items:center;gap:7px;padding:6px 14px;border-radius:20px;font-weight:700;font-size:13px;}
+.decision-badge svg{width:15px;height:15px;}
+.decision-badge.sell{background:rgba(23,107,69,0.12);color:var(--sell);}
+.decision-badge.wait{background:rgba(180,121,12,0.14);color:var(--wait);}
+.decision-badge.switch{background:rgba(23,50,77,0.10);color:var(--switch);}
+
+.demo-tag{font-size:10.5px;font-weight:700;background:#F2EEE3;color:var(--terracotta);padding:3px 8px;border-radius:5px;letter-spacing:0.02em;border:1px solid #E7DCC6;}
+
+/* Recommendation preview (landing + dashboard) */
+.reco-card{border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow-2);overflow:hidden;}
+.reco-head{background:var(--cream);padding:18px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);}
+.reco-body{padding:24px;}
+.reco-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0;}
+@media(max-width:520px){.reco-grid{grid-template-columns:1fr;}}
+.reco-stat .label{font-size:12px;color:var(--ink-soft);font-weight:600;margin-bottom:3px;}
+.reco-stat .val{font-size:16px;font-weight:700;}
+.reco-reason{background:var(--bg-soft);border-left:3px solid var(--green-leaf);padding:14px 16px;border-radius:0 8px 8px 0;font-size:13.5px;color:var(--ink-soft);}
+
+/* Features */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+@media(max-width:900px){.feat-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:560px){.feat-grid{grid-template-columns:1fr;}}
+.feat-card{padding:20px;border:1px solid var(--line);border-radius:var(--radius-m);background:#fff;display:flex;gap:14px;align-items:flex-start;}
+.feat-icon{width:38px;height:38px;border-radius:9px;background:rgba(46,139,87,0.10);color:var(--green-deep);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.feat-icon svg{width:19px;height:19px;}
+.feat-card h4{font-size:14.5px;margin-bottom:4px;}
+.feat-card p{font-size:12.5px;color:var(--ink-soft);}
+
+.final-cta{background:var(--navy);color:#fff;padding:64px 24px;text-align:center;border-radius:18px;margin:0 24px;}
+.final-cta h2{font-size:28px;margin-bottom:22px;}
+footer{padding:34px 0;border-top:1px solid var(--line);color:var(--ink-soft);font-size:13px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+
+/* Auth pages */
+.auth-shell{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;}
+@media(max-width:860px){.auth-shell{grid-template-columns:1fr;}}
+.auth-visual{background:linear-gradient(160deg,var(--green-deep),#0F4A30);color:#fff;padding:48px;display:flex;flex-direction:column;justify-content:space-between;}
+@media(max-width:860px){.auth-visual{display:none;}}
+.auth-form-side{display:flex;align-items:center;justify-content:center;padding:40px 24px;}
+.auth-box{width:100%;max-width:400px;}
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--ink);}
+.field input,.field select{width:100%;padding:11px 13px;border:1px solid var(--line-strong);border-radius:8px;font-size:14.5px;font-family:var(--font-body);background:#fff;color:var(--ink);}
+.field input:focus,.field select:focus{border-color:var(--green-deep);outline:none;box-shadow:0 0 0 3px rgba(23,107,69,0.12);}
+.role-tabs{display:flex;gap:8px;margin-bottom:22px;}
+.role-tab{flex:1;padding:10px;text-align:center;border:1px solid var(--line-strong);border-radius:8px;font-weight:600;font-size:13.5px;color:var(--ink-soft);}
+.role-tab.active{border-color:var(--green-deep);background:rgba(23,107,69,0.07);color:var(--green-deep);}
+
+/* Onboarding */
+.onboard-shell{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 20px;}
+.progress-row{display:flex;align-items:center;gap:8px;margin-bottom:40px;width:100%;max-width:520px;}
+.progress-step{flex:1;height:4px;border-radius:3px;background:var(--line);}
+.progress-step.done{background:var(--green-deep);}
+.onboard-card{width:100%;max-width:520px;}
+.onboard-num{font-family:var(--font-head);font-weight:800;font-size:13px;color:var(--saffron);margin-bottom:6px;}
+.chip-grid{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;}
+.chip{padding:9px 15px;border:1px solid var(--line-strong);border-radius:20px;font-size:13.5px;font-weight:600;color:var(--ink-soft);}
+.chip.selected{background:var(--green-deep);border-color:var(--green-deep);color:#fff;}
+
+/* Dashboard layout */
+.dash-grid{display:grid;grid-template-columns:2fr 1fr;gap:20px;align-items:flex-start;}
+@media(max-width:980px){.dash-grid{grid-template-columns:1fr;}}
+.page-header{padding:28px 0 8px;}
+.greet{font-size:22px;font-weight:800;}
+.loc-line{display:flex;align-items:center;gap:6px;color:var(--ink-soft);font-size:13.5px;margin-top:4px;}
+.weather-pill{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 16px;}
+.weather-pill .temp{font-size:20px;font-weight:800;}
+.weather-pill .desc{font-size:12px;color:var(--ink-soft);}
+
+.section-title{font-size:16px;font-weight:800;margin:28px 0 14px;display:flex;align-items:center;justify-content:space-between;}
+.see-all{font-size:12.5px;font-weight:700;color:var(--green-deep);}
+
+.crop-card{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 18px;border:1px solid var(--line);border-radius:var(--radius-m);background:#fff;margin-bottom:10px;}
+.crop-card:hover{border-color:var(--line-strong);}
+.crop-main{display:flex;align-items:center;gap:12px;}
+.crop-icon{width:42px;height:42px;border-radius:10px;background:var(--bg-soft);display:flex;align-items:center;justify-content:center;font-size:19px;}
+.crop-name{font-weight:700;font-size:14.5px;}
+.crop-meta{font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+.stage-tag{font-size:11px;font-weight:700;padding:3px 9px;border-radius:12px;}
+.stage-tag.mature{background:rgba(23,107,69,0.12);color:var(--green-deep);}
+.stage-tag.growing{background:rgba(23,50,77,0.09);color:var(--navy);}
+.stage-tag.harvested{background:#EFEFEF;color:#666;}
+
+table.data-table{width:100%;border-collapse:collapse;font-size:13.5px;}
+table.data-table th{text-align:left;font-size:11.5px;color:var(--ink-soft);font-weight:700;text-transform:uppercase;letter-spacing:0.03em;padding:10px 12px;border-bottom:1px solid var(--line);}
+table.data-table td{padding:13px 12px;border-bottom:1px solid var(--line);}
+table.data-table tr.highlight td{background:rgba(46,139,87,0.06);}
+table.data-table tr:last-child td{border-bottom:none;}
+.table-scroll{overflow-x:auto;}
+@media(max-width:760px){
+  table.data-table thead{display:none;}
+  table.data-table, table.data-table tbody, table.data-table tr, table.data-table td{display:block;width:100%;}
+  table.data-table tr{border:1px solid var(--line);border-radius:10px;margin-bottom:10px;padding:6px 4px;background:#fff;}
+  table.data-table td{border:none;display:flex;justify-content:space-between;font-size:13px;padding:8px 12px;}
+  table.data-table td::before{content:attr(data-label);font-weight:700;color:var(--ink-soft);font-size:11.5px;}
+}
+
+.badge-pill{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:12px;}
+.badge-high{background:rgba(23,107,69,0.12);color:var(--green-deep);}
+.badge-medium{background:rgba(180,121,12,0.14);color:var(--wait);}
+.badge-low{background:#EFEFEF;color:#777;}
+
+.wx-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.wx-day{border:1px solid var(--line);border-radius:10px;padding:14px;text-align:center;}
+.wx-day .d{font-size:12px;color:var(--ink-soft);font-weight:700;margin-bottom:8px;}
+.wx-day .t{font-size:19px;font-weight:800;}
+.wx-day .r{font-size:12px;color:var(--terracotta);margin-top:4px;font-weight:600;}
+.alert-box{display:flex;gap:12px;padding:14px 16px;border-radius:10px;background:#FBF3E7;border:1px solid #EFD9B0;font-size:13.5px;color:#7A4E0C;align-items:flex-start;margin-top:14px;}
+.alert-box svg{flex-shrink:0;width:18px;height:18px;margin-top:1px;}
+
+/* forms */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:640px){.form-grid{grid-template-columns:1fr;}}
+.upload-box{border:1.5px dashed var(--line-strong);border-radius:10px;padding:28px;text-align:center;color:var(--ink-soft);font-size:13.5px;}
+
+.processing-list{display:flex;flex-direction:column;gap:14px;margin:24px 0;}
+.proc-item{display:flex;align-items:center;gap:12px;font-size:14.5px;color:var(--ink-soft);}
+.proc-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--line-strong);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;}
+.proc-item.done .proc-check{background:var(--green-deep);border-color:var(--green-deep);color:#fff;}
+.proc-item.done{color:var(--ink);}
+.spinner{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--green-deep);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* Timeline (harvest / transaction) */
+.timeline{display:flex;flex-direction:column;}
+.tl-item{display:flex;gap:16px;position:relative;padding-bottom:26px;}
+.tl-item:last-child{padding-bottom:0;}
+.tl-dot-col{display:flex;flex-direction:column;align-items:center;}
+.tl-dot{width:14px;height:14px;border-radius:50%;background:var(--line-strong);flex-shrink:0;margin-top:3px;}
+.tl-dot.active{background:var(--green-deep);box-shadow:0 0 0 4px rgba(23,107,69,0.15);}
+.tl-dot.risk{background:var(--saffron);}
+.tl-line{width:2px;flex:1;background:var(--line);margin-top:2px;}
+.tl-content h4{font-size:14px;margin-bottom:2px;}
+.tl-content p{font-size:12.5px;color:var(--ink-soft);}
+.tl-item.highlight .tl-content h4{color:var(--green-deep);}
+
+.hl-timeline{display:flex;overflow-x:auto;gap:0;padding:8px 0;}
+.hl-node{flex:1;min-width:120px;text-align:center;position:relative;padding:0 6px;}
+.hl-node .bar{height:5px;background:var(--line);border-radius:3px;margin-bottom:10px;}
+.hl-node.done .bar, .hl-node.window .bar{background:var(--green-deep);}
+.hl-node.risk .bar{background:var(--saffron);}
+.hl-node .lbl{font-size:11.5px;font-weight:700;color:var(--ink-soft);}
+.hl-node.window .lbl{color:var(--green-deep);}
+.hl-node.risk .lbl{color:var(--terracotta);}
+
+/* decision center */
+.alt-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0;}
+@media(max-width:700px){.alt-row{grid-template-columns:1fr;}}
+.alt-card{border:1.5px solid var(--line);border-radius:12px;padding:20px;text-align:center;position:relative;}
+.alt-card.selected{border-color:var(--green-deep);background:rgba(23,107,69,0.04);}
+.alt-card .alt-badge{margin-bottom:10px;}
+.alt-card .alt-note{font-size:12px;color:var(--ink-soft);}
+.alt-card .picked-tag{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--green-deep);color:#fff;font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:10px;}
+
+.reason-list{display:flex;flex-direction:column;gap:11px;}
+.reason-item{display:flex;gap:10px;align-items:flex-start;font-size:14px;}
+.reason-item svg{width:17px;height:17px;color:var(--green-deep);flex-shrink:0;margin-top:2px;}
+
+.mkt-compare-card{border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:12px;position:relative;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.mkt-compare-card.recommended{border-color:var(--green-deep);background:rgba(23,107,69,0.045);}
+.mkt-compare-card .rec-flag{position:absolute;top:-10px;right:16px;background:var(--green-deep);color:#fff;font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:10px;}
+.mkt-name{font-weight:700;font-size:15px;}
+.mkt-figs{display:flex;gap:24px;flex-wrap:wrap;}
+.mkt-fig .l{font-size:11px;color:var(--ink-soft);font-weight:600;}
+.mkt-fig .v{font-size:15px;font-weight:800;}
+.mkt-fig .v.net{color:var(--green-deep);}
+
+/* market intel filters */
+.filter-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
+.filter-chip{padding:8px 14px;border:1px solid var(--line-strong);border-radius:8px;font-size:13px;font-weight:600;color:var(--ink-soft);background:#fff;display:flex;align-items:center;gap:6px;}
+.filter-chip.active{border-color:var(--green-deep);color:var(--green-deep);background:rgba(23,107,69,0.06);}
+.tabs-row{display:flex;gap:6px;border:1px solid var(--line);border-radius:8px;padding:3px;width:fit-content;}
+.tab-btn{padding:6px 14px;border-radius:6px;font-size:12.5px;font-weight:700;color:var(--ink-soft);}
+.tab-btn.active{background:var(--green-deep);color:#fff;}
+
+/* buyer / lot / offer cards */
+.buyer-card,.lot-card,.offer-card{border:1px solid var(--line);border-radius:12px;padding:20px;background:#fff;margin-bottom:14px;}
+.buyer-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.verified-tag{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;color:var(--green-deep);}
+.buyer-facts{display:flex;flex-wrap:wrap;gap:18px;margin:14px 0;font-size:13px;}
+.buyer-facts .l{color:var(--ink-soft);font-size:11px;font-weight:600;}
+.buyer-facts .v{font-weight:700;font-size:14px;}
+.buyer-foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding-top:12px;border-top:1px solid var(--line);}
+
+.search-bar{display:flex;gap:10px;margin-bottom:16px;}
+.search-bar input{flex:1;padding:12px 15px;border:1px solid var(--line-strong);border-radius:8px;font-size:14px;}
+
+.status-tabs{display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--line);}
+.status-tab{padding:10px 4px;margin-right:22px;font-weight:700;font-size:13.5px;color:var(--ink-soft);border-bottom:2px solid transparent;}
+.status-tab.active{color:var(--green-deep);border-color:var(--green-deep);}
+
+.metric-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;}
+@media(max-width:980px){.metric-grid{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:640px){.metric-grid{grid-template-columns:repeat(2,1fr);}}
+.metric-card{border:1px solid var(--line);border-radius:10px;padding:16px;background:#fff;}
+.metric-card .l{font-size:11.5px;color:var(--ink-soft);font-weight:600;margin-bottom:6px;}
+.metric-card .v{font-size:21px;font-weight:800;}
+.metric-card .d{font-size:11.5px;color:var(--green-deep);font-weight:600;margin-top:4px;}
+
+.chart-box{position:relative;height:260px;}
+.empty-state{text-align:center;padding:50px 20px;color:var(--ink-soft);}
+.empty-state h3{color:var(--ink);margin-bottom:6px;font-size:16px;}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 20px;border-radius:10px;font-size:13.5px;font-weight:600;z-index:200;box-shadow:var(--shadow-2);display:flex;align-items:center;gap:10px;opacity:0;pointer-events:none;transition:opacity .25s ease, transform .25s ease;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+
+.mobile-menu{position:fixed;inset:0;background:rgba(15,25,20,0.5);z-index:100;display:none;}
+.mobile-menu.open{display:block;}
+.mobile-menu-panel{position:absolute;top:0;right:0;bottom:0;width:78%;max-width:320px;background:#fff;padding:22px;display:flex;flex-direction:column;gap:4px;}
+.mobile-menu-panel a{padding:13px 10px;border-radius:8px;font-weight:600;font-size:15px;color:var(--ink);}
+.mobile-menu-panel a.active{color:var(--green-deep);background:var(--bg-soft);}
+
+.dropdown-panel{position:absolute;top:56px;right:0;width:300px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-2);padding:14px;z-index:60;display:none;}
+.dropdown-panel.open{display:block;}
+.dropdown-item{padding:10px 8px;border-radius:8px;font-size:13px;}
+.dropdown-item:hover{background:var(--bg-soft);}
+.dropdown-item .t{font-weight:700;margin-bottom:2px;}
+.dropdown-item .s{color:var(--ink-soft);font-size:12px;}
+
+.lang-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+@media(max-width:480px){.lang-grid{grid-template-columns:1fr;}}
+.lang-opt{padding:12px 14px;border:1px solid var(--line-strong);border-radius:8px;font-size:14px;font-weight:600;}
+.lang-opt.selected{border-color:var(--green-deep);color:var(--green-deep);background:rgba(23,107,69,0.06);}
+
+.pf-row{display:flex;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--line);font-size:14px;}
+.pf-row:last-child{border-bottom:none;}
+.pf-row .l{color:var(--ink-soft);}
+.pf-row .v{font-weight:600;}
+
+.confidence-track{height:6px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:6px;}
+.confidence-fill{height:100%;background:var(--green-deep);border-radius:4px;}
+
+.disclaimer{font-size:12px;color:var(--ink-soft);font-style:normal;margin-top:10px;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" class="toast"></div>
+
+<script>
+/* ============================================================
+   KISANSETU AI — PROTOTYPE APPLICATION
+   Vanilla JS SPA, hash-based routing, in-memory demo data.
+   ============================================================ */
+
+/* ---------------- DEMO DATA (structured to mirror future API shape) ---------------- */
+const DEMO = {
+  farmer: { name:"Ramesh Patil", location:"Nashik, Maharashtra", initials:"RP" },
+  weatherToday: { temp:28, condition:"Partly Cloudy", rain:35, humidity:62 },
+  weather7day: [
+    {day:"Today", temp:28, rain:35, humidity:62},
+    {day:"Tomorrow", temp:29, rain:25, humidity:58},
+    {day:"Day 3", temp:26, rain:70, humidity:74},
+    {day:"Day 4", temp:25, rain:80, humidity:78},
+    {day:"Day 5", temp:27, rain:55, humidity:66},
+    {day:"Day 6", temp:29, rain:20, humidity:54},
+    {day:"Day 7", temp:30, rain:15, humidity:50},
+  ],
+  crops: [
+    { id:"tomato", name:"Tomato", icon:"🍅", variety:"Hybrid F1", qty:500, unit:"kg", location:"Nashik, Maharashtra",
+      stage:"Near maturity", stageClass:"mature", sowDate:"12 Jun 2026", harvestEst:"08–10 Sep 2026", harvestWindow:"2–4 days",
+      recommendation:"SELL", bestMarket:"Nashik Market", netRealization:29, confidence:86 },
+    { id:"onion", name:"Onion", icon:"🧅", variety:"Local Red", qty:800, unit:"kg", location:"Nashik, Maharashtra",
+      stage:"Growing", stageClass:"growing", sowDate:"02 Jul 2026", harvestEst:"24–30 Sep 2026", harvestWindow:"18–24 days",
+      recommendation:"WAIT", bestMarket:"—", netRealization:null, confidence:64 },
+    { id:"potato", name:"Potato", icon:"🥔", variety:"Kufri Jyoti", qty:1200, unit:"kg", location:"Nashik, Maharashtra",
+      stage:"Harvested", stageClass:"harvested", sowDate:"18 Apr 2026", harvestEst:"Completed", harvestWindow:"—",
+      recommendation:"SWITCH", bestMarket:"Ahmednagar Market", netRealization:14, confidence:71 },
+  ],
+  markets: {
+    tomato: [
+      { id:"nashik", name:"Nashik Market", price:30, transport:400, net:29, demand:"High", distance:25, trend:[27,28,29,28,30,29,30] },
+      { id:"pune", name:"Pune Market", price:31, transport:2800, net:24, demand:"Medium", distance:190, trend:[29,30,30,31,30,31,31] },
+      { id:"ahmednagar", name:"Ahmednagar Market", price:29, transport:1000, net:26, demand:"High", distance:80, trend:[26,27,28,27,28,29,29] },
+      { id:"kolhapur", name:"Kolhapur Market", price:27, transport:1900, net:20, demand:"Low", distance:230, trend:[25,26,26,27,26,27,27] },
+    ]
+  },
+  buyers: [
+    { id:"freshfarm", name:"FreshFarm Foods", verified:true, crop:"Tomato", qty:2000, grade:"A", price:31, distance:42, validDays:3, payment:"4.6 / 5 — Reliable payer", deadline:"12 Sep 2026", location:"Nashik MIDC" },
+    { id:"agrico", name:"Agrico Exports", verified:true, crop:"Onion", qty:5000, grade:"B+", price:22, distance:65, validDays:5, payment:"4.2 / 5 — Reliable payer", deadline:"20 Sep 2026", location:"Sinnar" },
+    { id:"deccan", name:"Deccan Traders", verified:false, crop:"Tomato", qty:800, grade:"A", price:29, distance:18, validDays:2, payment:"New buyer — no history", deadline:"09 Sep 2026", location:"Nashik Road" },
+    { id:"greenline", name:"GreenLine Retail", verified:true, crop:"Potato", qty:3000, grade:"A", price:16, distance:95, validDays:4, payment:"4.8 / 5 — Reliable payer", deadline:"15 Sep 2026", location:"Ahmednagar" },
+  ],
+  lots: [
+    { id:"KS-2026-001", crop:"Tomato", qty:500, status:"Open for Offers", interests:3, expectedPrice:30, created:"05 Sep 2026" },
+    { id:"KS-2026-002", crop:"Potato", qty:1200, status:"Sold", interests:5, expectedPrice:16, created:"28 Aug 2026" },
+    { id:"KS-2025-114", crop:"Onion", qty:600, status:"Expired", interests:1, expectedPrice:21, created:"14 Aug 2026" },
+  ],
+  offers: [
+    { id:"off1", lotId:"KS-2026-001", buyer:"FreshFarm Foods", verified:true, price:31, qty:2000, grade:"A", expires:"2 days", status:"pending" },
+    { id:"off2", lotId:"KS-2026-001", buyer:"Deccan Traders", verified:false, price:29, qty:800, grade:"A", expires:"1 day", status:"pending" },
+  ],
+  transaction: {
+    lotId:"KS-2026-001", buyer:"FreshFarm Foods", crop:"Tomato", qty:500, price:31,
+    stages:[
+      {label:"Lot Created", done:true, date:"05 Sep, 10:20 AM"},
+      {label:"Buyer Offer Received", done:true, date:"05 Sep, 3:40 PM"},
+      {label:"Offer Accepted", done:true, date:"06 Sep, 9:05 AM"},
+      {label:"Logistics Arranged", done:false, date:"Pending"},
+      {label:"Delivery", done:false, date:"Pending"},
+      {label:"Payment Settled", done:false, date:"Pending"},
+    ]
+  },
+  fpo: {
+    name:"Godavari Farmers Producer Company",
+    farmers:[
+      {name:"Suresh Kale", crop:"Tomato", qty:300},
+      {name:"Anita Wagh", crop:"Tomato", qty:500},
+      {name:"Prakash More", crop:"Tomato", qty:700},
+    ]
+  },
+  analytics: {
+    totalProduce:"6,400 kg", avgRealization:"₹24.8/kg", bestMarket:"Nashik Market", activeLots:2, completedSales:9,
+    priceTrend:[22,23,25,24,26,27,29],
+    cropPerf:[ {crop:"Tomato", val:29}, {crop:"Onion", val:19}, {crop:"Potato", val:15}, {crop:"Chilli", val:34} ]
+  }
+};
+
+let STATE = {
+  role:"Farmer",
+  onboardStep:1,
+  onboardData:{ location:"", crops:[], quantity:"", markets:[] },
+  selectedCropId:"tomato",
+  addCropStage:"form",
+  addCropForm:{},
+  lotForm:{},
+  lotJustCreated:false,
+  marketRange:"7",
+  lang:"English",
+  mobileMenuOpen:false,
+  notifOpen:false,
+  offers: JSON.parse(JSON.stringify(DEMO.offers)),
+  lots: JSON.parse(JSON.stringify(DEMO.lots)),
+};
+
+/* ---------------- ICONS (inline SVG, stroke-based, consistent set) ---------------- */
+const ICON = {
+  leaf:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 15c0-6 5-11 15-11-1 10-6 15-15 15-1-2-1-3 0-4z"/><path d="M9 15c2-3 4-6 10-9"/></svg>`,
+  bridge:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 17h20"/><path d="M5 17v-4M9 17v-6M12 17V9M15 17v-6M19 17v-4"/><path d="M2 9c4-3 16-3 20 0"/></svg>`,
+  home:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>`,
+  crop:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M8 7c0 3 2 4 4 4s4-1 4-4M6 13c0 3 2.5 4 6 4s6-1 6-4"/></svg>`,
+  market:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l1.5-5h15L21 9"/><path d="M4 9h16v10H4z"/><path d="M9 19v-5h6v5"/></svg>`,
+  buyers:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/><circle cx="17.5" cy="9" r="2.3"/><path d="M16 20c0-2.5 1.5-4.3 3.5-4.9"/></svg>`,
+  bulb:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18h6M10 21h4M7 9a5 5 0 1 1 10 0c0 2-1 3-2 4.5-.5.8-1 1.5-1 2.5h-4c0-1-.5-1.7-1-2.5C8 12 7 11 7 9z"/></svg>`,
+  chart:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M12 20V4M20 20v-7"/><path d="M2 20h20"/></svg>`,
+  bell:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>`,
+  cloud:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 18h10a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.7 1.7A3.5 3.5 0 0 0 7 18z"/></svg>`,
+  menu:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M3 12h18M3 18h18"/></svg>`,
+  close:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg>`,
+  check:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>`,
+  checkCircle:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>`,
+  arrowRight:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`,
+  pin:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.4 7-12a7 7 0 1 0-14 0c0 5.6 7 12 7 12z"/><circle cx="12" cy="9" r="2.4"/></svg>`,
+  alert:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L2.5 18a1.6 1.6 0 0 0 1.4 2.4h16.2a1.6 1.6 0 0 0 1.4-2.4L13.7 3.9a1.6 1.6 0 0 0-2.8 0z"/></svg>`,
+  waitIcon:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>`,
+  switchIcon:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 3l4 4-4 4"/><path d="M3 11V9a2 2 0 0 1 2-2h16"/><path d="M7 21l-4-4 4-4"/><path d="M21 13v2a2 2 0 0 1-2 2H3"/></svg>`,
+  sellIcon:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 12l-8 8-8-8 8-8z"/><path d="M12 8v6"/></svg>`,
+  filter:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M7 12h10M10 18h4"/></svg>`,
+  camera:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.3"/></svg>`,
+  truck:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 17V7h11v10"/><path d="M13 10h5l3 3v4h-8"/><circle cx="6" cy="18" r="1.8"/><circle cx="17.5" cy="18" r="1.8"/></svg>`,
+  store:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V10M20 21V10M2 10l2-6h16l2 6M2 10h20"/><path d="M9 21v-6h6v6"/></svg>`,
+  user:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>`,
+};
+
+function icon(name, cls){ return `<span class="${cls||''}" style="display:inline-flex">${ICON[name]||''}</span>`; }
+
+/* ---------------- ROUTER ---------------- */
+function parseHash(){
+  let h = location.hash.replace(/^#\/?/, '');
+  if(!h) h = '';
+  const [path, qs] = h.split('?');
+  const params = {};
+  if(qs) qs.split('&').forEach(pair=>{ const [k,v] = pair.split('='); if(k) params[k]=decodeURIComponent(v||''); });
+  return { path: path || 'landing', params };
+}
+function navigate(path, params){
+  let h = '#/' + path;
+  if(params){
+    const qs = Object.entries(params).map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join('&');
+    if(qs) h += '?' + qs;
+  }
+  location.hash = h;
+}
+window.addEventListener('hashchange', render);
+window.addEventListener('DOMContentLoaded', render);
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.innerHTML = icon('checkCircle') + `<span>${msg}</span>`;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+/* ---------------- SHARED HELPERS ---------------- */
+function fmtRs(n){ return '₹' + n; }
+
+function decisionBadge(type, size){
+  const map = {
+    SELL:{cls:'sell', ic:'sellIcon', label:'SELL NOW'},
+    WAIT:{cls:'wait', ic:'waitIcon', label:'WAIT'},
+    SWITCH:{cls:'switch', ic:'switchIcon', label:'SWITCH MARKET'},
+  };
+  const d = map[type] || map.SELL;
+  return `<span class="decision-badge ${d.cls}">${ICON[d.ic]}${d.label}</span>`;
+}
+
+function cropById(id){ return DEMO.crops.find(c=>c.id===id) || DEMO.crops[0]; }
+function buyerById(id){ return DEMO.buyers.find(b=>b.id===id) || DEMO.buyers[0]; }
+function lotById(id){ return STATE.lots.find(l=>l.id===id) || STATE.lots[0]; }
+
+/* ---------------- APP SHELL (nav) ---------------- */
+const NAV_ITEMS = [
+  { path:'dashboard', label:'Dashboard', icon:'home' },
+  { path:'crops', label:'My Crops', icon:'crop' },
+  { path:'market', label:'Markets', icon:'market' },
+  { path:'buyers', label:'Buyers', icon:'buyers' },
+  { path:'decision', label:'Recommendations', icon:'bulb' },
+  { path:'analytics', label:'Analytics', icon:'chart' },
+];
+const BOTTOM_NAV_ITEMS = [
+  { path:'dashboard', label:'Home', icon:'home' },
+  { path:'crops', label:'Crops', icon:'crop' },
+  { path:'market', label:'Markets', icon:'market' },
+  { path:'buyers', label:'Buyers', icon:'buyers' },
+  { path:'profile', label:'Profile', icon:'user' },
+];
+
+function Logo(){
+  return `<a href="#/dashboard" class="logo">${icon('bridge')} KisanSetu<span class="tag">AI</span></a>`;
+}
+
+function AppShell(activePath, contentHtml){
+  const navLinks = NAV_ITEMS.map(n=>`<a href="#/${n.path}" class="nav-link ${activePath===n.path?'active':''}">${n.label}</a>`).join('');
+  const bottomLinks = BOTTOM_NAV_ITEMS.map(n=>`<a href="#/${n.path}" class="bn-item ${activePath===n.path?'active':''}">${ICON[n.icon]}<span>${n.label}</span></a>`).join('');
+  const mobileLinks = NAV_ITEMS.concat([{path:'weather',label:'Weather'},{path:'profile',label:'Profile'}]).map(n=>`<a href="#/${n.path}" class="${activePath===n.path?'active':''}" onclick="closeMobileMenu()">${n.label}</a>`).join('');
+  return `
+  <div class="app-shell">
+    <div class="topbar">
+      <div class="topbar-inner">
+        ${Logo()}
+        <nav class="nav-links">${navLinks}</nav>
+        <div class="top-actions">
+          <a href="#/weather" class="icon-btn" title="Weather">${ICON.cloud}</a>
+          <div style="position:relative">
+            <button class="icon-btn" onclick="toggleNotif(event)" title="Notifications">${ICON.bell}<span class="dot-badge"></span></button>
+            <div class="dropdown-panel ${STATE.notifOpen?'open':''}" id="notifPanel">
+              <div class="dropdown-item"><div class="t">Rain risk rising for Nashik</div><div class="s">Harvest tomato before Day 3 for best safety margin.</div></div>
+              <div class="dropdown-item"><div class="t">New buyer offer received</div><div class="s">FreshFarm Foods offered ₹31/kg for Lot KS-2026-001.</div></div>
+              <div class="dropdown-item"><div class="t">Price update — Nashik Market</div><div class="s">Tomato price moved to ₹30/kg today.</div></div>
+            </div>
+          </div>
+          <a href="#/profile" class="profile-chip"><span class="avatar">${DEMO.farmer.initials}</span></a>
+          <button class="icon-btn hamburger" onclick="toggleMobileMenu()">${ICON.menu}</button>
+        </div>
+      </div>
+    </div>
+    <div class="main-content">${contentHtml}</div>
+    <footer class="wrap"><span>© 2026 KisanSetu AI · Team Skill Squad · SIH26132</span><span>Prices shown are demo data unless stated otherwise</span></footer>
+    <div class="bottom-nav">${bottomLinks}</div>
+    <div class="mobile-menu ${STATE.mobileMenuOpen?'open':''}" id="mobileMenu" onclick="if(event.target===this)closeMobileMenu()">
+      <div class="mobile-menu-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">${Logo()}<button class="icon-btn" onclick="closeMobileMenu()">${ICON.close}</button></div>
+        ${mobileLinks}
+      </div>
+    </div>
+  </div>`;
+}
+function toggleMobileMenu(){ STATE.mobileMenuOpen = !STATE.mobileMenuOpen; render(); }
+function closeMobileMenu(){ STATE.mobileMenuOpen = false; render(); }
+function toggleNotif(e){ e.stopPropagation(); STATE.notifOpen = !STATE.notifOpen; render(); }
+document.addEventListener('click', (e)=>{ if(STATE.notifOpen && !e.target.closest('#notifPanel') && !e.target.closest('.icon-btn')){ STATE.notifOpen=false; render(); } });
+
+/* ================================================================
+   PAGE: LANDING
+   ================================================================ */
+function PageLanding(){
+  const nav = `
+  <div class="topbar">
+    <div class="topbar-inner">
+      ${Logo()}
+      <nav class="nav-links">
+        <a href="#/landing" class="nav-link active">Home</a>
+        <a href="#/landing?scroll=how" class="nav-link">How it works</a>
+        <a href="#/landing?scroll=features" class="nav-link">Features</a>
+      </nav>
+      <div class="top-actions">
+        <a href="#/login" class="btn btn-outline btn-sm">Log in</a>
+        <a href="#/login" class="btn btn-primary btn-sm">Get Started</a>
+      </div>
+    </div>
+  </div>`;
+
+  const hero = `
+  <section class="hero">
+    <div class="hero-bg-pattern"></div>
+    <div class="wrap hero-inner">
+      <div>
+        <span class="eyebrow" style="color:#BFE6D3">SIH26132 · Government of Maharashtra</span>
+        <h1>From knowing the market price<br/>to knowing the best action.</h1>
+        <p class="lede">AI-powered farm-to-market intelligence helping farmers and FPOs make better harvest, market and buyer decisions.</p>
+        <p class="sub">KisanSetu AI reads weather, mandi prices, buyer demand and logistics together — then tells you what to do next, and why.</p>
+        <div class="hero-actions">
+          <a href="#/login" class="btn btn-saffron">Get Started</a>
+          <a href="#/landing?scroll=how" class="btn btn-outline" onclick="scrollToHow(event)">See How It Works</a>
+        </div>
+      </div>
+      <div class="flow-card">
+        <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.6);margin-bottom:14px;letter-spacing:0.03em;">DECISION FLOW</div>
+        <div class="flow-row"><span class="flow-chip">FARM</span></div>
+        <div style="text-align:center;padding:8px 0;color:rgba(255,255,255,0.4)">↓</div>
+        <div class="flow-row" style="justify-content:center">
+          <span class="flow-chip">WEATHER</span><span class="flow-chip">MARKET</span><span class="flow-chip">BUYER</span>
+        </div>
+        <div style="text-align:center;padding:8px 0;color:rgba(255,255,255,0.4)">↓</div>
+        <div class="flow-row"><span class="flow-chip" style="background:rgba(255,255,255,0.18)">AI DECISION ENGINE</span></div>
+        <div style="text-align:center;padding:8px 0;color:rgba(255,255,255,0.4)">↓</div>
+        <div class="flow-row" style="justify-content:center">
+          <span class="flow-chip">SELL</span><span class="flow-chip">WAIT</span><span class="flow-chip">SWITCH</span>
+        </div>
+        <div style="text-align:center;padding:8px 0;color:rgba(255,255,255,0.4)">↓</div>
+        <div class="flow-row"><span class="flow-chip flow-final">BEST MARKET: NASHIK</span></div>
+      </div>
+    </div>
+  </section>`;
+
+  const problem = `
+  <section class="section wrap" id="problem">
+    <div class="section-head"><span class="eyebrow">The Problem</span><h2>Farmers lose money between the field and the mandi</h2><p>Not from bad crops — from decisions made without enough information.</p></div>
+    <div class="grid-3">
+      <div class="num-card"><div class="n">01</div><h3>Scattered market information</h3><p>Prices are spread across mandis, agents and word of mouth, with no single reliable view.</p></div>
+      <div class="num-card"><div class="n">02</div><h3>Uncertain selling decisions</h3><p>Farmers often can't tell if it's better to sell today or hold for a few more days.</p></div>
+      <div class="num-card"><div class="n">03</div><h3>Weak buyer connectivity</h3><p>Good buyers exist, but there's no simple way for a farmer to reach and verify them.</p></div>
+    </div>
+  </section>`;
+
+  const how = `
+  <section class="section wrap" id="how">
+    <div class="section-head"><span class="eyebrow">How It Works</span><h2>Five steps from field to sale</h2><p>Each step feeds the next — culminating in one clear recommendation.</p></div>
+    <div class="steps-row">
+      <div class="step-card"><div class="n">1</div><h4>Add Crop</h4><p>Tell us the crop, quantity, location and current stage.</p></div>
+      <div class="step-card"><div class="n">2</div><h4>Analyze Conditions</h4><p>We read weather risk and crop maturity together.</p></div>
+      <div class="step-card"><div class="n">3</div><h4>Compare Markets</h4><p>Nearby mandis are compared on price, demand and transport cost.</p></div>
+      <div class="step-card"><div class="n">4</div><h4>Get AI Recommendation</h4><p>A clear SELL, WAIT or SWITCH call — with the reasoning shown.</p></div>
+      <div class="step-card"><div class="n">5</div><h4>Connect With Buyers</h4><p>Create a lot and receive offers from verified buyers.</p></div>
+    </div>
+  </section>`;
+
+  const decision = `
+  <section class="section wrap" id="decision-preview">
+    <div class="section-head"><span class="eyebrow">Smart Decision</span><h2>One recommendation, fully explained</h2><p>Every call KisanSetu makes comes with the reasoning behind it — never a black box.</p></div>
+    <div class="reco-card" style="max-width:620px">
+      <div class="reco-head">
+        <div><div style="font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:4px;">AI RECOMMENDATION</div>${decisionBadge('SELL')}</div>
+        <span class="demo-tag">DEMO DATA</span>
+      </div>
+      <div class="reco-body">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div><h3 style="font-size:19px;">Tomato · 500 kg</h3><p style="color:var(--ink-soft);font-size:13px;margin-top:2px;">Near maturity</p></div>
+        </div>
+        <div class="reco-grid">
+          <div class="reco-stat"><div class="label">Weather Risk</div><div class="val">Medium</div></div>
+          <div class="reco-stat"><div class="label">Buyer Demand</div><div class="val">High</div></div>
+          <div class="reco-stat"><div class="label">Best Market</div><div class="val">Nashik Market</div></div>
+          <div class="reco-stat"><div class="label">Expected Net Realization</div><div class="val" style="color:var(--green-deep)">₹29/kg</div></div>
+        </div>
+        <div class="reco-reason">Buyer demand is strong and the expected net realization is higher than nearby alternatives. Weather risk is expected to increase after 2 days.</div>
+      </div>
+    </div>
+  </section>`;
+
+  const features = `
+  <section class="section wrap" id="features">
+    <div class="section-head"><span class="eyebrow">Features</span><h2>Built around one decision, not six dashboards</h2></div>
+    <div class="feat-grid">
+      <div class="feat-card"><div class="feat-icon">${ICON.cloud}</div><div><h4>Weather Intelligence</h4><p>Localized rain and temperature risk mapped to your crop stage.</p></div></div>
+      <div class="feat-card"><div class="feat-icon">${ICON.market}</div><div><h4>Market Intelligence</h4><p>Live-style price comparison across nearby mandis.</p></div></div>
+      <div class="feat-card"><div class="feat-icon">${ICON.crop}</div><div><h4>Harvest Window</h4><p>AI-assisted estimate of when a crop is ready to sell.</p></div></div>
+      <div class="feat-card"><div class="feat-icon">${ICON.buyers}</div><div><h4>Buyer Matching</h4><p>Verified buyers matched to your crop, grade and quantity.</p></div></div>
+      <div class="feat-card"><div class="feat-icon">${ICON.truck}</div><div><h4>Logistics</h4><p>Transport cost factored into every market comparison.</p></div></div>
+      <div class="feat-card"><div class="feat-icon">${ICON.store}</div><div><h4>Storage</h4><p>Storage availability considered before recommending WAIT.</p></div></div>
+    </div>
+  </section>`;
+
+  const cta = `
+  <section class="section wrap">
+    <div class="final-cta">
+      <h2>Make every harvest decision smarter.</h2>
+      <a href="#/login" class="btn btn-saffron">Start Now</a>
+    </div>
+  </section>`;
+
+  return nav + hero + problem + how + decision + features + cta;
+}
+function scrollToHow(e){ e.preventDefault(); const el=document.getElementById('how'); if(el) el.scrollIntoView({behavior:'smooth'}); }
+
+/* ================================================================
+   PAGE: LOGIN
+   ================================================================ */
+function PageLogin(){
+  const roles = ['Farmer','FPO','Buyer'];
+  const roleTabs = roles.map(r=>`<div class="role-tab ${STATE.role===r?'active':''}" onclick="STATE.role='${r}';render()">${r}</div>`).join('');
+  return `
+  <div class="auth-shell">
+    <div class="auth-visual">
+      <div>${Logo()}</div>
+      <div>
+        <h2 style="font-size:26px;color:#fff;margin-bottom:14px;">One platform for the whole farm-to-market decision.</h2>
+        <p style="color:rgba(255,255,255,0.75);font-size:14.5px;max-width:380px;">Weather, mandi prices, buyer demand and logistics — combined into one clear recommendation for every lot you grow.</p>
+      </div>
+      <div style="color:rgba(255,255,255,0.55);font-size:12.5px;">Government of Maharashtra · Agriculture, FoodTech &amp; Rural Development</div>
+    </div>
+    <div class="auth-form-side">
+      <div class="auth-box">
+        <h2 style="font-size:23px;margin-bottom:6px;">Welcome back</h2>
+        <p style="color:var(--ink-soft);font-size:14px;margin-bottom:22px;">Log in to continue to your dashboard.</p>
+        <div class="role-tabs">${roleTabs}</div>
+        <div class="field"><label>Mobile number or email</label><input type="text" placeholder="e.g. 98765 43210" /></div>
+        <div class="field"><label>Password</label><input type="password" placeholder="••••••••" /></div>
+        <div class="field"><label>Language</label>
+          <select onchange="STATE.lang=this.value">
+            ${['English','हिन्दी','मराठी','తెలుగు'].map(l=>`<option ${STATE.lang===l?'selected':''}>${l}</option>`).join('')}
+          </select>
+        </div>
+        <button class="btn btn-primary btn-block" style="margin-top:6px" onclick="handleLogin()">Log in</button>
+        <p style="text-align:center;margin-top:18px;font-size:13.5px;color:var(--ink-soft)">New to KisanSetu? <a href="#/onboarding" style="color:var(--green-deep);font-weight:700">Create account</a></p>
+      </div>
+    </div>
+  </div>`;
+}
+function handleLogin(){
+  if(STATE.role==='FPO') navigate('fpo');
+  else navigate('dashboard');
+}
+
+/* ================================================================
+   PAGE: ONBOARDING
+   ================================================================ */
+const CROP_OPTIONS = ['Tomato','Onion','Potato','Chilli'];
+const MARKET_OPTIONS = ['Nashik','Pune','Nagpur','Ahmednagar','Kolhapur'];
+
+function PageOnboarding(){
+  const step = STATE.onboardStep;
+  const progress = [1,2,3,4].map(n=>`<div class="progress-step ${n<=step?'done':''}"></div>`).join('');
+  let body = '';
+  if(step===1){
+    body = `
+    <div class="onboard-num">STEP 01 OF 04</div>
+    <h2 style="font-size:22px;margin-bottom:8px;">Your location</h2>
+    <p style="color:var(--ink-soft);font-size:14px;margin-bottom:22px;">This helps us match you to nearby mandis and weather data.</p>
+    <div class="field"><label>Village / Town</label><input id="ob-village" type="text" placeholder="e.g. Niphad" value="${STATE.onboardData.village||''}"/></div>
+    <div class="field"><label>District</label><input id="ob-district" type="text" placeholder="e.g. Nashik" value="${STATE.onboardData.district||''}"/></div>
+    <div class="field"><label>State</label><input id="ob-state" type="text" value="Maharashtra" disabled/></div>`;
+  } else if(step===2){
+    const chips = CROP_OPTIONS.map(c=>`<div class="chip ${STATE.onboardData.crops.includes(c)?'selected':''}" onclick="toggleOnboardCrop('${c}')">${c}</div>`).join('');
+    body = `
+    <div class="onboard-num">STEP 02 OF 04</div>
+    <h2 style="font-size:22px;margin-bottom:8px;">Your crops</h2>
+    <p style="color:var(--ink-soft);font-size:14px;margin-bottom:10px;">Select all crops you currently grow.</p>
+    <div class="chip-grid">${chips}</div>`;
+  } else if(step===3){
+    body = `
+    <div class="onboard-num">STEP 03 OF 04</div>
+    <h2 style="font-size:22px;margin-bottom:8px;">Typical quantity</h2>
+    <p style="color:var(--ink-soft);font-size:14px;margin-bottom:22px;">Roughly how much do you harvest per season, per crop?</p>
+    <div class="field"><label>Average quantity per harvest</label><input id="ob-qty" type="text" placeholder="e.g. 500 kg" value="${STATE.onboardData.quantity||''}"/></div>
+    <div class="field"><label>Typical land under cultivation</label><input id="ob-land" type="text" placeholder="e.g. 2 acres" value="${STATE.onboardData.land||''}"/></div>`;
+  } else {
+    const chips = MARKET_OPTIONS.map(m=>`<div class="chip ${STATE.onboardData.markets.includes(m)?'selected':''}" onclick="toggleOnboardMarket('${m}')">${m}</div>`).join('');
+    body = `
+    <div class="onboard-num">STEP 04 OF 04</div>
+    <h2 style="font-size:22px;margin-bottom:8px;">Preferred markets</h2>
+    <p style="color:var(--ink-soft);font-size:14px;margin-bottom:10px;">Which mandis would you like KisanSetu to track for you?</p>
+    <div class="chip-grid">${chips}</div>`;
+  }
+  return `
+  <div class="onboard-shell">
+    <div class="progress-row">${progress}</div>
+    <div class="onboard-card card card-pad">
+      ${body}
+      <div style="display:flex;justify-content:space-between;margin-top:28px;">
+        ${step>1?`<button class="btn btn-ghost" onclick="onboardBack()">Back</button>`:`<span></span>`}
+        <button class="btn btn-primary" onclick="onboardNext()">${step<4?'Continue':'Finish setup'}</button>
+      </div>
+    </div>
+  </div>`;
+}
+function toggleOnboardCrop(c){
+  const i = STATE.onboardData.crops.indexOf(c);
+  if(i>-1) STATE.onboardData.crops.splice(i,1); else STATE.onboardData.crops.push(c);
+  render();
+}
+function toggleOnboardMarket(m){
+  const i = STATE.onboardData.markets.indexOf(m);
+  if(i>-1) STATE.onboardData.markets.splice(i,1); else STATE.onboardData.markets.push(m);
+  render();
+}
+function onboardBack(){ STATE.onboardStep = Math.max(1, STATE.onboardStep-1); render(); }
+function onboardNext(){
+  if(STATE.onboardStep===1){
+    STATE.onboardData.village = document.getElementById('ob-village').value;
+    STATE.onboardData.district = document.getElementById('ob-district').value;
+  } else if(STATE.onboardStep===3){
+    STATE.onboardData.quantity = document.getElementById('ob-qty').value;
+    STATE.onboardData.land = document.getElementById('ob-land').value;
+  }
+  if(STATE.onboardStep<4){ STATE.onboardStep++; render(); }
+  else { showToast('Account set up — welcome to KisanSetu AI'); navigate('dashboard'); }
+}
+
+/* ================================================================
+   PAGE: FARMER DASHBOARD
+   ================================================================ */
+function PageDashboard(){
+  const focusCrop = DEMO.crops[0]; // tomato — the current decision focus
+  const cropRows = DEMO.crops.map(c=>`
+    <div class="crop-card" onclick="navigate('crop',{id:'${c.id}'})" style="cursor:pointer">
+      <div class="crop-main">
+        <div class="crop-icon">${c.icon}</div>
+        <div>
+          <div class="crop-name">${c.name} <span style="color:var(--ink-soft);font-weight:500;font-size:12.5px">· ${c.qty} ${c.unit}</span></div>
+          <div class="crop-meta">Harvest window: ${c.harvestWindow}</div>
+        </div>
+      </div>
+      <span class="stage-tag ${c.stageClass}">${c.stage}</span>
+    </div>`).join('');
+
+  const marketRows = DEMO.markets.tomato.slice(0,3).map(m=>`
+    <tr class="${m.id==='nashik'?'highlight':''}">
+      <td data-label="Market">${m.name}</td>
+      <td data-label="Price">₹${m.price}/kg</td>
+      <td data-label="Demand"><span class="badge-pill badge-${m.demand.toLowerCase()}">${m.demand}</span></td>
+      <td data-label="Distance">${m.distance} km</td>
+      <td data-label="Net Realization" style="font-weight:700;color:${m.id==='nashik'?'var(--green-deep)':'inherit'}">₹${m.net}/kg</td>
+    </tr>`).join('');
+
+  return AppShell('dashboard', `
+  <div class="wrap">
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;">
+      <div>
+        <div class="greet">Good morning, ${DEMO.farmer.name.split(' ')[0]}</div>
+        <div class="loc-line">${ICON.pin} ${DEMO.farmer.location}</div>
+      </div>
+      <div class="weather-pill">
+        ${ICON.cloud}
+        <div><div class="temp">${DEMO.weatherToday.temp}°C</div><div class="desc">${DEMO.weatherToday.condition} · ${DEMO.weatherToday.rain}% rain</div></div>
+      </div>
+    </div>
+
+    <div class="dash-grid" style="margin-top:12px">
+      <div>
+        <div class="reco-card">
+          <div class="reco-head">
+            <div><div style="font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:4px;">YOUR NEXT DECISION</div>
+              <h3 style="font-size:18px;">${focusCrop.name} · ${focusCrop.qty} ${focusCrop.unit}</h3></div>
+            <span class="stage-tag ${focusCrop.stageClass}">${focusCrop.stage}</span>
+          </div>
+          <div class="reco-body">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+              <div><div style="font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;">AI RECOMMENDATION</div>${decisionBadge(focusCrop.recommendation)}</div>
+              <div style="text-align:right"><div class="reco-stat"><div class="label">Confidence</div><div class="val">High</div></div></div>
+            </div>
+            <div class="reco-grid">
+              <div class="reco-stat"><div class="label">Best Market</div><div class="val">${focusCrop.bestMarket}</div></div>
+              <div class="reco-stat"><div class="label">Expected Net Realization</div><div class="val" style="color:var(--green-deep)">₹${focusCrop.netRealization}/kg</div></div>
+            </div>
+            <button class="btn btn-primary btn-block" onclick="navigate('decision',{id:'${focusCrop.id}'})">View Recommendation</button>
+          </div>
+        </div>
+
+        <div class="section-title">My Crops <a href="#/crops" class="see-all">See all</a></div>
+        ${cropRows}
+
+        <div class="section-title">Market Snapshot — Tomato <a href="#/market" class="see-all">Full market view</a></div>
+        <div class="card card-pad table-scroll">
+          <table class="data-table">
+            <thead><tr><th>Market</th><th>Price</th><th>Demand</th><th>Distance</th><th>Net Realization</th></tr></thead>
+            <tbody>${marketRows}</tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <div class="card card-pad">
+          <div style="font-weight:800;font-size:14.5px;margin-bottom:14px;">Weather Risk — Next 3 Days</div>
+          <div class="wx-strip">
+            ${DEMO.weather7day.slice(0,3).map((w,i)=>`<div class="wx-day"><div class="d">${w.day}</div><div class="t">${w.temp}°</div><div class="r">${w.rain}% rain</div></div>`).join('')}
+          </div>
+          <div class="alert-box">${ICON.alert}<span>Rain risk increases after Day 2. Consider harvesting near-maturity crops before then.</span></div>
+        </div>
+        <div class="card card-pad" style="margin-top:16px">
+          <div style="font-weight:800;font-size:14.5px;margin-bottom:12px;">Quick Actions</div>
+          <div style="display:flex;flex-direction:column;gap:9px;">
+            <button class="btn btn-outline btn-block" onclick="navigate('add-crop')">${ICON.crop} Add Crop</button>
+            <button class="btn btn-outline btn-block" onclick="navigate('buyers')">${ICON.buyers} Find Buyers</button>
+            <button class="btn btn-outline btn-block" onclick="navigate('create-lot')">${ICON.store} Create Lot</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`);
+}
+
+/* ================================================================
+   PAGE: MY CROPS (list)
+   ================================================================ */
+function PageCrops(){
+  const cards = DEMO.crops.map(c=>`
+    <div class="crop-card" onclick="navigate('crop',{id:'${c.id}'})" style="cursor:pointer">
+      <div class="crop-main">
+        <div class="crop-icon">${c.icon}</div>
+        <div>
+          <div class="crop-name">${c.name} <span style="color:var(--ink-soft);font-weight:500;font-size:12.5px">· ${c.variety}</span></div>
+          <div class="crop-meta">${c.qty} ${c.unit} · ${c.location} · Harvest window: ${c.harvestWindow}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        ${decisionBadge(c.recommendation)}
+        <span class="stage-tag ${c.stageClass}">${c.stage}</span>
+      </div>
+    </div>`).join('');
+  return AppShell('crops', `
+  <div class="wrap">
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+      <h2 style="font-size:22px;">My Crops</h2>
+      <button class="btn btn-primary" onclick="navigate('add-crop')">+ Add Crop</button>
+    </div>
+    <div style="margin-top:18px">${cards}</div>
+  </div>`);
+}
+
+/* ================================================================
+   PAGE: ADD CROP
+   ================================================================ */
+function PageAddCrop(){
+  if(STATE.addCropStage==='processing'){
+    return AppShell('crops', `
+    <div class="wrap" style="max-width:560px">
+      <div class="page-header"><h2 style="font-size:22px;">Analyzing your crop</h2><p style="color:var(--ink-soft);font-size:14px;margin-top:4px;">This usually takes a few seconds.</p></div>
+      <div class="card card-pad">
+        <div class="processing-list" id="proc-list">
+          <div class="proc-item" data-i="0"><div class="proc-check"><div class="spinner"></div></div><span>Analyzing weather conditions</span></div>
+          <div class="proc-item" data-i="1"><div class="proc-check"></div><span>Analyzing market prices</span></div>
+          <div class="proc-item" data-i="2"><div class="proc-check"></div><span>Estimating harvest window</span></div>
+          <div class="proc-item" data-i="3"><div class="proc-check"></div><span>Finding matching buyers</span></div>
+        </div>
+      </div>
+    </div>`);
+  }
+  const f = STATE.addCropForm;
+  return AppShell('crops', `
+  <div class="wrap" style="max-width:720px">
+    <div class="page-header"><h2 style="font-size:22px;">Add Crop</h2><p style="color:var(--ink-soft);font-size:14px;margin-top:4px;">Tell us about your crop so we can analyze conditions.</p></div>
+    <div class="card card-pad">
+      <div class="form-grid">
+        <div class="field"><label>Crop</label>
+          <select id="f-crop">${CROP_OPTIONS.map(c=>`<option ${f.crop===c?'selected':''}>${c}</option>`).join('')}</select>
+        </div>
+        <div class="field"><label>Variety</label><input id="f-variety" type="text" placeholder="e.g. Hybrid F1" value="${f.variety||''}"/></div>
+        <div class="field"><label>Location</label><input id="f-location" type="text" placeholder="e.g. Nashik, Maharashtra" value="${f.location||'Nashik, Maharashtra'}"/></div>
+        <div class="field"><label>Quantity</label><input id="f-qty" type="text" placeholder="e.g. 500 kg" value="${f.qty||''}"/></div>
+        <div class="field"><label>Sowing Date</label><input id="f-sow" type="date" value="${f.sow||''}"/></div>
+        <div class="field"><label>Current Crop Stage</label>
+          <select id="f-stage">${['Sowing','Growing','Near maturity','Harvested'].map(s=>`<option ${f.stage===s?'selected':''}>${s}</option>`).join('')}</select>
+        </div>
+        <div class="field"><label>Expected Harvest Date</label><input id="f-harvest" type="date" value="${f.harvest||''}"/></div>
+      </div>
+      <div class="field" style="margin-top:2px">
+        <label>Crop image (optional)</label>
+        <div class="upload-box">${ICON.camera}<div style="margin-top:8px">Upload a photo of your crop</div></div>
+      </div>
+      <button class="btn btn-primary btn-block" style="margin-top:6px" onclick="submitAddCrop()">Analyze Crop</button>
+    </div>
+  </div>`);
+}
+function submitAddCrop(){
+  STATE.addCropStage='processing';
+  render();
+  const steps = document.querySelectorAll('#proc-list .proc-item');
+  let i=0;
+  function step(){
+    if(i>0){ steps[i-1].classList.add('done'); steps[i-1].querySelector('.proc-check').innerHTML = ICON.check; }
+    if(i<steps.length){ if(i<steps.length) { steps[i].querySelector('.proc-check').innerHTML = '<div class="spinner"></div>'; } i++; setTimeout(step, 700); }
+    else { setTimeout(()=>{ STATE.addCropStage='form'; showToast('Crop analyzed — recommendation ready'); navigate('crop',{id:'tomato'}); }, 500); }
+  }
+  setTimeout(step, 500);
+}
+
+/* ================================================================
+   PAGE: CROP DETAILS
+   ================================================================ */
+function PageCropDetails(params){
+  const c = cropById(params.id || STATE.selectedCropId);
+  return AppShell('crops', `
+  <div class="wrap">
+    <div class="page-header" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h2 style="font-size:22px;">${c.icon} ${c.name}</h2>
+        <p style="color:var(--ink-soft);font-size:14px;margin-top:4px;">${c.qty} ${c.unit} · ${c.location}</p>
+      </div>
+      <button class="btn btn-primary" onclick="navigate('decision',{id:'${c.id}'})">View AI Recommendation ${ICON.arrowRight}</button>
+    </div>
+
+    <div class="dash-grid" style="margin-top:6px">
+      <div>
+        <div class="card card-pad">
+          <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:8px;">
+            <div><div class="reco-stat"><div class="label">Current Stage</div><div class="val">${c.stage}</div></div></div>
+            <div><div class="reco-stat"><div class="label">Estimated Harvest Window</div><div class="val" style="color:var(--green-deep)">${c.harvestWindow}</div></div></div>
+            <div><div class="reco-stat"><div class="label">Expected Harvest Date</div><div class="val">${c.harvestEst}</div></div></div>
+          </div>
+          <div style="font-weight:800;font-size:13.5px;margin:20px 0 4px;">AI-assisted harvest window</div>
+          <div class="hl-timeline">
+            <div class="hl-node done"><div class="bar"></div><div class="lbl">Sowing</div></div>
+            <div class="hl-node done"><div class="bar"></div><div class="lbl">Growth</div></div>
+            <div class="hl-node done"><div class="bar"></div><div class="lbl">Near Maturity</div></div>
+            <div class="hl-node window"><div class="bar"></div><div class="lbl">Best Harvest Window</div></div>
+            <div class="hl-node risk"><div class="bar"></div><div class="lbl">Increasing Weather Risk</div></div>
+          </div>
+          <p class="disclaimer">This is an AI-assisted estimate based on crop stage and weather patterns, not a guaranteed prediction. Field conditions may vary.</p>
+        </div>
+
+        <div class="section-title">Crop Information</div>
+        <div class="card card-pad">
+          <div class="pf-row"><span class="l">Variety</span><span class="v">${c.variety}</span></div>
+          <div class="pf-row"><span class="l">Quantity</span><span class="v">${c.qty} ${c.unit}</span></div>
+          <div class="pf-row"><span class="l">Location</span><span class="v">${c.location}</span></div>
+          <div class="pf-row"><span class="l">Sowing Date</span><span class="v">${c.sowDate}</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="card card-pad">
+          <div style="font-weight:800;font-size:14.5px;margin-bottom:10px;">Current Recommendation</div>
+          ${decisionBadge(c.recommendation)}
+          <div style="margin-top:14px" class="reco-stat"><div class="label">Best Market</div><div class="val">${c.bestMarket}</div></div>
+          ${c.netRealization?`<div style="margin-top:10px" class="reco-stat"><div class="label">Expected Net Realization</div><div class="val" style="color:var(--green-deep)">₹${c.netRealization}/kg</div></div>`:''}
+          <button class="btn btn-outline btn-block" style="margin-top:16px" onclick="navigate('market')">Compare Markets</button>
+        </div>
+      </div>
+    </div>
+  </div>`);
+}
+
+/* ================================================================
+   PAGE: AI DECISION CENTER
+   ================================================================ */
+function PageDecision(params){
+  const c = cropById(params.id || 'tomato');
+  const markets = DEMO.markets.tomato;
+  const rows = markets.map(m=>`
+    <div class="mkt-compare-card ${m.id==='nashik'?'recommended':''}">
+      ${m.id==='nashik'?'<span class="rec-flag">RECOMMENDED</span>':''}
+      <div class="mkt-name">${m.name}</div>
+      <div class="mkt-figs">
+        <div class="mkt-fig"><div class="l">Price</div><div class="v">₹${m.price}/kg</div></div>
+        <div class="mkt-fig"><div class="l">Transport</div><div class="v">₹${m.transport}</div></div>
+        <div class="mkt-fig"><div class="l">Expected Net</div><div class="v net">₹${m.net}/kg</div></div>
+      </div>
+    </div>`).join('');
+  return AppShell('decision', `
+  <div class="wrap">
+    <div class="page-header"><h2 style="font-size:22px;">AI Decision Center</h2><p style="color:var(--ink-soft);font-size:14px;margin-top:4px;">${c.name} · ${c.qty} ${c.unit} · ${c.location}</p></div>
+
+    <div class="card card-pad" style="text-align:center;padding:36px 24px;margin-top:8px">
+      <div style="font-size:12px;font-weight:700;color:var(--ink-soft);letter-spacing:0.03em;margin-bottom:12px;">AI RECOMMENDATION</div>
+      <div style="transform:scale(1.3);display:inline-flex;margin-bottom:10px;">${decisionBadge(c.recommendation)}</div>
+      <div style="max-width:420px;margin:14px auto 0;">
+        <div class="reco-stat" style="text-align:left"><div class="label">Confidence</div>
+          <div class="confidence-track"><div class="confidence-fill" style="width:${c.confidence}%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="alt-row">
+      <div class="alt-card ${c.recommendation==='SELL'?'selected':''}">${c.recommendation==='SELL'?'<span class="picked-tag">AI PICK</span>':''}<div class="alt-badge">${decisionBadge('SELL')}</div><div class="alt-note">Sell to Nashik Market now at ₹29/kg net realization.</div></div>
+      <div class="alt-card ${c.recommendation==='WAIT'?'selected':''}">${c.recommendation==='WAIT'?'<span class="picked-tag">AI PICK</span>':''}<div class="alt-badge">${decisionBadge('WAIT')}</div><div class="alt-note">Hold for 3–4 days if storage is available and weather risk stays low.</div></div>
+      <div class="alt-card ${c.recommendation==='SWITCH'?'selected':''}">${c.recommendation==='SWITCH'?'<span class="picked-tag">AI PICK</span>':''}<div class="alt-badge">${decisionBadge('SWITCH')}</div><div class="alt-note">Move to Ahmednagar Market for a better net realization.</div></div>
+    </div>
+
+    <div class="dash-grid">
+      <div>
+        <div class="section-title">Market Comparison</div>
+        ${rows}
+        <p class="disclaimer">Highest listed price is not always the highest profit — transport cost changes the outcome. Prices shown are demo data.</p>
+      </div>
+      <div>
+        <div class="card card-pad">
+          <div style="font-weight:800;font-size:14.5px;margin-bottom:14px;">Why this recommendation?</div>
+          <div class="reason-list">
+            <div class="reason-item">${ICON.check}<span>Buyer demand is high in Nashik Market</span></div>
+            <div class="reason-item">${ICON.check}<span>Expected net realization is strong at ₹29/kg</span></div>
+            <div class="reason-item">${ICON.check}<span>Transportation cost is manageable at ₹400</span></div>
+            <div class="reason-item">${ICON.check}<span>Weather risk is expected to increase after 2 days</span></div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-block" style="margin-top:16px" onclick="navigate('buyers')">Find Buyers for This Crop</button>
+        <button class="btn btn-outline btn-block" style="margin-top:10px" onclick="navigate('market')">Open Full Market Intelligence</button>
+      </div>
+    </div>
+  </div>`);
+}
+
+/* ================================================================
+   PAGE: MARKET INTELLIGENCE
+   ================================================================ */
+function PageMarket(){
+  const markets = DEMO.markets.tomato;
+  const cards = markets.map(m=>`
+    <div class="mkt-compare-card ${m.id==='nashik'?'recommended':''}">
+      ${m.id==='nashik'?'<span class="rec-flag">BEST NET</span>':''}
+      <div class="mkt-name">${m.name} <span style="font-weight:500;font-size:12px;color:var(--ink-soft)">· ${m.distance} km</span></div>
+      <div class="mkt-figs">
+        <div class="mkt-fig"><div class="l">Price</div><div class="v">₹${m.price}/kg</div></div>
+        <div class="mkt-fig"><div class="l">Demand</div><div class="v"><span class="badge-pill badge-${m.demand.toLowerCase()}">${m.demand}</span></div></div>
+        <div class="mkt-fig"><div class="l">Net Realization</div><div class="v net">₹${m.net}/kg</div></div>
+      </div>
+    </div>`).join('');
+
+  return AppShell('market', `
+  <div class="wrap">
+    <div class="page-header"><h2 style="font-size:22px;">Market Intelligence</h2><p style="color:var(--ink-soft);font-size:14px;margin-top:4px;">Crop: Tomato · Location: Nashik, Maharashtra</p></div>
+
+    <div class="filter-row" style="margin-top:14px">
+      <div class="filter-chip active">${ICON.filter} Distance</div>
+      <div class="filter-chip">Price</div>
+      <div class="filter-chip">Demand</div>
+      <div class="filter-chip">Buyer availability</div>
+    </div>
+
+    <div class="card card-pad">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+        <div style="font-weight:800;font-size:14.5px;">Price Trend — Tomato</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="tabs-row">
+            <div class="tab-btn ${STATE.marketRange==='7'?'active':''}" onclick="STATE.marketRange='7';render()">7 Days</div>
+            <div class="tab-btn ${STATE.marketRange==='30'?'active':''}" onclick="STATE.marketRange='30';render()">30 Days</div>
+          </div>
+          <span class="demo-tag">DEMO DATA</span>
+        </div>
+      </div>
+      <div class="chart-box"><canvas id="priceTrendChart"></canvas></div>
+    </div>
+
+    <div class="section-title">Nearby Markets</div>
+    ${cards}
+  </div>`);
+}
+function renderPriceTrendChart(){
+  const el = document.getElementById('priceTrendChart');
+  if(!el || !window.Chart) return;
+  const labels7 = ['Mon','Tue','Wed','Thu','Fri','Sat','Today'];
+  const labels30 = Array.from({length:30},(_,i)=>`D${i+1}`);
+  const base = DEMO.markets.tomato[0].trend;
+  const data7 = base;
+  const data30 = Array.from({length:30},(_,i)=> 24 + Math.round(Math.sin(i/3)*3) + (i>24? (i-24):0));
+  if(window._priceChart) window._priceChart.destroy();
+  window._priceChart = new Chart(el, {
+    type:'line',
+    data:{ labels: STATE.marketRange==='7'?labels7:labels30,
+      datasets:[{ label:'Nashik Market (₹/kg)', data: STATE.marketRange==='7'?data7:data30,
+        borderColor:'#176B45', backgroundColor:'rgba(23,107,69,0.08)', fill:true, tension:0.35, pointRadius:3, pointBackgroundColor:'#176B45' }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ y:{ grid:{color:'#EEF1EA'}, ticks:{callback:v=>'₹'+v} }, x:{ grid:{display:false} } } }
+  });
+}
+
+/* ================================================================
+   PAGE: BUYER MARKETPLACE
+   ================================================================ */
+function PageBuyers(){
+  const cards = DEMO.buyers.map(b=>`
+    <div class="buyer-card">
+      <div class="buyer-top">
+        <div><h3 style="font-size:16px;">${b.name}</h3>${b.verified?`<span class="verified-tag">${ICON.checkCircle} Verified</span>`:`<span style="font-size:11.5px;color:var(--ink-soft)">Unverified</span>`}</div>
+        <span class="badge-pill badge-high">₹${b.price}/kg</span>
+      </div>
+      <p style="font-size:13.5px;color:var(--ink-soft)">${b.crop} · ${b.qty.toLocaleString()} kg required · Grade ${b.grade}</p>
+      <div class="buyer-facts">
+        <div><div class="l">Distance</div><div class="v">${b.distance} km</div></div>
+        <div><div class="l">Offer valid</div><div class="v">${b.validDays} days</div></div>
+      </div>
+      <div class="buyer-foot">
+        <span style="font-size:12.5px;color:var(--ink-soft)">${b.payment}</span>
+        <button class="btn btn-primary btn-sm" onclick="navigate('buyer',{id:'${b.id}'})">View Buyer</button>
+      </div>
+    </div>`).join('');
+  return AppShell('buyers', `
+  <div class="wrap">
+    <div class="page-header"><h2 style="font-size:22px;">Find Buyers</h2></div>
+    <div class="search-bar"><input type="text" placeholder="Search crop, e.g. Tomato" /><button class="btn btn-outline">Search</button></div>
+    <div class="filter-row">
+      <div class="filter-chip active">${ICON.checkCircle} Verified</div>
+      <div class="filter-chip">Price</div>
+      <div class="filter-chip">Distance</div>
+      <div class="filter-chip">Quantity</div>
+    </div>
+    ${cards}
+  </div>`);
+}
+
+/* ================================================================
+   PAGE: BUYER DETAIL
+   ================================================================ */
+function PageBuyerDetail(params){
+  const b = buyerById(params.id);
+  return AppShell('buyers', `
+  <div class="wrap" style="max-width:680px">
+    <div class="page-header">
+      <h2 style="font-size:22px;">${b.name}</h2>
+      ${b.verified?`<span class="verified-tag">${ICON.checkCircle} Verified buyer</span>`:`<span style="font-size:12.5px;color:var(--ink-soft)">Unverified buyer</span>`}
+    </div>
+    <div class="card card-pad">
+      <div class="pf-row"><span class="l">Required crop</span><span class="v">${b.crop}</span></div>
+      <div class="pf-row"><span class="l">Quantity</span><span class="v">${b.qty.toLocaleString()} kg</span></div>
+      <div class="pf-row"><span class="l">Quality grade</span><span class="v">${b.grade}</span></div>
+      <div class="pf-row"><span class="l">Offered price</span><span class="v" style="color:var(--green-deep)">₹${b.price}/kg</span></div>
+      <div class="pf-row"><span class="l">Location</span><span class="v">${b.location} (${b.distance} km)</span></div>
+      <div class="pf-row"><span class="l">Payment reliability</span><span class="v">${b.payment}</span></div>
+      <div class="pf-row"><span class="l">Offer deadline</span><span class="v">${b.deadline}</span></div>
+    </div>
+    <button class="btn btn-primary btn-block" style="margin-top:16px" onclick="navigate('create-lot',{buyer:'${b.id}'})">Create Lot for Buyer</button>
+  </div>`);
+}
+
+/* ================================================================
+   PAGE: CREATE LOT
+   ================================================================ */
+function PageCreateLot(params){
+  if(STATE.lotJustCreated){
+    const newId = 'KS-2026-00' + (STATE.lots.length);
+    return AppShell('buyers', `
+    <div class="wrap" style="max-width:480px;text-align:center;padding-top:40px">
+      <div class="card card-pad" style="padding:40px 28px">
+        <div style="width:56px;height:56px;border-radius:50%;background:rgba(23,107,69,0.12);color:var(--green-deep);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">${ICON.checkCircle}</div>
+        <h2 style="font-size:20px;margin-bottom:6px;">LOT CREATED</h2>
+        <p style="color:var(--ink-soft);font-size:14px;margin-bottom:18px;">Your lot is now visible to matching buyers.</p>
+        <div class="pf-row"><span class="l">Lot ID</span><span class="v">${newId}</span></div>
+        <div class="pf-row"><span class="l">Status</span><span class="v" style="color:var(--green-deep)">Open for Offers</span></div>
+        <button class="btn btn-primary btn-block" style="margin-top:20px" onclick="STATE.lotJustCreated=false;navigate('my-lots')">View My Lots</button>
+      </div>
+    </div>`);
+  }
+  const buyer = params.buyer ? buyerById(params.buyer) : null;
+  return AppShell('buyers', `
+  <div class="wrap" style="max-width:640px">
+    <div class="page-header"><h2 style="font-size:22px;">Create Lot</h2>${buyer?`<p style="color:var(--ink-soft);font-size:14px;margin-top:4px;">For ${buyer.name}</p>`:''}</div>
+    <div class="card card-pad">
+      <div class="form-grid">
+        <div class="field"><label>Crop</label>
+          <select id="lf-crop">${CROP_OPTIONS.map(c=>`<option ${buyer&&buyer.crop===c?'selected':''}>${c}</option>`).join('')}</select>
+        </div>
+        <div class="field"><label>Quantity (kg)</label><input id="lf-qty" type="text" placeholder="e.g. 500" value="${buyer?'':''}"/></div>
+        <div class="field"><label>Quality Grade</label>
+          <select id="lf-grade"><option>Grade A</option><option>Grade B+</option><option>Grade B</option></select>
+        </div>
+        <div class="field"><label>Harvest Date</label><input id="lf-harvest" type="date" /></div>
+        <div class="field"><label>Location</label><input id="lf-location" type="text" value="Nashik, Maharashtra"/></div>
+        <div class="field"><label>Expected Price (₹/kg)</label><input id="lf-price" type="text" placeholder="e.g. 30"/></div>
+      </div>
+      <div class="field"><label>Photos (optional)</label><div class="upload-box">${ICON.camera}<div style="margin-top:8px">Upload lot photos</div></div></div>
+      <button class="btn btn-primary btn-block" style="margin-top:6px" onclick="submitCreateLot()">Create Lot</button>
+    </div>
+  </div>`);
+}
+function submitCreateLot(){
+  const newLot = { id:'KS-2026-00'+(STATE.lots.length+1), crop:'Tomato', qty:500, status:'Open for Offers', interests:0, expectedPrice:30, created:'Today' };
+  STATE.lots.unshift(newLot);
+  STATE.lotJustCreated = true;
+  render();
+}
+
+/* ================================================================
+   PAGE: MY LOTS
+   ================================================================ */
+function PageMyLots(){
+  STATE.lotsTab = STATE.lotsTab || 'Active';
+  const tabs = ['Active','Sold','Expired'];
+  const filterMap = { Active:'Open for Offers', Sold:'Sold', Expired:'Expired' };
+  const filtered = STATE.lots.filter(l=>l.status===filterMap[STATE.lotsTab]);
+  const cards = filtered.length ? filtered.map(l=>`
+    <div class="lot-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+        <div><h3 style="font-size:15.5px;">${l.crop} · ${l.qty} kg</h3><p style="font-size:12.5px;color:var(--ink-soft);margin-top:3px;">Lot ID: ${l.id} · Created ${l.created}</p></div>
+        <span class="badge-pill ${l.status==='Open for Offers'?'badge-high':l.status==='Sold'?'badge-medium':'badge-low'}">${l.status}</span>
+      </div>
+      <div class="buyer-facts">
+        <div><div class="l">Buyer interests</div><div class="v">${l.interests}</div></div>
+        <div><div class="l">Expected price</div><div class="v">₹${l.expectedPrice}/kg</div></div>
+      </div>
+      <div class="buyer-foot"><span></span><button class="btn btn-outline btn-sm" onclick="navigate('offers',{lot:'${l.id}'})">View Lot</button></div>
+    </div>`).join('') : `<div class="empty-state"><h3>No ${STATE.lotsTab.toLowerCase()} lots</h3><p>Lots you create will appear here.</p></div>`;
+  return AppShell('buyers', `
+  <div class="wrap">
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+      <h2 style="font-size:22px;">My Lots</h2>
+      <button class="btn btn-primary" onclick="navigate('create-lot')">+ Create Lot</button>
+    </div>
+    <div class="status-tabs">${tabs.map(t=>`<div class="status-tab ${STATE.lotsTab===t?'active':''}" onclick="STATE.lotsTab='${t}';render()">${t}</div>`).join('')}</div>
+    ${cards}
+  </div>`);
+}
+
+/* ================================================================
+   PAGE: OFFERS
+   ================================================================ */
+function PageOffers(){
+  const pending = STATE.offers.filter(o=>o.status==='pending');
+  const cards = pending.length ? pending.map(o=>`
+    <div class="offer-card">
+      <div class="buyer-top">
+        <div><h3 style="font-size:15.5px;">${o.buyer}</h3>${o.verified?`<span class="verified-tag">${ICON.checkCircle} Verified</span>`:`<span style="font-size:11.5px;color:var(--ink-soft)">Unverified</span>`}</div>
+        <span class="badge-pill badge-high">₹${o.price}/kg</span>
+      </div>
+      <div class="buyer-facts">
+        <div><div class="l">Quantity</div><div class="v">${o.qty.toLocaleString()} kg</div></div>
+        <div><div class="l">Grade</div><div class="v">${o.grade}</div></div>
+        <div><div class="l">Expires in</div><div class="v" style="color:var(--terracotta)">${o.expires}</div></div>
+      </div>
+      <div class="buyer-foot">
+        <button class="btn btn-danger-outline btn-sm" onclick="rejectOffer('${o.id}')">Reject</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" onclick="showToast('Counter offer sent to '+'${o.buyer}')">Counter Offer</button>
+          <button class="btn btn-primary btn-sm" onclick="acceptOffer('${o.id}')">Accept</button>
+        </div>
+      </div>
+    </div>`).join('') : `<div class="empty-state"><h3>No pending offers</h3><p>New buyer offers on your lots will show up here.</p></div>`;
+  return AppShell('buyers', `
+  <div class="wrap">
+    <div class="page-header"><h2 style="font-size:22px;">Buyer Offers</h2><p style="color:var(--ink-soft);font-size:14px;margin-top:4px;">Lot KS-2026-001 · Tomato · 500 kg</p></div>
+    ${cards}
+  </div>`);
+}
+function acceptOffer(id){
+  const o = STATE.offers.find(x=>x.id===id);
+  if(o) o.status='accepted';
+  showToast('Offer accepted — tracking transaction');
+  navigate('transaction',{id: o?o.lotId:'KS-2026-001'});
+}
+function rejectOffer(id){
+  const o = STATE.offers.find(x=>x.id===id);
+  if(o) o.status='rejected';
+  showToast('Offer rejected');
+  render();
+}
+
+/* ================================================================
+   PAGE: TRANSACTION TRACKING
+   ================================================================ */
+function PageTransaction(){
+  const t = DEMO.transaction;
+  const items = t.stages.map((s,i)=>{
+    const isLast = i===t.stages.length-1;
+    return `<div class="tl-item ${s.done?'highlight':''}">
+      <div class="tl-dot-col"><div class="tl-dot ${s.done?'active':''}"></div>${!isLast?'<div class="tl-line"></div>':''}</div>
+      <div class="tl-content"><h4>${s.label}</h4><p>${s.date}</p></div>
+    </div>`;
+  }).join('');
+  return AppShell('buyers', `
+  <div class="wrap" style="max-width:640px">
+    <div class="page-header"><h2 style="font-size:22px;">Transaction Status</h2><p style="color:var(--ink-soft);font-size:14px;margin-top:4px;">${t.crop} · ${t.qty} kg · Buyer: ${t.buyer} · ₹${t.price}/kg</p></div>
+    <div class="card card-pad">${items}</div>
+  </div>`);
+}
+
+/* ================================================================
+   PAGE: WEATHER
+   ================================================================ */
+function PageWeather(){
+  const days = DEMO.weather7day.map((w,i)=>`
+    <div class="wx-day" style="${i===0?'border-color:var(--green-deep)':''}">
+      <div class="d">${w.day}</div><div class="t">${w.temp}°</div><div class="r">${w.rain}% rain</div>
+      <div style="font-size:11px;color:var(--ink-soft);margin-top:4px;">${w.humidity}% humidity</div>
+    </div>`).join('');
+  return AppShell('weather', `
+  <div class="wrap">
+    <div class="page-header"><h2 style="font-size:22px;">Weather Intelligence</h2><p style="color:var(--ink-soft);font-size:14px;margin-top:4px;">${DEMO.farmer.location}</p></div>
+
+    <div class="card card-pad" style="margin-top:8px">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div style="font-size:44px;">${ICON.cloud}</div>
+        <div>
+          <div style="font-size:30px;font-weight:800;">${DEMO.weatherToday.temp}°C</div>
+          <div style="color:var(--ink-soft);font-size:13.5px;">${DEMO.weatherToday.condition} · ${DEMO.weatherToday.rain}% rain probability · ${DEMO.weatherToday.humidity}% humidity</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">7-Day Forecast</div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px;overflow-x:auto;">${days}</div>
+
+    <div class="card card-pad" style="margin-top:20px">
+      <div style="font-weight:800;font-size:14.5px;margin-bottom:10px;">Agricultural Alert</div>
+      <div class="alert-box">${ICON.alert}<span>Rain probability is expected to increase after Day 2.</span></div>
+      <div style="margin-top:12px;padding:14px 16px;background:var(--bg-soft);border-radius:10px;font-size:13.5px;color:var(--ink-soft);border-left:3px solid var(--green-leaf)">
+        Recommendation: Consider harvesting mature tomato lots before the high-risk period begins.
+      </div>
+    </div>
+  </div>`);
+}
+
+/* ================================================================
+   PAGE: ANALYTICS
+   ================================================================ */
+function PageAnalytics(){
+  const a = DEMO.analytics;
+  return AppShell('analytics', `
+  <div class="wrap">
+    <div class="page-header"><h2 style="font-size:22px;">Farm Performance</h2></div>
+    <div class="metric-grid" style="margin-top:8px">
+      <div class="metric-card"><div class="l">Total Produce</div><div class="v">${a.totalProduce}</div></div>
+      <div class="metric-card"><div class="l">Avg. Realization</div><div class="v">${a.avgRealization}</div></div>
+      <div class="metric-card"><div class="l">Best Market</div><div class="v" style="font-size:16px">${a.bestMarket}</div></div>
+      <div class="metric-card"><div class="l">Active Lots</div><div class="v">${a.activeLots}</div></div>
+      <div class="metric-card"><div class="l">Completed Sales</div><div class="v">${a.completedSales}</div></div>
+    </div>
+
+    <div class="dash-grid" style="margin-top:24px">
+      <div class="card card-pad">
+        <div style="display:flex;justify-content:space-between;"><div style="font-weight:800;font-size:14.5px;margin-bottom:10px;">Price Realization Trend</div><span class="demo-tag">DEMO DATA</span></div>
+        <div class="chart-box"><canvas id="realizationChart"></canvas></div>
+      </div>
+      <div class="card card-pad">
+        <div style="display:flex;justify-content:space-between;"><div style="font-weight:800;font-size:14.5px;margin-bottom:10px;">Crop-wise Performance</div><span class="demo-tag">DEMO DATA</span></div>
+        <div class="chart-box"><canvas id="cropPerfChart"></canvas></div>
+      </div>
+    </div>
+  </div>`);
+}
+function renderAnalyticsCharts(){
+  const a = DEMO.analytics;
+  const el1 = document.getElementById('realizationChart');
+  if(el1 && window.Chart){
+    if(window._realChart) window._realChart.destroy();
+    window._realChart = new Chart(el1, { type:'line',
+      data:{ labels:['W1','W2','W3','W4','W5','W6','W7'], datasets:[{ label:'₹/kg', data:a.priceTrend, borderColor:'#2E8B57', backgroundColor:'rgba(46,139,87,0.08)', fill:true, tension:0.35, pointRadius:3 }]},
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{grid:{color:'#EEF1EA'}}, x:{grid:{display:false}} } } });
+  }
+  const el2 = document.getElementById('cropPerfChart');
+  if(el2 && window.Chart){
+    if(window._cropChart) window._cropChart.destroy();
+    window._cropChart = new Chart(el2, { type:'bar',
+      data:{ labels:a.cropPerf.map(c=>c.crop), datasets:[{ label:'₹/kg', data:a.cropPerf.map(c=>c.val), backgroundColor:['#176B45','#2E8B57','#A85D35','#E88922'] }]},
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{grid:{color:'#EEF1EA'}}, x:{grid:{display:false}} } } });
+  }
+}
+
+/* ================================================================
+   PAGE: FPO DASHBOARD
+   ================================================================ */
+function PageFPO(){
+  const f = DEMO.fpo;
+  const total = f.farmers.reduce((s,x)=>s+x.qty,0);
+  const rows = f.farmers.map(x=>`<tr><td data-label="Farmer">${x.name}</td><td data-label="Crop">${x.crop}</td><td data-label="Quantity">${x.qty} kg</td></tr>`).join('');
+  return AppShell('dashboard', `
+  <div class="wrap">
+    <div class="page-header"><h2 style="font-size:22px;">${f.name}</h2><p style="color:var(--ink-soft);font-size:14px;margin-top:4px;">FPO Dashboard</p></div>
+    <div class="metric-grid" style="margin-top:8px">
+      <div class="metric-card"><div class="l">Farmers</div><div class="v">${f.farmers.length}</div></div>
+      <div class="metric-card"><div class="l">Total Produce</div><div class="v">${total} kg</div></div>
+      <div class="metric-card"><div class="l">Active Lots</div><div class="v">2</div></div>
+      <div class="metric-card"><div class="l">Buyer Interest</div><div class="v">4</div></div>
+      <div class="metric-card"><div class="l">Expected Value</div><div class="v">₹${(total*29).toLocaleString()}</div></div>
+    </div>
+    <div class="section-title">Contributing Farmers — Tomato</div>
+    <div class="card card-pad table-scroll">
+      <table class="data-table"><thead><tr><th>Farmer</th><th>Crop</th><th>Quantity</th></tr></thead>
+      <tbody>${rows}<tr class="highlight"><td data-label="Farmer" style="font-weight:700">Total</td><td data-label="Crop"></td><td data-label="Quantity" style="font-weight:700">${total} kg</td></tr></tbody></table>
+    </div>
+    <button class="btn btn-primary" style="margin-top:18px" onclick="navigate('create-lot')">Create Aggregated Lot</button>
+  </div>`);
+}
+
+/* ================================================================
+   PAGE: PROFILE / SETTINGS
+   ================================================================ */
+function PageProfile(){
+  const langs = ['English','हिन्दी','मराठी','తెలుగు'];
+  return AppShell('profile', `
+  <div class="wrap" style="max-width:680px">
+    <div class="page-header"><h2 style="font-size:22px;">Profile &amp; Settings</h2></div>
+
+    <div class="card card-pad">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px;">
+        <span class="avatar" style="width:52px;height:52px;font-size:18px;">${DEMO.farmer.initials}</span>
+        <div><h3 style="font-size:17px;">${DEMO.farmer.name}</h3><p style="font-size:13px;color:var(--ink-soft);">Farmer · ${DEMO.farmer.location}</p></div>
+      </div>
+      <div class="pf-row"><span class="l">Mobile</span><span class="v">98765 43210</span></div>
+      <div class="pf-row"><span class="l">Farm location</span><span class="v">Niphad, Nashik, Maharashtra</span></div>
+      <div class="pf-row"><span class="l">Land under cultivation</span><span class="v">2 acres</span></div>
+    </div>
+
+    <div class="section-title">Crops &amp; Preferred Markets</div>
+    <div class="card card-pad">
+      <div class="pf-row"><span class="l">Crops grown</span><span class="v">Tomato, Onion, Potato</span></div>
+      <div class="pf-row"><span class="l">Preferred markets</span><span class="v">Nashik, Ahmednagar, Pune</span></div>
+    </div>
+
+    <div class="section-title">Language</div>
+    <div class="card card-pad">
+      <div class="lang-grid">${langs.map(l=>`<div class="lang-opt ${STATE.lang===l?'selected':''}" onclick="STATE.lang='${l}';render()">${l}</div>`).join('')}</div>
+    </div>
+
+    <div class="section-title">Notifications</div>
+    <div class="card card-pad">
+      <div class="pf-row"><span class="l">Price alerts</span><span class="v">On</span></div>
+      <div class="pf-row"><span class="l">Weather risk alerts</span><span class="v">On</span></div>
+      <div class="pf-row"><span class="l">Buyer offer alerts</span><span class="v">On</span></div>
+    </div>
+  </div>`);
+}
+
+/* ---------------- MAIN RENDER DISPATCH ---------------- */
+function render(){
+  const { path, params } = parseHash();
+  let html = '';
+  let afterRender = null;
+  switch(path){
+    case '': case 'landing': html = PageLanding(); break;
+    case 'login': html = PageLogin(); break;
+    case 'onboarding': html = PageOnboarding(); break;
+    case 'dashboard': html = PageDashboard(); break;
+    case 'crops': html = PageCrops(); break;
+    case 'add-crop': html = PageAddCrop(); break;
+    case 'crop': html = PageCropDetails(params); break;
+    case 'decision': html = PageDecision(params); break;
+    case 'market': html = PageMarket(); afterRender = renderPriceTrendChart; break;
+    case 'buyers': html = PageBuyers(); break;
+    case 'buyer': html = PageBuyerDetail(params); break;
+    case 'create-lot': html = PageCreateLot(params); break;
+    case 'my-lots': html = PageMyLots(); break;
+    case 'offers': html = PageOffers(); break;
+    case 'transaction': html = PageTransaction(); break;
+    case 'weather': html = PageWeather(); break;
+    case 'analytics': html = PageAnalytics(); afterRender = renderAnalyticsCharts; break;
+    case 'fpo': html = PageFPO(); break;
+    case 'profile': html = PageProfile(); break;
+    default: html = PageLanding();
+  }
+  document.getElementById('app').innerHTML = html;
+  window.scrollTo(0,0);
+  if(afterRender) setTimeout(afterRender, 30);
+}
+// expose functions used in inline handlers
+window.navigate = navigate; window.render = render; window.STATE = STATE; window.showToast = showToast;
+window.toggleOnboardCrop = toggleOnboardCrop; window.toggleOnboardMarket = toggleOnboardMarket;
+window.onboardBack = onboardBack; window.onboardNext = onboardNext;
+window.handleLogin = handleLogin; window.submitAddCrop = submitAddCrop; window.submitCreateLot = submitCreateLot;
+window.acceptOffer = acceptOffer; window.rejectOffer = rejectOffer;
+window.toggleMobileMenu = toggleMobileMenu; window.closeMobileMenu = closeMobileMenu; window.toggleNotif = toggleNotif;
+window.scrollToHow = scrollToHow;
+</script>
+</body>
+</html>
