@@ -13,6 +13,7 @@ import {
 import { CropCard } from "../components/CropCard";
 import { DecisionBadge } from "../components/DecisionBadge";
 import { FarmTodayCard } from "../components/FarmTodayCard";
+import { MarketIntelligenceSummaryCard } from "../components/MarketIntelligenceSummaryCard";
 import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
 import { weatherByLocation, marketsByCrop } from "../data/demo";
@@ -102,6 +103,9 @@ export function DashboardPage() {
 
       {/* Phase 4: Farm Intelligence Engine - Your Farm Today */}
       <FarmTodayCard farmerId={user?.id ? Number(user.id) : 1} />
+
+      {/* Phase 5: Market Intelligence & Price Discovery Summary */}
+      <MarketIntelligenceSummaryCard cropName={focusCrop?.name || "Tomato"} quantityQuintals={30} />
 
       {/* Main Grid: Decision + Crops on Left, Weather + Quick Actions on Right */}
       <div className="grid-2" style={{ gridTemplateColumns: "1.25fr 0.75fr", marginTop: 12 }}>

@@ -79,14 +79,20 @@ class MarketPrice(Base):
     __tablename__ = "market_prices"
 
     id = Column(Integer, primary_key=True, index=True)
-    market_id = Column(Integer, ForeignKey("markets.id", ondelete="CASCADE"), nullable=False)
+    market_id = Column(Integer, ForeignKey("markets.id", ondelete="CASCADE"), nullable=False, index=True)
     crop_name = Column(String(100), nullable=False, index=True)
-    price = Column(Float, nullable=False)
+    price = Column(Float, nullable=False)  # Primary benchmark (modal price)
+    min_price = Column(Float, nullable=True)
+    max_price = Column(Float, nullable=True)
+    modal_price = Column(Float, nullable=True)
+    arrival_quantity = Column(Float, nullable=True)  # in Quintals / MT
+    source = Column(String(100), default="APMC Mandi Bulletin")  # "APMC Mandi", "Agmarknet Feed", "Demo Mandi Benchmark"
     unit = Column(String(20), default="kg")
-    date = Column(String(50), nullable=False)
+    date = Column(String(50), nullable=False, index=True)
 
     # Relationship
     market = relationship("Market", back_populates="prices")
+
 
 
 class Buyer(Base):

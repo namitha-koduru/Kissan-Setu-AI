@@ -12,6 +12,7 @@ from .chat import router as chat_router
 from .images import router as images_router
 from .soil import router as soil_router
 from .farm_intelligence import router as farm_intelligence_router
+from .market_intelligence import router as market_intelligence_router
 
 __all__ = [
     "auth_router",
@@ -28,5 +29,7 @@ __all__ = [
     "images_router",
     "soil_router",
     "farm_intelligence_router",
+    "market_intelligence_router",
 ]
+
 

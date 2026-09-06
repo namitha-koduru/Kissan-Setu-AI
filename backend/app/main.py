@@ -21,6 +21,7 @@ from app.routers import (
     images_router,
     soil_router,
     farm_intelligence_router,
+    market_intelligence_router,
 )
 
 
@@ -92,6 +93,7 @@ app.include_router(chat_router, prefix="/api")
 app.include_router(images_router, prefix="/api")
 app.include_router(soil_router, prefix="/api")
 app.include_router(farm_intelligence_router, prefix="/api")
+app.include_router(market_intelligence_router, prefix="/api")
 
 
 @app.get("/", tags=["Root"])

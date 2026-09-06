@@ -123,31 +123,47 @@ def seed_database(db: Session):
         db.refresh(m_vashi)
         db.refresh(m_pimpalgaon)
 
-        # Market Prices
-        print("[Seeder] Seeding mandi crop prices...")
-        prices = [
-            MarketPrice(market_id=m_lasalgaon.id, crop_name="Tomato", price=26.50, unit="kg", date="2026-09-06"),
-            MarketPrice(market_id=m_lasalgaon.id, crop_name="Onion", price=19.20, unit="kg", date="2026-09-06"),
-            MarketPrice(market_id=m_lasalgaon.id, crop_name="Grapes", price=58.00, unit="kg", date="2026-09-06"),
+        # Market Prices (Seeding Current and Historical Series)
+        print("[Seeder] Seeding mandi crop prices with historical series...")
+        today = datetime.now()
+        prices = []
 
-            MarketPrice(market_id=m_nashik.id, crop_name="Tomato", price=24.50, unit="kg", date="2026-09-06"),
-            MarketPrice(market_id=m_nashik.id, crop_name="Onion", price=18.00, unit="kg", date="2026-09-06"),
-            MarketPrice(market_id=m_nashik.id, crop_name="Grapes", price=55.00, unit="kg", date="2026-09-06"),
-
-            MarketPrice(market_id=m_pune.id, crop_name="Tomato", price=28.00, unit="kg", date="2026-09-06"),
-            MarketPrice(market_id=m_pune.id, crop_name="Onion", price=21.00, unit="kg", date="2026-09-06"),
-            MarketPrice(market_id=m_pune.id, crop_name="Grapes", price=62.00, unit="kg", date="2026-09-06"),
-
-            MarketPrice(market_id=m_vashi.id, crop_name="Tomato", price=31.00, unit="kg", date="2026-09-06"),
-            MarketPrice(market_id=m_vashi.id, crop_name="Onion", price=23.50, unit="kg", date="2026-09-06"),
-            MarketPrice(market_id=m_vashi.id, crop_name="Grapes", price=68.00, unit="kg", date="2026-09-06"),
-
-            MarketPrice(market_id=m_pimpalgaon.id, crop_name="Tomato", price=25.00, unit="kg", date="2026-09-06"),
-            MarketPrice(market_id=m_pimpalgaon.id, crop_name="Onion", price=19.80, unit="kg", date="2026-09-06"),
-            MarketPrice(market_id=m_pimpalgaon.id, crop_name="Grapes", price=56.00, unit="kg", date="2026-09-06"),
+        mandi_list = [
+            (m_lasalgaon, {"Tomato": 28.50, "Onion": 19.50, "Grapes": 68.00}),
+            (m_nashik, {"Tomato": 26.70, "Onion": 18.20, "Grapes": 64.00}),
+            (m_pune, {"Tomato": 29.80, "Onion": 21.00, "Grapes": 72.00}),
+            (m_vashi, {"Tomato": 32.00, "Onion": 23.50, "Grapes": 78.00}),
+            (m_pimpalgaon, {"Tomato": 27.20, "Onion": 20.10, "Grapes": 66.00}),
         ]
+
+        for m_obj, crop_map in mandi_list:
+            for crop_k, base_p in crop_map.items():
+                for day_offset in range(14, -1, -1):
+                    d_date = (today - timedelta(days=day_offset)).strftime("%Y-%m-%d")
+                    # Realistic minor fluctuation
+                    p_modal = round(base_p - (day_offset * 0.15) + (1.2 if day_offset % 3 == 0 else -0.4), 2)
+                    p_min = round(p_modal * 0.93, 2)
+                    p_max = round(p_modal * 1.07, 2)
+                    arrival_qtl = round(450.0 + (day_offset * 12.0), 0)
+
+                    prices.append(
+                        MarketPrice(
+                            market_id=m_obj.id,
+                            crop_name=crop_k,
+                            price=p_modal,
+                            modal_price=p_modal,
+                            min_price=p_min,
+                            max_price=p_max,
+                            arrival_quantity=arrival_qtl,
+                            source="APMC Mandi Bulletin (Demo Stream)",
+                            unit="kg",
+                            date=d_date
+                        )
+                    )
+
         db.add_all(prices)
         db.commit()
+
 
     # 4. Buyers
     if db.query(Buyer).count() == 0:

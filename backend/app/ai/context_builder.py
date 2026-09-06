@@ -1,7 +1,8 @@
 """
 Context Builder for KissanSetuAI Farmer Assistant.
 Aggregates Farmer Profile, Crops, Soil Profile, Weather Intelligence Signals, Farm Risks,
-Recommendations, and Mandi Intelligence into a concise, structured context block for the LLM.
+Crop Suitability, and Market Intelligence (Prices, Trends, Forecasts, Best Market Net Realization, Buyer Demand)
+into a concise, structured context block for the LLM.
 """
 
 from typing import Optional
@@ -12,6 +13,7 @@ from app.services.weather_intelligence import weather_intelligence_service
 from app.services.soil_service import soil_service
 from app.services.farm_risk_service import farm_risk_service
 from app.services.crop_suitability_engine import crop_suitability_engine
+from app.services.market_intelligence_service import market_intelligence_service
 
 
 class FarmContextBuilder:
@@ -25,6 +27,7 @@ class FarmContextBuilder:
 
         location_district = "Nashik"
         location_state = "Maharashtra"
+        primary_crop_name = "Tomato"
 
         if farmer:
             location_district = farmer.district or "Nashik"
@@ -45,6 +48,7 @@ class FarmContextBuilder:
                         f"Soil: '{c.soil_type or 'Loam'}', Sowing Date: {c.sowing_date or 'Not recorded'}"
                     )
                 parts.append("- Active Farmer Crops:\n" + "\n".join(crop_lines))
+                primary_crop_name = crops[0].crop_name
             else:
                 crops = []
 
@@ -111,23 +115,46 @@ class FarmContextBuilder:
         except Exception:
             pass
 
-        # 6. Mandi Market Price Snapshot
+        # 6. Structured Market Intelligence & Selling Decision (Phase 5)
         try:
-            mandi_prices = (
-                db.query(MarketPrice, Market)
-                .join(Market, MarketPrice.market_id == Market.id)
-                .filter(Market.district.ilike(f"%{location_district}%"))
-                .limit(3)
-                .all()
+            market_overview = market_intelligence_service.get_market_intelligence_overview(
+                db=db,
+                crop_name=primary_crop_name,
+                farmer_id=farmer.id if farmer else 1
             )
-            if mandi_prices:
-                price_strs = [
-                    f"{p.MarketPrice.crop_name} at {p.Market.name}: ₹{p.MarketPrice.price}/{p.MarketPrice.unit}"
-                    for p in mandi_prices
-                ]
-                parts.append(f"- Nearby Mandi Benchmarks: {'; '.join(price_strs)}")
+            parts.append(
+                f"- Market Intelligence ({primary_crop_name}): Current Price = ₹{market_overview.current_price.current_modal_price}/Qtl (₹{market_overview.current_price.current_price_per_kg}/kg), "
+                f"7D Trend = {market_overview.trend.get('direction', 'stable').upper()} ({market_overview.trend.get('change_7d_percent', 0)}%), "
+                f"3-Day Forecast = ₹{market_overview.forecast.expected_price_qtl}/Qtl (Range: ₹{market_overview.forecast.expected_range_qtl[0]}–₹{market_overview.forecast.expected_range_qtl[1]})"
+            )
+            parts.append(
+                f"- AI Selling Signal: {market_overview.decision.action} ({market_overview.decision.action_label}) - {market_overview.decision.headline}"
+            )
+            parts.append(
+                f"- Recommended Best Market: {market_overview.best_market.market_name} (Estimated Net Realization: ₹{int(market_overview.best_market.estimated_net_realization)} / ₹{market_overview.best_market.net_price_per_kg}/kg in-hand after freight)"
+            )
+            if market_overview.best_buyer:
+                parts.append(
+                    f"- Best Institutional Buyer Opportunity: {market_overview.best_buyer.name} (Indicative Offer: ₹{market_overview.best_buyer.indicative_offer_qtl}/Qtl, {market_overview.best_buyer.verification_status})"
+                )
         except Exception:
-            pass
+            # Fallback basic Mandi Market Price Snapshot
+            try:
+                mandi_prices = (
+                    db.query(MarketPrice, Market)
+                    .join(Market, MarketPrice.market_id == Market.id)
+                    .filter(Market.district.ilike(f"%{location_district}%"))
+                    .limit(3)
+                    .all()
+                )
+                if mandi_prices:
+                    price_strs = [
+                        f"{p.MarketPrice.crop_name} at {p.Market.name}: ₹{p.MarketPrice.price}/{p.MarketPrice.unit}"
+                        for p in mandi_prices
+                    ]
+                    parts.append(f"- Nearby Mandi Benchmarks: {'; '.join(price_strs)}")
+            except Exception:
+                pass
 
         return "\n".join(parts) if parts else "General Indian Agronomic Context."
 

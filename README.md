@@ -45,6 +45,8 @@ KissanSetuAI/
 │   ├── pages/                   # 19 Full-featured interactive views
 │   ├── services/                # Centralized frontend API services
 │   │   ├── api.ts               # Core Axios/Fetch client
+│   │   ├── marketIntelligenceApi.ts # Phase 5: Price Discovery & Net Realization API
+│   │   ├── farmIntelligenceApi.ts   # Phase 4: Soil, Weather & Farm Advisory API
 │   │   ├── farmerApi.ts         # Farmer profile service
 │   │   ├── cropApi.ts           # Crop lifecycle & harvest service
 │   │   ├── marketApi.ts         # Mandi price discovery service
