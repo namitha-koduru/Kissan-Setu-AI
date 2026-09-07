@@ -132,11 +132,32 @@ export function TransactionPage() {
     if (!nextUnfinished) return;
 
     try {
-      await buyerMatchingApi.advanceTransactionStage(txDetail.id, {
-        stage_id: nextUnfinished.id,
-        stage_label: nextUnfinished.stage_label,
-        description: `Stage completed at ${new Date().toLocaleTimeString()}`,
-      });
+      const stageLower = nextUnfinished.stage_label.toLowerCase();
+      if (stageLower.includes("pickup") || stageLower.includes("schedule")) {
+        await buyerMatchingApi.updateLogistics(txDetail.id, {
+          logistics_status: "SCHEDULED",
+          pickup_location: txDetail.pickup_location,
+        });
+      } else if (stageLower.includes("transit") || stageLower.includes("dispatch")) {
+        await buyerMatchingApi.updateLogistics(txDetail.id, {
+          logistics_status: "IN_TRANSIT",
+          pickup_location: txDetail.pickup_location,
+        });
+      } else if (stageLower.includes("delivery") || stageLower.includes("settlement")) {
+        await buyerMatchingApi.updateLogistics(txDetail.id, {
+          logistics_status: "DELIVERED",
+          pickup_location: txDetail.pickup_location,
+        });
+      } else if (stageLower.includes("payment")) {
+        await buyerMatchingApi.recordPayment(txDetail.id, {
+          paid_amount: txDetail.total_amount,
+          payment_status: "RECEIVED",
+        });
+      } else {
+        await buyerMatchingApi.updateLogistics(txDetail.id, {
+          logistics_status: "IN_TRANSIT",
+        });
+      }
       showToast(`Advanced to next step: ${nextUnfinished.stage_label}`);
       loadTransaction();
     } catch (err: any) {

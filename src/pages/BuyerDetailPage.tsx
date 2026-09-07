@@ -105,7 +105,7 @@ export function BuyerDetailPage() {
     return (
       <div className="wrap" style={{ maxWidth: 760, textAlign: "center", padding: "60px 20px" }}>
         <RefreshCw size={32} className="animate-spin" color="var(--green-deep)" style={{ margin: "0 auto 16px" }} />
-        <h3 style={{ fontSize: "18px", fontWeight: 800 }}>Evaluating Smart Buyer Profile & Net Advantage...</h3>
+        <h3 style={{ fontSize: "18px", fontWeight: 800 }}>{t("common.loading", "Evaluating Smart Buyer Profile & Net Advantage...")}</h3>
       </div>
     );
   }
@@ -116,7 +116,7 @@ export function BuyerDetailPage() {
         <h2>Buyer Profile Not Found</h2>
         <p style={{ color: "var(--ink-soft)", marginTop: 6 }}>The requested buyer could not be retrieved.</p>
         <Link to="/buyers" className="btn btn-primary" style={{ marginTop: 16 }}>
-          Back to Buyer Marketplace
+          {t("common.back", "Back to")} {t("nav.buyers", "Buyer Marketplace")}
         </Link>
       </div>
     );
@@ -132,7 +132,7 @@ export function BuyerDetailPage() {
           to="/buyers"
           style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--ink-soft)", fontWeight: 600 }}
         >
-          <ArrowLeft size={14} /> Back to Buyer Marketplace
+          <ArrowLeft size={14} /> {t("common.back", "Back to")} {t("nav.buyers", "Buyer Marketplace")}
         </Link>
       </div>
 
