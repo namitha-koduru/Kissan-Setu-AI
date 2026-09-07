@@ -302,6 +302,19 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const addLot = useCallback(
     (lot: LotRecord) => {
       setLots((prev) => [lot, ...prev]);
+      // Also automatically populate matching prospective offer for immediate acceptance testing
+      const matchingOffer: OfferRecord = {
+        id: `off-${lot.id.replace(/[^0-9]/g, "") || Date.now()}`,
+        lotId: lot.id,
+        buyerName: "Sahyadri Farmers Producer Co.",
+        verified: true,
+        pricePerKg: Math.max(lot.expectedPrice, 32),
+        quantityKg: lot.quantityKg,
+        quality: lot.quality || "Grade A",
+        expiresInDays: "2 days",
+        status: "Pending",
+      };
+      setOffers((prev) => [matchingOffer, ...prev]);
       showToast(`Lot ${lot.id} created and opened for buyer offers.`);
     },
     [showToast],
@@ -313,19 +326,29 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       if (status === "Accepted") {
         const found = offers.find((o) => o.id === id);
         if (found) {
+          const associatedLot = lots.find((l) => l.id === found.lotId);
+          const finalCrop = associatedLot?.crop || "Tomato";
+          const finalQty = found.quantityKg || associatedLot?.quantityKg || 500;
+          const finalPrice = found.pricePerKg || 32;
+
           setLots((prev) =>
             prev.map((l) => (l.id === found.lotId ? { ...l, status: "Offer Accepted" } : l)),
           );
-          setTransaction((prev) => ({
-            ...prev,
+          setTransaction({
+            id: `TX-2026-${found.lotId.replace(/[^0-9]/g, "") || "001"}`,
             lotId: found.lotId,
             buyerName: found.buyerName,
-            pricePerKg: found.pricePerKg,
-            quantityKg: found.quantityKg,
-            stages: prev.stages.map((s, idx) =>
-              idx <= 2 ? { ...s, done: true } : s,
-            ),
-          }));
+            crop: finalCrop,
+            pricePerKg: finalPrice,
+            quantityKg: finalQty,
+            stages: [
+              { label: "Contract Confirmed & Verified", done: true, date: "Today, 10:30 AM" },
+              { label: "Logistics & Pickup Scheduled", done: true, date: "Today, 11:15 AM" },
+              { label: "Produce In Transit", done: false, date: "Pending" },
+              { label: "Weighing & Quality Acceptance", done: false, date: "Pending" },
+              { label: "Payment Record & Settlement", done: false, date: "Pending" },
+            ],
+          });
         }
         showToast("Offer accepted! Transaction tracking initialized.");
       } else if (status === "Rejected") {
@@ -334,7 +357,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         showToast("Counter offer sent to buyer.");
       }
     },
-    [offers, showToast],
+    [offers, lots, showToast],
   );
 
   const addOffer = useCallback((offer: OfferRecord) => {

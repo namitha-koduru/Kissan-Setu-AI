@@ -23,7 +23,7 @@ import { DigitalReceiptModal } from "../components/DigitalReceiptModal";
 export function TransactionPage() {
   const { user } = useAuth();
   const [params] = useSearchParams();
-  const { transaction: localTx, showToast } = useAppState();
+  const { transaction: localTx, lots, crops, showToast } = useAppState();
   const { t } = useLanguage();
 
   const userDistrict = user?.district || (user?.location ? user.location.split(",")[0].trim() : "Farm Location");
@@ -46,52 +46,70 @@ export function TransactionPage() {
   const [pickupLocation, setPickupLocation] = useState(userLocStr);
   const [transportCost, setTransportCost] = useState(800);
 
-  const [paidAmount, setPaidAmount] = useState(72000);
-  const [paymentStatus, setPaymentStatus] = useState("PAID");
-  const [paymentRef, setPaymentRef] = useState("UTR-HDFC-98234190");
+  const [paidAmount, setPaidAmount] = useState(0);
+  const [paymentStatus, setPaymentStatus] = useState("PENDING");
+  const [paymentRef, setPaymentRef] = useState(`TXN-SETU-${txIdParam}`);
 
   const loadTransaction = async () => {
     try {
       setLoading(true);
-      const data = await buyerMatchingApi.getTransactionDetail(Number(txIdParam));
-      setTxDetail(data);
-      setLogisticsStatus(data.logistics_status || "PICKUP_SCHEDULED");
-      setPaidAmount(data.paid_amount || data.total_amount);
-      setPaymentStatus(data.payment_status || "PENDING");
-    } catch (err) {
-      console.warn("Falling back to local transaction state", err);
-      // Construct consistent fallback using authenticated user and local lot data
-      const finalQty = localTx.quantityKg || 500;
-      const finalRate = localTx.pricePerKg || 32;
-      setTxDetail({
-        id: Number(txIdParam) || 1,
-        lot_id: 1,
-        buyer_name: localTx.buyerName || "Sahyadri Farmer Producer Co.",
-        buyer_organization: "Sahyadri Agro Processing",
-        crop_name: localTx.crop || "Tomato",
-        quantity_kg: finalQty,
-        final_price: finalRate,
-        total_amount: finalRate * finalQty,
-        status: "PICKUP_SCHEDULED",
-        logistics_status: "PICKUP_SCHEDULED",
-        pickup_date: "2026-09-08",
-        pickup_location: userLocStr,
-        delivery_location: "Sahyadri Central Processing Hub",
-        transport_cost_actual: 800,
-        payment_status: "PENDING",
-        expected_amount: finalRate * finalQty,
-        paid_amount: 0,
-        payment_reference: "",
-        created_at: new Date().toISOString(),
-        events: [
-          { id: 1, stage_label: "Contract Confirmed & Verified", description: "Farmer accepted procurement offer at agreed farmgate terms", done: true, created_at: "Today, 10:30 AM" },
-          { id: 2, stage_label: "Logistics & Pickup Scheduled", description: `Farm-gate pickup scheduled at ${userLocStr} (Vehicle: AP-16-EV-2026)`, done: true, created_at: "Today, 11:15 AM" },
-          { id: 3, stage_label: "Produce In Transit", description: "Produce loaded and dispatched to regional processing hub", done: false, created_at: "Pending" },
-          { id: 4, stage_label: "Weighing & Quality Acceptance", description: "Digital weighing scale sync and Grade A quality verification", done: false, created_at: "Pending" },
-          { id: 5, stage_label: "Payment Record & Settlement", description: "Direct bank transfer credit to farmer registered bank account", done: false, created_at: "Pending" },
-        ],
-        disputes: [],
-      });
+      const activeLot = lots.find((l) => l.id === localTx.lotId) || lots[0];
+      const activeCrop = crops.find((c) => c.name.toLowerCase() === (localTx.crop || activeLot?.crop || "").toLowerCase()) || crops[0];
+      const finalQty = (localTx.quantityKg && localTx.quantityKg > 0)
+        ? localTx.quantityKg
+        : (activeLot?.quantityKg || activeCrop?.quantityKg || 500);
+      const finalRate = (localTx.pricePerKg && localTx.pricePerKg > 0)
+        ? localTx.pricePerKg
+        : (activeLot?.expectedPrice || activeCrop?.expectedPrice || 32);
+      const finalCrop = localTx.crop || activeLot?.crop || activeCrop?.name || "Tomato";
+      const finalBuyer = localTx.buyerName || "Sahyadri Farmers Producer Co.";
+      const total = finalRate * finalQty;
+
+      // Try fetching backend detail
+      let backendData: TransactionDetailResponse | null = null;
+      try {
+        backendData = await buyerMatchingApi.getTransactionDetail(Number(txIdParam));
+      } catch {}
+
+      if (backendData && localTx.quantityKg && backendData.quantity_kg === localTx.quantityKg) {
+        setTxDetail(backendData);
+        setLogisticsStatus(backendData.logistics_status || "PICKUP_SCHEDULED");
+        setPaidAmount(backendData.paid_amount || 0);
+        setPaymentStatus(backendData.payment_status || "PENDING");
+      } else {
+        setTxDetail({
+          id: Number(txIdParam) || 1,
+          lot_id: Number((activeLot?.id || localTx.lotId || "1").replace(/[^0-9]/g, "")) || 1,
+          buyer_name: finalBuyer,
+          buyer_organization: "Sahyadri Agro Processing Hub",
+          crop_name: finalCrop,
+          quantity_kg: finalQty,
+          final_price: finalRate,
+          total_amount: total,
+          status: "PICKUP_SCHEDULED",
+          logistics_status: "PICKUP_SCHEDULED",
+          pickup_date: "2026-09-08",
+          pickup_location: userLocStr,
+          delivery_location: "Sahyadri Central Processing Hub",
+          transport_cost_actual: 800,
+          payment_status: "PENDING",
+          expected_amount: total,
+          paid_amount: 0,
+          payment_reference: "",
+          created_at: new Date().toISOString(),
+          events: [
+            { id: 1, stage_label: "Contract Confirmed & Verified", description: "Farmer accepted procurement offer at agreed farmgate terms", done: true, created_at: "Today, 10:30 AM" },
+            { id: 2, stage_label: "Logistics & Pickup Scheduled", description: `Farm-gate pickup scheduled at ${userLocStr} (Vehicle: AP-16-EV-2026)`, done: true, created_at: "Today, 11:15 AM" },
+            { id: 3, stage_label: "Produce In Transit", description: "Produce loaded and dispatched to regional processing hub", done: false, created_at: "Pending" },
+            { id: 4, stage_label: "Weighing & Quality Acceptance", description: "Digital weighing scale sync and Grade A quality verification", done: false, created_at: "Pending" },
+            { id: 5, stage_label: "Payment Record & Settlement", description: "Direct bank transfer credit to farmer registered bank account", done: false, created_at: "Pending" },
+          ],
+          disputes: [],
+        });
+        setLogisticsStatus("PICKUP_SCHEDULED");
+        setPaidAmount(0);
+        setPaymentStatus("PENDING");
+      }
     } finally {
       setLoading(false);
     }
@@ -99,7 +117,7 @@ export function TransactionPage() {
 
   useEffect(() => {
     loadTransaction();
-  }, [txIdParam]);
+  }, [txIdParam, localTx, lots]);
 
   const handleUpdateLogistics = async (e: React.FormEvent) => {
     e.preventDefault();

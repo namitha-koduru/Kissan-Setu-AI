@@ -25,6 +25,15 @@ export function DashboardPage() {
   const [locationModalOpen, setLocationModalOpen] = useState(false);
 
   const hasCrops = crops.length > 0;
+  const preferredCropsList: string[] = Array.isArray(user?.preferredCrops)
+    ? (user.preferredCrops as string[])
+    : typeof user?.preferredCrops === "string"
+    ? [(user.preferredCrops as string)]
+    : [];
+  const profileCrops: string[] = preferredCropsList.filter(
+    (pc: string) => !crops.some((c) => c.name.toLowerCase() === pc.toLowerCase())
+  );
+  const hasAnyCrops = crops.length > 0 || profileCrops.length > 0;
   const activeCrop = hasCrops ? (crops[selectedCropIndex] || crops[0]) : null;
 
   const userDistrict = user?.district || (user?.location ? user.location.split(",")[0].trim() : "Farm Location");
@@ -130,34 +139,37 @@ export function DashboardPage() {
         </div>
 
         <div className="flex gap-sm">
-          <Link to="/chat" className="btn btn-outline btn-sm" style={{ borderRadius: 20 }}>
-            <Sparkles size={14} color="var(--green-deep)" />
-            <span>{t("nav.askAi", "Ask AI Assistant")}</span>
-          </Link>
           <Link
             to="/weather"
-            className="flex flex-center gap-xs"
             style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
               padding: "6px 12px",
               borderRadius: 20,
               background: "rgba(46,139,87,0.08)",
               border: "1px solid rgba(46,139,87,0.2)",
-              fontSize: 12.5,
-              fontWeight: 700,
               color: "var(--green-deep)",
+              fontSize: 13,
+              fontWeight: 700,
+              textDecoration: "none",
             }}
           >
             <CloudSun size={16} />
             <span>{weather.currentTempC}°C · {weather.condition}</span>
           </Link>
+          <Link to="/chat" className="btn btn-outline btn-sm" style={{ borderRadius: 20 }}>
+            <Sparkles size={14} color="var(--green-deep)" />
+            <span>{t("nav.askAi", "Ask AI Assistant")}</span>
+          </Link>
         </div>
       </div>
 
-      {/* 2. "WHAT ARE YOU SELLING?" — Crop Selector */}
+      {/* 2. "YOUR CROPS" — Crop Selector */}
       <div className="mb-xl">
         <div className="flex flex-between flex-center mb-sm">
           <div style={{ fontSize: 12, fontWeight: 800, color: "var(--ink-muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-            {t("crops.cropName", "What are you selling today?")}
+            {t("crops.myCrops", "Your Crops")}
           </div>
           <Link to="/crops/add" className="flex flex-center gap-xs text-sm fw-700" style={{ color: "var(--green-deep)" }}>
             <Plus size={14} />
@@ -165,7 +177,7 @@ export function DashboardPage() {
           </Link>
         </div>
 
-        {!hasCrops ? (
+        {!hasAnyCrops ? (
           <div
             className="card card-pad text-center"
             style={{ padding: "28px 16px", background: "var(--bg-warm)", border: "1.5px dashed var(--line-strong)", borderRadius: 14 }}
@@ -212,6 +224,35 @@ export function DashboardPage() {
                 </button>
               );
             })}
+
+            {profileCrops.map((pc) => (
+              <Link
+                key={pc}
+                to={`/crops/add?crop=${encodeURIComponent(pc)}`}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "10px 16px",
+                  borderRadius: 14,
+                  border: "1.5px dashed var(--green-leaf)",
+                  background: "#FAFCF9",
+                  textDecoration: "none",
+                  minWidth: 200,
+                  textAlign: "left",
+                  flexShrink: 0,
+                  transition: "all 0.15s ease",
+                }}
+              >
+                <span style={{ fontSize: 24 }}>🌱</span>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "var(--navy)" }}>{pc}</div>
+                  <div style={{ fontSize: 11, color: "var(--green-deep)", fontWeight: 700 }}>
+                    Cultivated crop · Add details to enable AI tracking
+                  </div>
+                </div>
+              </Link>
+            ))}
 
             <Link
               to="/crops/add"
