@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import { Sprout, Building2, Store, ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Sprout, Building2, Store, ArrowRight, ShieldCheck, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { useAuth } from "../context/AuthContext";
 import type { UserRole } from "../types";
@@ -34,6 +34,7 @@ export function RegisterPage() {
   const [buyerPassword, setBuyerPassword] = useState("");
   const [buyerConfirmPassword, setBuyerConfirmPassword] = useState("");
 
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -157,59 +158,91 @@ export function RegisterPage() {
     nav("/onboarding");
   }
 
+  const renderPasswordField = (
+    id: string,
+    label: string,
+    value: string,
+    onChange: (v: string) => void,
+    placeholder: string,
+    isConfirm = false
+  ) => (
+    <div className="field">
+      <label htmlFor={id}>
+        {label} <span className="required">*</span>
+      </label>
+      <div className="password-wrapper">
+        <input
+          id={id}
+          type={showPassword ? "text" : "password"}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          autoComplete={isConfirm ? "new-password" : "new-password"}
+          required
+        />
+        <button
+          type="button"
+          className="password-toggle"
+          onClick={() => setShowPassword(!showPassword)}
+          aria-label={showPassword ? "Hide password" : "Show password"}
+          tabIndex={-1}
+        >
+          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="auth-shell">
       <div className="auth-visual">
         <Logo to="/" />
         <div>
-          <span className="badge-pill badge-neutral" style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "none", marginBottom: 16 }}>
-            National Agri-Marketplace · SIH26132
-          </span>
-          <h2 style={{ fontSize: "28px", color: "#fff", marginBottom: "14px", lineHeight: 1.3 }}>
-            Join India's AI-Powered Agricultural Decision & Linkage Network
+          <h2>
+            Join India's AI-Powered Agricultural Intelligence Network
           </h2>
-          <p style={{ color: "rgba(255,255,255,0.85)", fontSize: "15px", maxWidth: "440px", lineHeight: 1.6 }}>
-            Connect directly with verified institutional buyers, track real-time mandi prices across all Indian states, and receive trusted agronomic decisions.
+          <p>
+            Connect with verified institutional buyers, track real-time mandi prices
+            across all Indian states, and receive trusted agronomic decisions.
           </p>
-
-          <div style={{ marginTop: 28, display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, color: "rgba(255,255,255,0.9)", fontSize: 13.5 }}>
-              <CheckCircle2 size={18} color="#85E0A3" />
+          <div className="auth-value-props">
+            <div className="auth-value-prop">
+              <CheckCircle2 size={18} />
               <span>Zero middlemen — direct farm-to-buyer transactions</span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, color: "rgba(255,255,255,0.9)", fontSize: 13.5 }}>
-              <CheckCircle2 size={18} color="#85E0A3" />
+            <div className="auth-value-prop">
+              <CheckCircle2 size={18} />
               <span>AI Sell / Wait recommendations grounded in ICAR data</span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, color: "rgba(255,255,255,0.9)", fontSize: 13.5 }}>
-              <CheckCircle2 size={18} color="#85E0A3" />
+            <div className="auth-value-prop">
+              <CheckCircle2 size={18} />
               <span>Multi-lingual voice assistant in 8+ Indian languages</span>
             </div>
           </div>
         </div>
-
-        <div style={{ color: "rgba(255,255,255,0.6)", fontSize: "12px", display: "flex", alignItems: "center", gap: 6 }}>
-          <ShieldCheck size={16} />
+        <div className="auth-visual-footer">
+          <ShieldCheck size={14} />
           <span>Secure, Verified National Agriculture Infrastructure</span>
         </div>
       </div>
 
       <div className="auth-form-side">
-        <div className="auth-box" style={{ maxWidth: 480 }}>
-          <h2 style={{ fontSize: "24px", marginBottom: "6px" }}>Create Your Account</h2>
-          <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginBottom: "18px" }}>
+        <div className="auth-box">
+          <h2>Create Your Account</h2>
+          <p className="auth-subtitle">
             Select your role to get started with KissanSetu AI.
           </p>
 
-          {/* Role Selection Tabs */}
-          <div className="role-tabs" style={{ marginBottom: 20 }}>
+          {/* Role Selection */}
+          <div className="role-tabs">
             <div
               className={`role-tab ${selectedRole === "farmer" ? "active" : ""}`}
               onClick={() => { setSelectedRole("farmer"); setError(null); }}
               role="button"
               tabIndex={0}
+              onKeyDown={(e) => e.key === "Enter" && setSelectedRole("farmer")}
             >
-              <Sprout size={16} style={{ display: "inline", marginRight: 6, verticalAlign: "text-bottom" }} />
+              <Sprout size={16} />
               Farmer
             </div>
             <div
@@ -217,18 +250,20 @@ export function RegisterPage() {
               onClick={() => { setSelectedRole("fpo"); setError(null); }}
               role="button"
               tabIndex={0}
+              onKeyDown={(e) => e.key === "Enter" && setSelectedRole("fpo")}
             >
-              <Building2 size={16} style={{ display: "inline", marginRight: 6, verticalAlign: "text-bottom" }} />
-              FPO Collective
+              <Building2 size={16} />
+              FPO
             </div>
             <div
               className={`role-tab ${selectedRole === "buyer" ? "active" : ""}`}
               onClick={() => { setSelectedRole("buyer"); setError(null); }}
               role="button"
               tabIndex={0}
+              onKeyDown={(e) => e.key === "Enter" && setSelectedRole("buyer")}
             >
-              <Store size={16} style={{ display: "inline", marginRight: 6, verticalAlign: "text-bottom" }} />
-              Buyer / Enterprise
+              <Store size={16} />
+              Buyer
             </div>
           </div>
 
@@ -237,58 +272,43 @@ export function RegisterPage() {
             {selectedRole === "farmer" && (
               <>
                 <div className="field">
-                  <label htmlFor="farmer-name">Full Name <span style={{ color: "var(--danger)" }}>*</span></label>
+                  <label htmlFor="farmer-name">Full Name <span className="required">*</span></label>
                   <input
                     id="farmer-name"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="e.g. Ramesh Kumar"
+                    autoComplete="name"
                     required
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="farmer-mobile">Mobile Number <span style={{ color: "var(--danger)" }}>*</span></label>
+                  <label htmlFor="farmer-mobile">Mobile Number <span className="required">*</span></label>
                   <input
                     id="farmer-mobile"
                     type="tel"
                     value={farmerMobile}
                     onChange={(e) => setFarmerMobile(e.target.value)}
                     placeholder="e.g. 9876543210"
+                    autoComplete="tel"
                     required
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="farmer-email">Email Address <span style={{ fontSize: 12, color: "var(--ink-soft)", fontWeight: 400 }}>(Optional)</span></label>
+                  <label htmlFor="farmer-email">
+                    Email Address <span className="optional">(Optional)</span>
+                  </label>
                   <input
                     id="farmer-email"
                     type="email"
                     value={farmerEmail}
                     onChange={(e) => setFarmerEmail(e.target.value)}
                     placeholder="e.g. farmer@example.com"
+                    autoComplete="email"
                   />
                 </div>
-                <div className="field">
-                  <label htmlFor="farmer-pwd">Create Password <span style={{ color: "var(--danger)" }}>*</span></label>
-                  <input
-                    id="farmer-pwd"
-                    type="password"
-                    value={farmerPassword}
-                    onChange={(e) => setFarmerPassword(e.target.value)}
-                    placeholder="Min 6 characters"
-                    required
-                  />
-                </div>
-                <div className="field">
-                  <label htmlFor="farmer-confirm-pwd">Confirm Password <span style={{ color: "var(--danger)" }}>*</span></label>
-                  <input
-                    id="farmer-confirm-pwd"
-                    type="password"
-                    value={farmerConfirmPassword}
-                    onChange={(e) => setFarmerConfirmPassword(e.target.value)}
-                    placeholder="Re-enter password"
-                    required
-                  />
-                </div>
+                {renderPasswordField("farmer-pwd", "Create Password", farmerPassword, setFarmerPassword, "Min 6 characters")}
+                {renderPasswordField("farmer-confirm-pwd", "Confirm Password", farmerConfirmPassword, setFarmerConfirmPassword, "Re-enter password", true)}
               </>
             )}
 
@@ -296,7 +316,7 @@ export function RegisterPage() {
             {selectedRole === "fpo" && (
               <>
                 <div className="field">
-                  <label htmlFor="fpo-name">FPO / Collective Name <span style={{ color: "var(--danger)" }}>*</span></label>
+                  <label htmlFor="fpo-name">FPO / Collective Name <span className="required">*</span></label>
                   <input
                     id="fpo-name"
                     value={fpoName}
@@ -306,59 +326,42 @@ export function RegisterPage() {
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="fpo-lead">Authorized Representative Name <span style={{ color: "var(--danger)" }}>*</span></label>
+                  <label htmlFor="fpo-lead">Authorized Representative <span className="required">*</span></label>
                   <input
                     id="fpo-lead"
                     value={fpoLeadName}
                     onChange={(e) => setFpoLeadName(e.target.value)}
                     placeholder="e.g. Suresh Deshmukh (Director / CEO)"
+                    autoComplete="name"
                     required
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="fpo-mobile">Official Mobile Number <span style={{ color: "var(--danger)" }}>*</span></label>
+                  <label htmlFor="fpo-mobile">Official Mobile Number <span className="required">*</span></label>
                   <input
                     id="fpo-mobile"
                     type="tel"
                     value={fpoMobile}
                     onChange={(e) => setFpoMobile(e.target.value)}
                     placeholder="e.g. 9822011223"
+                    autoComplete="tel"
                     required
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="fpo-email">Official Email Address <span style={{ color: "var(--danger)" }}>*</span></label>
+                  <label htmlFor="fpo-email">Official Email Address <span className="required">*</span></label>
                   <input
                     id="fpo-email"
                     type="email"
                     value={fpoEmail}
                     onChange={(e) => setFpoEmail(e.target.value)}
                     placeholder="e.g. contact@godavarifpo.in"
+                    autoComplete="email"
                     required
                   />
                 </div>
-                <div className="field">
-                  <label htmlFor="fpo-pwd">Create Password <span style={{ color: "var(--danger)" }}>*</span></label>
-                  <input
-                    id="fpo-pwd"
-                    type="password"
-                    value={fpoPassword}
-                    onChange={(e) => setFpoPassword(e.target.value)}
-                    placeholder="Min 6 characters"
-                    required
-                  />
-                </div>
-                <div className="field">
-                  <label htmlFor="fpo-confirm-pwd">Confirm Password <span style={{ color: "var(--danger)" }}>*</span></label>
-                  <input
-                    id="fpo-confirm-pwd"
-                    type="password"
-                    value={fpoConfirmPassword}
-                    onChange={(e) => setFpoConfirmPassword(e.target.value)}
-                    placeholder="Re-enter password"
-                    required
-                  />
-                </div>
+                {renderPasswordField("fpo-pwd", "Create Password", fpoPassword, setFpoPassword, "Min 6 characters")}
+                {renderPasswordField("fpo-confirm-pwd", "Confirm Password", fpoConfirmPassword, setFpoConfirmPassword, "Re-enter password", true)}
               </>
             )}
 
@@ -366,7 +369,7 @@ export function RegisterPage() {
             {selectedRole === "buyer" && (
               <>
                 <div className="field">
-                  <label htmlFor="buyer-org">Organization / Business Name <span style={{ color: "var(--danger)" }}>*</span></label>
+                  <label htmlFor="buyer-org">Organization / Business Name <span className="required">*</span></label>
                   <input
                     id="buyer-org"
                     value={buyerOrgName}
@@ -376,97 +379,67 @@ export function RegisterPage() {
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="buyer-contact">Primary Contact Person <span style={{ color: "var(--danger)" }}>*</span></label>
+                  <label htmlFor="buyer-contact">Primary Contact Person <span className="required">*</span></label>
                   <input
                     id="buyer-contact"
                     value={buyerContactPerson}
                     onChange={(e) => setBuyerContactPerson(e.target.value)}
                     placeholder="e.g. Anand Sharma (Procurement Head)"
+                    autoComplete="name"
                     required
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="buyer-mobile">Contact Mobile Number <span style={{ color: "var(--danger)" }}>*</span></label>
+                  <label htmlFor="buyer-mobile">Contact Mobile Number <span className="required">*</span></label>
                   <input
                     id="buyer-mobile"
                     type="tel"
                     value={buyerMobile}
                     onChange={(e) => setBuyerMobile(e.target.value)}
                     placeholder="e.g. 9988776655"
+                    autoComplete="tel"
                     required
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="buyer-email">Business Email Address <span style={{ color: "var(--danger)" }}>*</span></label>
+                  <label htmlFor="buyer-email">Business Email Address <span className="required">*</span></label>
                   <input
                     id="buyer-email"
                     type="email"
                     value={buyerEmail}
                     onChange={(e) => setBuyerEmail(e.target.value)}
                     placeholder="e.g. procurement@freshfarmfoods.in"
+                    autoComplete="email"
                     required
                   />
                 </div>
-                <div className="field">
-                  <label htmlFor="buyer-pwd">Create Password <span style={{ color: "var(--danger)" }}>*</span></label>
-                  <input
-                    id="buyer-pwd"
-                    type="password"
-                    value={buyerPassword}
-                    onChange={(e) => setBuyerPassword(e.target.value)}
-                    placeholder="Min 6 characters"
-                    required
-                  />
-                </div>
-                <div className="field">
-                  <label htmlFor="buyer-confirm-pwd">Confirm Password <span style={{ color: "var(--danger)" }}>*</span></label>
-                  <input
-                    id="buyer-confirm-pwd"
-                    type="password"
-                    value={buyerConfirmPassword}
-                    onChange={(e) => setBuyerConfirmPassword(e.target.value)}
-                    placeholder="Re-enter password"
-                    required
-                  />
-                </div>
+                {renderPasswordField("buyer-pwd", "Create Password", buyerPassword, setBuyerPassword, "Min 6 characters")}
+                {renderPasswordField("buyer-confirm-pwd", "Confirm Password", buyerConfirmPassword, setBuyerConfirmPassword, "Re-enter password", true)}
               </>
             )}
 
             {error && (
-              <div
-                style={{
-                  background: "#FEE2E2",
-                  color: "#991B1B",
-                  padding: "10px 14px",
-                  borderRadius: "8px",
-                  fontSize: "13.5px",
-                  marginBottom: "14px",
-                  border: "1px solid #FCA5A5",
-                }}
-              >
+              <div className="form-error-alert">
                 {error}
               </div>
             )}
 
             <button
-              className="btn btn-primary btn-block"
+              className={`btn btn-primary btn-block btn-lg ${busy ? "btn-loading" : ""}`}
               disabled={busy}
-              style={{ marginTop: 10, padding: "12px 18px", display: "flex", justifyContent: "center", alignItems: "center", gap: 8 }}
             >
               {busy ? "Creating Account…" : (
                 <>
-                  <span>Create Account & Continue to Setup</span>
+                  <span>Create Account & Continue</span>
                   <ArrowRight size={16} />
                 </>
               )}
             </button>
           </form>
 
-          <div style={{ textAlign: "center", marginTop: "20px", fontSize: "13.5px", color: "var(--ink-soft)" }}>
+          <div className="auth-footer-link">
             Already have an account?{" "}
-            <Link to="/login" style={{ color: "var(--green-deep)", fontWeight: 700 }}>
-              Sign In
-            </Link>
+            <Link to="/login">Sign In</Link>
           </div>
         </div>
       </div>

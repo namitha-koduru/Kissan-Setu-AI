@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -12,6 +13,7 @@ export function LoginPage() {
   const [selectedRole, setSelectedRole] = useState<UserRole>("farmer");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -45,34 +47,55 @@ export function LoginPage() {
       <div className="auth-visual">
         <Logo to="/" />
         <div>
-          <h2 style={{ fontSize: "28px", color: "#fff", marginBottom: "14px" }}>
-            One platform for the complete farm-to-market decision.
+          <h2>
+            Smarter decisions.<br />
+            Better markets.<br />
+            Stronger farmers.
           </h2>
-          <p style={{ color: "rgba(255,255,255,0.85)", fontSize: "15px", maxWidth: "420px", lineHeight: 1.6 }}>
-            Weather conditions, mandi prices, institutional buyer demand, and transport logistics — combined into one transparent AI recommendation for every lot you grow.
+          <p>
+            AI-powered farm-to-market intelligence combining weather, mandi prices,
+            buyer demand, and logistics into one transparent recommendation.
           </p>
+          <div className="auth-value-props">
+            <div className="auth-value-prop">
+              <ShieldCheck size={18} />
+              <span>Pan-India market intelligence across all states</span>
+            </div>
+            <div className="auth-value-prop">
+              <ShieldCheck size={18} />
+              <span>Direct farm-to-buyer marketplace</span>
+            </div>
+            <div className="auth-value-prop">
+              <ShieldCheck size={18} />
+              <span>Multi-lingual voice AI assistant</span>
+            </div>
+          </div>
         </div>
-        <div style={{ color: "rgba(255,255,255,0.6)", fontSize: "12.5px" }}>
-          Government of Maharashtra · Agriculture, FoodTech & Rural Development · SIH 2026
+        <div className="auth-visual-footer">
+          <ShieldCheck size={14} />
+          <span>Smart India Hackathon 2026 · SIH26132</span>
         </div>
       </div>
 
       <div className="auth-form-side">
         <div className="auth-box">
-          <h2 style={{ fontSize: "24px", marginBottom: "6px" }}>Welcome Back</h2>
-          <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginBottom: "22px" }}>
-            Log in to access your agricultural decision dashboard.
+          <h2>Welcome Back</h2>
+          <p className="auth-subtitle">
+            Sign in to access your agricultural decision dashboard.
           </p>
 
-          {/* Role selector tabs */}
+          {/* Role selector */}
           <div className="role-tabs">
             {(["farmer", "fpo", "buyer"] as const).map((r) => (
               <div
                 key={r}
                 className={`role-tab ${selectedRole === r ? "active" : ""}`}
                 onClick={() => handleRoleSelect(r)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === "Enter" && handleRoleSelect(r)}
               >
-                {r === "farmer" ? "Farmer" : r === "fpo" ? "FPO Lead" : "Buyer"}
+                {r === "farmer" ? "🌾 Farmer" : r === "fpo" ? "🏛 FPO" : "🏪 Buyer"}
               </div>
             ))}
           </div>
@@ -84,22 +107,39 @@ export function LoginPage() {
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="e.g. farmer@kisansetu.in"
+                placeholder="e.g. 9876543210 or farmer@email.com"
+                autoComplete="username"
                 required
               />
             </div>
 
             <div className="field">
               <label htmlFor="password">Password</label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-              />
+              <div className="password-wrapper">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                  required
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
+
+            <a href="#" className="auth-forgot-link" onClick={(e) => e.preventDefault()}>
+              Forgot password?
+            </a>
 
             <div className="field">
               <label htmlFor="lang">Preferred Language</label>
@@ -116,21 +156,22 @@ export function LoginPage() {
             </div>
 
             {error && (
-              <p style={{ color: "var(--danger)", fontSize: "13.5px", marginBottom: "12px" }}>
+              <div className="form-error-alert">
                 {error}
-              </p>
+              </div>
             )}
 
-            <button className="btn btn-primary btn-block" disabled={busy} style={{ marginTop: "8px" }}>
-              {busy ? "Signing In…" : "Sign In to Dashboard"}
+            <button
+              className={`btn btn-primary btn-block btn-lg ${busy ? "btn-loading" : ""}`}
+              disabled={busy}
+            >
+              {busy ? "Signing In…" : "Sign In"}
             </button>
           </form>
 
-          <div style={{ textAlign: "center", marginTop: "20px", fontSize: "13.5px", color: "var(--ink-soft)" }}>
-            New to KisanSetu AI?{" "}
-            <Link to="/register" style={{ color: "var(--green-deep)", fontWeight: 700 }}>
-              Create Account
-            </Link>
+          <div className="auth-footer-link">
+            New to KissanSetu AI?{" "}
+            <Link to="/register">Create Account</Link>
           </div>
         </div>
       </div>

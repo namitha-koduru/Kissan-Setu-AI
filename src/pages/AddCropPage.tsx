@@ -167,8 +167,8 @@ export function AddCropPage() {
                 onChange={(e) => setLocation(e.target.value)}
               >
                 {locationOptions.map((loc) => (
-                  <option key={loc} value={`${loc}, Maharashtra`}>
-                    {loc}, Maharashtra
+                  <option key={loc} value={loc}>
+                    {loc}
                   </option>
                 ))}
               </select>

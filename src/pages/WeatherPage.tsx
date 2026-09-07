@@ -8,34 +8,25 @@ export function WeatherPage() {
 
   return (
     <div className="wrap">
-      <div
-        className="page-header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 12,
-          padding: "20px 0 14px",
-        }}
-      >
+      <div className="page-header">
         <div>
-          <h1 style={{ fontSize: "24px", fontWeight: 800 }}>Weather Risk Intelligence</h1>
-          <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 2 }}>
-            Meteorological models evaluated specifically for crop vulnerability, harvest risk & logistics safety.
+          <h1>Weather Risk Intelligence</h1>
+          <p className="page-subtitle">
+            Meteorological models evaluated for crop vulnerability, harvest risk & logistics safety.
           </p>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <label style={{ fontSize: "13px", fontWeight: 700, color: "var(--ink-soft)" }}>District:</label>
+        <div className="page-actions">
+          <label htmlFor="weather-district" className="text-sm fw-700 text-muted">District:</label>
           <select
+            id="weather-district"
             value={selectedLocation}
             onChange={(e) => setSelectedLocation(e.target.value)}
             style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid var(--line-strong)", fontWeight: 700 }}
           >
             {locationOptions.map((loc) => (
               <option key={loc} value={loc}>
-                {loc}, Maharashtra
+                {loc}
               </option>
             ))}
           </select>

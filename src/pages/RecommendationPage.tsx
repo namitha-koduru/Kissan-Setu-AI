@@ -89,7 +89,7 @@ export function RecommendationPage() {
               <span>Phase 4 Agronomic Engine</span>
             </div>
             <span style={{ fontSize: "12px", color: "var(--ink-soft)" }}>
-              {intelligence?.farm?.location || "Nashik, Maharashtra"}
+              {intelligence?.farm?.location || user?.location || "Your Farm"}
             </span>
           </div>
           <h1 style={{ fontSize: "24px", fontWeight: 800, margin: 0 }}>Farm Intelligence & Decision Center</h1>
@@ -177,7 +177,7 @@ export function RecommendationPage() {
                 Active Farm Profile
               </div>
               <div style={{ fontSize: "18px", fontWeight: 800, marginTop: 2 }}>
-                {intelligence?.farm?.farmer_name || "Ramesh Kumar"} · {intelligence?.farm?.location || "Nashik, Maharashtra"}
+                {intelligence?.farm?.farmer_name || user?.name || "Farmer"} · {intelligence?.farm?.location || user?.location || "Your Farm"}
               </div>
               <div style={{ fontSize: "13px", color: "#d1fae5", marginTop: 2 }}>
                 Land Area: <strong>{intelligence?.farm?.total_acreage || 3.5} acres</strong> · Active Crops:{" "}

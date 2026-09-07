@@ -22,7 +22,7 @@ export function LandingPage() {
         <div className="wrap hero-inner">
           <div>
             <span className="eyebrow" style={{ color: "#BFE6D3" }}>
-              SIH26132 · Government of Maharashtra · Skill Squad
+              Smart India Hackathon 2026 · SIH26132 · Pan-India Agriculture Intelligence
             </span>
             <h1>
               From knowing the market price<br />
@@ -79,6 +79,10 @@ export function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Tricolour ribbon divider */}
+      <div className="tricolour-bar-smooth" />
+
 
       {/* The Problem Section */}
       <section className="section wrap" id="problem">
@@ -210,7 +214,7 @@ export function LandingPage() {
           <span className="eyebrow">Enterprise Features</span>
           <h2>Built around profitable farmer actions</h2>
         </div>
-        <div className="feat-grid">
+        <div className="grid-3">
           <div className="feat-card">
             <div className="feat-icon"><CloudSun size={20} /></div>
             <div>
@@ -261,7 +265,7 @@ export function LandingPage() {
         <div className="final-cta">
           <h2>Make every harvest and selling decision smarter.</h2>
           <p style={{ color: "rgba(255,255,255,0.8)", maxWidth: 500, margin: "0 auto 24px" }}>
-            Join Maharashtra farmers and FPOs transforming price discovery and market linkages.
+            Join Indian farmers and FPOs transforming price discovery and market linkages nationwide.
           </p>
           <Link className="btn btn-saffron" to="/register" style={{ padding: "14px 32px", fontSize: "16px" }}>
             Start Decision Analysis Now
@@ -270,8 +274,8 @@ export function LandingPage() {
       </section>
 
       <footer className="wrap app-footer">
-        <span>© 2026 KisanSetu AI · Team Skill Squad · Smart India Hackathon 2026 · Problem SIH26132</span>
-        <span>Government of Maharashtra · Agriculture, FoodTech & Rural Development</span>
+        <span>© 2026 KisanSetu AI · Team Skill Squad · Smart India Hackathon 2026 · SIH26132</span>
+        <span>Agriculture, FoodTech & Rural Development · Pan-India Platform</span>
       </footer>
     </div>
   );

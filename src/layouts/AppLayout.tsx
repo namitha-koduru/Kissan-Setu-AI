@@ -20,14 +20,19 @@ export function AppLayout() {
       {/* Mobile slide-out drawer */}
       {menuOpen && (
         <>
-          <div className="drawer-overlay" onClick={() => setMenuOpen(false)} />
-          <div className="drawer-panel">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <div
+            className="drawer-overlay"
+            onClick={() => setMenuOpen(false)}
+            role="presentation"
+          />
+          <div className="drawer-panel" role="dialog" aria-label="Navigation menu">
+            <div className="flex flex-between flex-center mb-lg">
               <Logo to="/dashboard" />
               <button
                 className="icon-btn"
                 type="button"
                 onClick={() => setMenuOpen(false)}
+                aria-label="Close navigation menu"
               >
                 <X size={20} />
               </button>
@@ -39,7 +44,7 @@ export function AppLayout() {
 
       <div className="app-main">
         <Topbar onMenu={() => setMenuOpen(true)} />
-        <main className="main-content">
+        <main className="main-content" id="main-content">
           <Outlet />
         </main>
         <MobileNav />

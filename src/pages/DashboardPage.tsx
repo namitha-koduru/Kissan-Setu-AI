@@ -37,65 +37,29 @@ export function DashboardPage() {
 
   return (
     <div className="wrap">
-      {/* Page Header with Location and Weather Pill */}
-      <div
-        className="page-header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          flexWrap: "wrap",
-          gap: 14,
-          padding: "20px 0 10px",
-        }}
-      >
+      {/* Page Header */}
+      <div className="page-header">
         <div>
-          <h1 style={{ fontSize: "24px", fontWeight: 800 }}>
-            {getGreeting()}, {user?.name?.split(" ")[0] || "Ramesh"}
+          <h1>
+            {getGreeting()}, {user?.name?.split(" ")[0] || "Farmer"}
           </h1>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--ink-soft)", fontSize: "13.5px", marginTop: 4 }}>
-            <MapPin size={15} color="#176B45" />
-            <span>{user?.location || "Nashik, Maharashtra"}</span>
+          <div className="page-subtitle flex flex-center gap-sm">
+            <MapPin size={14} color="var(--green-deep)" />
+            <span>{user?.location || user?.district && user?.state ? `${user.district}, ${user.state}` : "Your Farm"}</span>
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-          <Link
-            to="/chat?mode=voice"
-            className="btn"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "8px 16px",
-              borderRadius: "12px",
-              background: "#FFFFFF",
-              color: "var(--green-deep)",
-              border: "1.5px solid var(--green-deep)",
-              fontWeight: 800,
-              boxShadow: "0 2px 8px rgba(23, 107, 69, 0.15)",
-            }}
-          >
+        <div className="page-actions">
+          <Link to="/chat?mode=voice" className="btn btn-outline">
             <span>🎙</span>
             <span>Speak to AI</span>
           </Link>
 
-          <Link
-            to="/chat"
-            className="btn btn-primary"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "8px 16px",
-              borderRadius: "12px",
-              background: "linear-gradient(135deg, var(--green-deep), var(--green-leaf))",
-              boxShadow: "0 4px 12px rgba(23, 107, 69, 0.25)",
-            }}
-          >
-            <Sparkles size={18} color="#fff" />
+          <Link to="/chat" className="btn btn-primary">
+            <Sparkles size={16} />
             <span>Ask KissanSetu AI</span>
           </Link>
+
 
           <Link
             to="/weather"

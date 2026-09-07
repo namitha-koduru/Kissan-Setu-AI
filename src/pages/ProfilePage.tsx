@@ -28,11 +28,13 @@ export function ProfilePage() {
 
   return (
     <div className="wrap" style={{ maxWidth: 720 }}>
-      <div className="page-header" style={{ padding: "20px 0 16px" }}>
-        <h1 style={{ fontSize: "24px", fontWeight: 800 }}>Profile & Farm Settings</h1>
-        <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 2 }}>
-          Manage your personal account, farm parcel details, language preferences, and notification triggers.
-        </p>
+      <div className="page-header">
+        <div>
+          <h1>Profile & Farm Settings</h1>
+          <p className="page-subtitle">
+            Manage your account, farm details, language, and notification preferences.
+          </p>
+        </div>
       </div>
 
       {/* Account Info Card */}
@@ -47,7 +49,7 @@ export function ProfilePage() {
           <div>
             <h2 style={{ fontSize: "20px", fontWeight: 800 }}>{user?.name || "Ramesh Patil"}</h2>
             <p style={{ color: "var(--ink-soft)", fontSize: "13.5px" }}>
-              Registered Role: <strong>{user?.role?.toUpperCase() || "FARMER"}</strong> · {user?.location || "Nashik, Maharashtra"}
+              Registered Role: <strong>{user?.role?.toUpperCase() || "FARMER"}</strong> · {user?.location || (user?.district ? `${user.district}, ${user.state}` : "India")}
             </p>
           </div>
         </div>
@@ -62,7 +64,7 @@ export function ProfilePage() {
         </div>
         <div className="pf-row">
           <span className="l">Farm Parcel Location</span>
-          <span className="v">{onboardData.village || "Niphad"}, {onboardData.district || "Nashik"}, Maharashtra</span>
+          <span className="v">{onboardData.village || "—"}, {onboardData.district || "—"}, {user?.state || onboardData.state || "—"}</span>
         </div>
         <div className="pf-row">
           <span className="l">Land Under Cultivation</span>
