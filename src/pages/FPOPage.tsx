@@ -2,8 +2,10 @@ import { Link } from "react-router-dom";
 import { Plus, ShieldCheck } from "lucide-react";
 import { fpoFarmers } from "../data/demo";
 import { MetricCard } from "../components/MetricCard";
+import { useLanguage } from "../context/LanguageContext";
 
 export function FPOPage() {
+  const { t } = useLanguage();
   const totalVolume = fpoFarmers.reduce((sum, f) => sum + f.quantityKg, 0);
   const expectedValue = totalVolume * 29;
 
@@ -13,12 +15,12 @@ export function FPOPage() {
         <div>
           <h1 style={{ fontSize: "24px", fontWeight: 800 }}>Godavari Farmers Producer Company</h1>
           <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 2 }}>
-            FPO Collective Bargaining & Aggregation Dashboard · Nashik Cluster
+            {t("fpo.subtitle")}
           </p>
         </div>
 
         <Link className="btn btn-primary" to="/lots/create">
-          <Plus size={16} /> Create Aggregated Lot
+          <Plus size={16} /> {t("lots.createLot")}
         </Link>
       </div>
 
@@ -42,11 +44,11 @@ export function FPOPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Farmer Name & Location</th>
-                <th>Crop</th>
-                <th>Quality Grade</th>
-                <th>Contributed Volume</th>
-                <th>Expected Payout</th>
+                <th>{t("auth.fullName")} & {t("auth.location")}</th>
+                <th>{t("lots.crop")}</th>
+                <th>{t("lots.qualityGrade")}</th>
+                <th>{t("lots.quantity")}</th>
+                <th>{t("offers.totalValue")}</th>
               </tr>
             </thead>
             <tbody>

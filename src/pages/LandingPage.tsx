@@ -10,8 +10,11 @@ import {
 } from "lucide-react";
 import { PublicNav } from "../components/Navbar";
 import { DecisionBadge } from "../components/DecisionBadge";
+import { useLanguage } from "../context/LanguageContext";
 
 export function LandingPage() {
+  const { t } = useLanguage();
+
   return (
     <div style={{ background: "var(--bg-soft)", minHeight: "100vh" }}>
       <PublicNav />
@@ -22,24 +25,23 @@ export function LandingPage() {
         <div className="wrap hero-inner">
           <div>
             <span className="eyebrow" style={{ color: "#BFE6D3" }}>
-              Smart India Hackathon 2026 · SIH26132 · Pan-India Agriculture Intelligence
+              {t("nav.credit", "Smart India Hackathon 2026 · SIH26132 · Pan-India Agriculture Intelligence")}
             </span>
             <h1>
-              From knowing the market price<br />
-              to knowing the best action.
+              {t("landing.tagline", "From knowing the market price to knowing the best action.")}
             </h1>
             <p className="lede">
-              AI-powered farm-to-market intelligence helping farmers and FPOs decide when to harvest, where to sell, and whether to sell now or wait.
+              {t("landing.heroTitle", "AI-powered farm-to-market intelligence helping farmers and FPOs decide when to harvest, where to sell, and whether to sell now or wait.")}
             </p>
             <p className="sub">
-              KisanSetu AI combines weather risk, crop maturity, mandi prices, buyer demand, and logistics into one explainable recommendation.
+              {t("landing.heroSubtitle", "KissanSetu AI combines weather risk, crop maturity, mandi prices, buyer demand, and logistics into one explainable recommendation.")}
             </p>
             <div className="hero-actions">
               <Link className="btn btn-saffron" to="/register">
-                Get Started Free <ArrowRight size={16} />
+                {t("landing.getStarted", "Get Started Free")} <ArrowRight size={16} />
               </Link>
               <a className="btn btn-outline" href="#how" style={{ color: "#fff", borderColor: "rgba(255,255,255,0.4)" }}>
-                See How It Works
+                {t("landing.seeHow", "See How It Works")}
               </a>
             </div>
           </div>
@@ -53,10 +55,10 @@ export function LandingPage() {
             </div>
             <div className="flow-arrow">↓</div>
             <div className="flow-row" style={{ justifyContent: "center" }}>
-              <span className="flow-chip">🌦️ WEATHER RISK</span>
-              <span className="flow-chip">📊 MANDI PRICES</span>
-              <span className="flow-chip">🤝 BUYER DEMAND</span>
-              <span className="flow-chip">🚚 LOGISTICS</span>
+              <span className="flow-chip">🌦️ {t("nav.weather", "Weather Risk")}</span>
+              <span className="flow-chip">📊 {t("nav.market", "Mandi Prices")}</span>
+              <span className="flow-chip">🤝 {t("nav.buyers", "Buyer Demand")}</span>
+              <span className="flow-chip">🚚 {t("transactions.logistics", "Logistics")}</span>
             </div>
             <div className="flow-arrow">↓</div>
             <div className="flow-row">
@@ -66,14 +68,14 @@ export function LandingPage() {
             </div>
             <div className="flow-arrow">↓</div>
             <div className="flow-row" style={{ justifyContent: "center" }}>
-              <span className="flow-chip" style={{ background: "rgba(23,107,69,0.8)" }}>SELL NOW</span>
-              <span className="flow-chip" style={{ background: "rgba(180,121,12,0.8)" }}>WAIT</span>
-              <span className="flow-chip" style={{ background: "rgba(23,50,77,0.8)" }}>SWITCH MARKET</span>
+              <span className="flow-chip" style={{ background: "rgba(23,107,69,0.8)" }}>{t("decision.sell", "SELL NOW")}</span>
+              <span className="flow-chip" style={{ background: "rgba(180,121,12,0.8)" }}>{t("decision.wait", "WAIT")}</span>
+              <span className="flow-chip" style={{ background: "rgba(23,50,77,0.8)" }}>{t("decision.switch", "SWITCH MARKET")}</span>
             </div>
             <div className="flow-arrow">↓</div>
             <div className="flow-row">
               <span className="flow-chip flow-final" style={{ width: "100%", textAlign: "center" }}>
-                ✓ RECOMMENDED: NASHIK MARKET · ₹29/kg NET (+₹5/kg over distant mandis)
+                ✓ {t("recommendations.decision", "RECOMMENDED")}: NASHIK MARKET · ₹29/kg NET
               </span>
             </div>
           </div>
@@ -83,31 +85,30 @@ export function LandingPage() {
       {/* Tricolour ribbon divider */}
       <div className="tricolour-bar-smooth" />
 
-
       {/* The Problem Section */}
       <section className="section wrap" id="problem">
         <div className="section-head">
-          <span className="eyebrow">The Real Problem</span>
-          <h2>Farmers lose income between the field and the mandi</h2>
+          <span className="eyebrow">{t("landing.theProblem", "The Problem")}</span>
+          <h2>{t("landing.heroTitle", "Farmers lose income between the field and the mandi")}</h2>
           <p>
-            Not from poor crops — but from critical selling decisions made without holistic market & logistics intelligence.
+            {t("landing.heroSubtitle", "Not from poor crops — but from critical selling decisions made without holistic market & logistics intelligence.")}
           </p>
         </div>
         <div className="grid-3">
           <div className="num-card">
             <div className="n">01</div>
-            <h3>Scattered Market Information</h3>
-            <p>Mandi prices are scattered across agents and boards without factoring transport costs and handling spoilage.</p>
+            <h3>{t("market.title", "Scattered Market Information")}</h3>
+            <p>{t("market.subtitle", "Mandi prices are scattered without factoring transport costs and handling spoilage.")}</p>
           </div>
           <div className="num-card">
             <div className="n">02</div>
-            <h3>Uncertain Harvest & Selling Timing</h3>
-            <p>Farmers struggle to know if harvesting 2 days earlier prevents weather damage or yields higher net realization.</p>
+            <h3>{t("recommendations.title", "Uncertain Harvest & Selling Timing")}</h3>
+            <p>{t("recommendations.subtitle", "Farmers struggle to know if harvesting earlier prevents weather damage or yields higher net realization.")}</p>
           </div>
           <div className="num-card">
             <div className="n">03</div>
-            <h3>Weak Buyer Linkages & High Intermediaries</h3>
-            <p>Verified institutional buyers exist nearby, but farmers lack direct discovery, lots creation, and offer negotiation tools.</p>
+            <h3>{t("buyers.title", "Weak Buyer Linkages & High Intermediaries")}</h3>
+            <p>{t("buyers.subtitle", "Verified institutional buyers exist nearby, but farmers lack direct discovery, lots creation, and offer negotiation tools.")}</p>
           </div>
         </div>
       </section>
@@ -115,35 +116,35 @@ export function LandingPage() {
       {/* How It Works Section */}
       <section className="section wrap" id="how">
         <div className="section-head">
-          <span className="eyebrow">How It Works</span>
-          <h2>Five steps from field to verified sale</h2>
-          <p>Each step feeds into the next, culminating in one actionable recommendation with transparent reasoning.</p>
+          <span className="eyebrow">{t("landing.howItWorks", "How It Works")}</span>
+          <h2>{t("landing.seeHow", "Five steps from field to verified sale")}</h2>
+          <p>{t("landing.heroSubtitle", "Each step feeds into the next, culminating in one actionable recommendation with transparent reasoning.")}</p>
         </div>
         <div className="steps-row">
           <div className="step-card">
             <div className="n">1</div>
-            <h4>Add Crop</h4>
-            <p>Enter crop variety, quantity, location and current crop stage.</p>
+            <h4>{t("crops.addCrop", "Add Crop")}</h4>
+            <p>{t("crops.subtitle", "Enter crop variety, quantity, location and current crop stage.")}</p>
           </div>
           <div className="step-card">
             <div className="n">2</div>
-            <h4>Analyze Conditions</h4>
-            <p>We read localized rain risk and harvest windows together.</p>
+            <h4>{t("weather.title", "Analyze Conditions")}</h4>
+            <p>{t("weather.subtitle", "We read localized rain risk and harvest windows together.")}</p>
           </div>
           <div className="step-card">
             <div className="n">3</div>
-            <h4>Compare Mandis</h4>
-            <p>Nearby markets compared on transport deduction & net realization.</p>
+            <h4>{t("market.nearbyMandis", "Compare Mandis")}</h4>
+            <p>{t("market.subtitle", "Nearby markets compared on transport deduction & net realization.")}</p>
           </div>
           <div className="step-card">
             <div className="n">4</div>
-            <h4>AI Recommendation</h4>
-            <p>Clear SELL, WAIT, or SWITCH call with complete reasons shown.</p>
+            <h4>{t("nav.recommendations", "AI Recommendation")}</h4>
+            <p>{t("recommendations.subtitle", "Clear SELL, WAIT, or SWITCH call with complete reasons shown.")}</p>
           </div>
           <div className="step-card">
             <div className="n">5</div>
-            <h4>Direct Buyer Sale</h4>
-            <p>Create a lot, receive offers from verified buyers, and track settlement.</p>
+            <h4>{t("buyers.title", "Direct Buyer Sale")}</h4>
+            <p>{t("buyers.subtitle", "Create a lot, receive offers from verified buyers, and track settlement.")}</p>
           </div>
         </div>
       </section>
@@ -151,9 +152,9 @@ export function LandingPage() {
       {/* Decision Showcase Preview */}
       <section className="section wrap" id="decision">
         <div className="section-head">
-          <span className="eyebrow">Smart Decision Center</span>
-          <h2>One clear recommendation. Fully explained.</h2>
-          <p>Never a black-box answer — KisanSetu demonstrates exactly why an action maximizes farmer earnings.</p>
+          <span className="eyebrow">{t("nav.recommendations", "Smart Decision Center")}</span>
+          <h2>{t("landing.tagline", "One clear recommendation. Fully explained.")}</h2>
+          <p>{t("recommendations.subtitle", "Never a black-box answer — KisanSetu demonstrates exactly why an action maximizes farmer earnings.")}</p>
         </div>
         <div className="reco-card" style={{ maxWidth: 680, margin: "0 auto" }}>
           <div className="reco-head">
@@ -163,7 +164,7 @@ export function LandingPage() {
               </div>
               <DecisionBadge decision="SELL" size="lg" />
             </div>
-            <span className="demo-tag">DEMO CALCULATION</span>
+            <span className="demo-tag">{t("common.demo", "DEMO CALCULATION")}</span>
           </div>
           <div className="reco-body">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
@@ -178,19 +179,19 @@ export function LandingPage() {
 
             <div className="reco-grid">
               <div className="reco-stat">
-                <div className="label">Recommended Market</div>
+                <div className="label">{t("market.bestMarket", "Recommended Market")}</div>
                 <div className="val" style={{ color: "var(--green-deep)" }}>Nashik Market Yard</div>
               </div>
               <div className="reco-stat">
-                <div className="label">Expected Net Realization</div>
+                <div className="label">{t("market.netInHand", "Expected Net Realization")}</div>
                 <div className="val" style={{ color: "var(--green-deep)", fontSize: "20px" }}>₹29.00 / kg</div>
               </div>
               <div className="reco-stat">
-                <div className="label">Buyer Wholesale Demand</div>
+                <div className="label">{t("buyers.demand", "Buyer Wholesale Demand")}</div>
                 <div className="val">HIGH (3 Active Buyers)</div>
               </div>
               <div className="reco-stat">
-                <div className="label">Upcoming Weather Risk</div>
+                <div className="label">{t("dashboard.farmRisks", "Upcoming Weather Risk")}</div>
                 <div className="val" style={{ color: "var(--terracotta)" }}>MEDIUM (Rain in 48 hrs)</div>
               </div>
             </div>
@@ -201,7 +202,7 @@ export function LandingPage() {
 
             <div style={{ marginTop: 20, display: "flex", gap: 12 }}>
               <Link className="btn btn-primary" to="/login" style={{ flex: 1 }}>
-                Explore Decision Center
+                {t("nav.recommendations", "Explore Decision Center")}
               </Link>
             </div>
           </div>
@@ -211,50 +212,50 @@ export function LandingPage() {
       {/* Key Features Grid */}
       <section className="section wrap" id="features">
         <div className="section-head">
-          <span className="eyebrow">Enterprise Features</span>
-          <h2>Built around profitable farmer actions</h2>
+          <span className="eyebrow">{t("landing.features", "Enterprise Features")}</span>
+          <h2>{t("landing.whyKissanSetu", "Built around profitable farmer actions")}</h2>
         </div>
         <div className="grid-3">
           <div className="feat-card">
             <div className="feat-icon"><CloudSun size={20} /></div>
             <div>
-              <h4>Weather Risk Intelligence</h4>
-              <p>Localized precipitation and humidity mapped directly to crop vulnerability stages.</p>
+              <h4>{t("weather.title", "Weather Risk Intelligence")}</h4>
+              <p>{t("weather.subtitle", "Localized precipitation and humidity mapped directly to crop vulnerability stages.")}</p>
             </div>
           </div>
           <div className="feat-card">
             <div className="feat-icon"><Store size={20} /></div>
             <div>
-              <h4>Net Realization Price Discovery</h4>
-              <p>Compare mandis after deducting freight, unloading, handling loss and storage fees.</p>
+              <h4>{t("market.title", "Net Realization Price Discovery")}</h4>
+              <p>{t("market.subtitle", "Compare mandis after deducting freight, unloading, handling loss and storage fees.")}</p>
             </div>
           </div>
           <div className="feat-card">
             <div className="feat-icon"><Sparkles size={20} /></div>
             <div>
-              <h4>Harvest Window Timing</h4>
-              <p>AI-assisted window predicting the safest and most profitable 3-day harvest frame.</p>
+              <h4>{t("chat.title", "AI Harvest Window & Chat")}</h4>
+              <p>{t("chat.subtitle", "AI-assisted window predicting the safest and most profitable harvest timing and agronomy.")}</p>
             </div>
           </div>
           <div className="feat-card">
             <div className="feat-icon"><Users size={20} /></div>
             <div>
-              <h4>Verified Buyer Marketplace</h4>
-              <p>Direct linkage to certified institutional procurers, retail chains and exporters.</p>
+              <h4>{t("buyers.title", "Verified Buyer Marketplace")}</h4>
+              <p>{t("buyers.subtitle", "Direct linkage to certified institutional procurers, retail chains and exporters.")}</p>
             </div>
           </div>
           <div className="feat-card">
             <div className="feat-icon"><Truck size={20} /></div>
             <div>
-              <h4>Integrated Logistics</h4>
-              <p>Automatic freight estimation per kilometer and pooled vehicle recommendations.</p>
+              <h4>{t("transactions.title", "Integrated Logistics & Trade")}</h4>
+              <p>{t("transactions.subtitle", "Automatic freight estimation per kilometer and pooled vehicle recommendations.")}</p>
             </div>
           </div>
           <div className="feat-card">
             <div className="feat-icon"><Warehouse size={20} /></div>
             <div>
-              <h4>FPO Pooling Dashboard</h4>
-              <p>Aggregate produce from dozens of smallholders for collective bargaining power.</p>
+              <h4>{t("fpo.title", "FPO Pooling Dashboard")}</h4>
+              <p>{t("fpo.subtitle", "Aggregate produce from dozens of smallholders for collective bargaining power.")}</p>
             </div>
           </div>
         </div>
@@ -263,20 +264,22 @@ export function LandingPage() {
       {/* CTA Section */}
       <section className="wrap" style={{ paddingBottom: 60 }}>
         <div className="final-cta">
-          <h2>Make every harvest and selling decision smarter.</h2>
+          <h2>{t("landing.tagline", "Make every harvest and selling decision smarter.")}</h2>
           <p style={{ color: "rgba(255,255,255,0.8)", maxWidth: 500, margin: "0 auto 24px" }}>
-            Join Indian farmers and FPOs transforming price discovery and market linkages nationwide.
+            {t("landing.heroSubtitle", "Join Indian farmers and FPOs transforming price discovery and market linkages nationwide.")}
           </p>
           <Link className="btn btn-saffron" to="/register" style={{ padding: "14px 32px", fontSize: "16px" }}>
-            Start Decision Analysis Now
+            {t("landing.getStarted", "Start Decision Analysis Now")}
           </Link>
         </div>
       </section>
 
       <footer className="wrap app-footer">
-        <span>© 2026 KisanSetu AI · Team Skill Squad · Smart India Hackathon 2026 · SIH26132</span>
+        <span>© 2026 KissanSetu AI · Team Skill Squad · Smart India Hackathon 2026 · SIH26132</span>
         <span>Agriculture, FoodTech & Rural Development · Pan-India Platform</span>
       </footer>
     </div>
   );
 }
+
+export default LandingPage;

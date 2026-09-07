@@ -20,11 +20,13 @@ import { NetRealizationCalculator } from "../components/NetRealizationCalculator
 import { SoilFormModal } from "../components/SoilFormModal";
 import { useAppState } from "../context/AppStateContext";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 import { farmIntelligenceApi } from "../services/farmIntelligenceApi";
 import type { FarmIntelligenceOverview } from "../services/farmIntelligenceApi";
 import type { Decision } from "../types";
 
 export function RecommendationPage() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const { crops, activeCropId, setActiveCropId } = useAppState();
   const [activeTab, setActiveTab] = useState<"intelligence" | "market">("intelligence");
@@ -69,9 +71,9 @@ export function RecommendationPage() {
               {intelligence?.farm?.location || user?.location || "Your Farm"}
             </span>
           </div>
-          <h1 style={{ fontSize: "24px", fontWeight: 800, margin: 0 }}>Farm Intelligence & Decision Center</h1>
+          <h1 style={{ fontSize: "24px", fontWeight: 800, margin: 0 }}>{t("recommendations.title")}</h1>
           <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 3 }}>
-            Structured, explainable crop suitability, soil interpretation, weather-aware action plan & market routing.
+            {t("recommendations.subtitle")}
           </p>
         </div>
 
@@ -91,7 +93,7 @@ export function RecommendationPage() {
             className={`tab-switcher-btn ${activeTab === "market" ? "active" : ""}`}
           >
             <Store size={16} />
-            <span>Market Decision (SELL / WAIT)</span>
+            <span>{t("market.decision")}</span>
           </button>
         </div>
       </div>

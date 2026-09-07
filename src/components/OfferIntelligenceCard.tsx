@@ -13,6 +13,7 @@ import type {
   OfferHistoryItem,
 } from "../services/buyerMatchingApi";
 import type { OfferRecord } from "../types";
+import { useLanguage } from "../context/LanguageContext";
 
 interface Props {
   offer: OfferRecord;
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export function OfferIntelligenceCard({ offer, onOfferUpdated }: Props) {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [intel, setIntel] = useState<OfferIntelligenceResponse | null>(null);
   const [history, setHistory] = useState<OfferHistoryItem[]>([]);
@@ -319,14 +321,14 @@ export function OfferIntelligenceCard({ offer, onOfferUpdated }: Props) {
               onClick={handleAccept}
               disabled={actionLoading}
             >
-              Accept Offer & Generate Contract <ArrowRight size={14} />
+              {t("offers.accept")} <ArrowRight size={14} />
             </button>
             <button
               className="btn btn-secondary"
               style={{ flex: 1, justifyContent: "center", fontSize: "12.5px" }}
               onClick={() => setShowCounter(!showCounter)}
             >
-              Counter
+              {t("offers.counter")}
             </button>
             <button
               className="btn btn-ghost"
@@ -334,7 +336,7 @@ export function OfferIntelligenceCard({ offer, onOfferUpdated }: Props) {
               onClick={handleReject}
               disabled={actionLoading}
             >
-              Reject
+              {t("offers.reject")}
             </button>
           </>
         )}

@@ -27,8 +27,10 @@ import type {
   NetRealizationBreakdown,
 } from "../services/marketIntelligenceApi";
 import { cropOptions } from "../data/demo";
+import { useLanguage } from "../context/LanguageContext";
 
 export function MarketPage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [selectedCrop, setSelectedCrop] = useState<string>("Tomato");
   const [quantityQuintals, setQuantityQuintals] = useState<number>(30);
@@ -125,18 +127,18 @@ export function MarketPage() {
               Phase 5 Engine
             </span>
             <h1 style={{ fontSize: "24px", fontWeight: 900, margin: 0 }}>
-              Market Intelligence & Price Discovery
+              {t("market.title")}
             </h1>
           </div>
           <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 4 }}>
-            Maximize your expected <strong>Net Realization</strong> (Gross revenue minus freight, mandi cess, handling, and storage).
+            {t("market.subtitle")}
           </p>
         </div>
 
         {/* Controls */}
         <div className="market-controls">
           <div className="flex flex-center gap-md">
-            <label style={{ fontSize: "13px", fontWeight: 700, color: "var(--ink-soft)" }}>Crop:</label>
+            <label style={{ fontSize: "13px", fontWeight: 700, color: "var(--ink-soft)" }}>{t("lots.crop")}:</label>
             <select
               value={selectedCrop}
               onChange={(e) => setSelectedCrop(e.target.value)}
@@ -151,7 +153,7 @@ export function MarketPage() {
           </div>
 
           <div className="flex flex-center gap-md">
-            <label style={{ fontSize: "13px", fontWeight: 700, color: "var(--ink-soft)" }}>Quantity:</label>
+            <label style={{ fontSize: "13px", fontWeight: 700, color: "var(--ink-soft)" }}>{t("lots.quantity")}:</label>
             <div className="qty-input-group">
               <input
                 type="number"
@@ -188,13 +190,13 @@ export function MarketPage() {
           className={`tab-btn ${activeTab === "compare" ? "active" : ""}`}
           onClick={() => setActiveTab("compare")}
         >
-          <Store size={15} /> Mandi Net Comparison
+          <Store size={15} /> {t("market.nearbyMandis")}
         </button>
         <button
           className={`tab-btn ${activeTab === "forecast" ? "active" : ""}`}
           onClick={() => setActiveTab("forecast")}
         >
-          <TrendingUp size={15} /> Price Forecast (7-Day)
+          <TrendingUp size={15} /> {t("market.forecast3d")}
         </button>
         <button
           className={`tab-btn ${activeTab === "calculator" ? "active" : ""}`}
@@ -206,14 +208,14 @@ export function MarketPage() {
           className={`tab-btn ${activeTab === "buyers" ? "active" : ""}`}
           onClick={() => setActiveTab("buyers")}
         >
-          <Users size={15} /> Verified Buyer Leads ({overview?.buyer_opportunities.opportunities_count || 0})
+          <Users size={15} /> {t("buyers.title")} ({overview?.buyer_opportunities.opportunities_count || 0})
         </button>
       </div>
 
       {loading && !overview && (
         <div className="card card-pad market-loading">
           <RefreshCw size={32} className="animate-spin" color="var(--green-deep)" style={{ margin: "0 auto 12px" }} />
-          <h3 style={{ fontSize: "16px", fontWeight: 700 }}>Calculating Net Realization & Multi-Mandi Analytics...</h3>
+          <h3 style={{ fontSize: "16px", fontWeight: 700 }}>{t("common.loading")}</h3>
           <p style={{ color: "var(--ink-soft)", fontSize: "13px" }}>Analyzing distance freight, handling fees, and price trajectories.</p>
         </div>
       )}

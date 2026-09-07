@@ -8,7 +8,7 @@ import type { UserRole, LanguageCode } from "../types";
 
 export function LoginPage() {
   const { user, login } = useAuth();
-  const { lang, setLang } = useLanguage();
+  const { lang, setLang, t, languages } = useLanguage();
   const nav = useNavigate();
   const [selectedRole, setSelectedRole] = useState<UserRole>("farmer");
   const [email, setEmail] = useState("");
@@ -48,40 +48,37 @@ export function LoginPage() {
         <Logo to="/" />
         <div>
           <h2>
-            Smarter decisions.<br />
-            Better markets.<br />
-            Stronger farmers.
+            {t("landing.tagline", "From knowing the market price to knowing the best action.")}
           </h2>
           <p>
-            AI-powered farm-to-market intelligence combining weather, mandi prices,
-            buyer demand, and logistics into one transparent recommendation.
+            {t("landing.heroSubtitle", "AI-powered farm-to-market intelligence combining weather, mandi prices, buyer demand, and logistics into one transparent recommendation.")}
           </p>
           <div className="auth-value-props">
             <div className="auth-value-prop">
               <ShieldCheck size={18} />
-              <span>Pan-India market intelligence across all states</span>
+              <span>{t("landing.verifiedIntelligence", "Pan-India market intelligence across all states")}</span>
             </div>
             <div className="auth-value-prop">
               <ShieldCheck size={18} />
-              <span>Direct farm-to-buyer marketplace</span>
+              <span>{t("landing.directBuyerLink", "Direct farm-to-buyer marketplace")}</span>
             </div>
             <div className="auth-value-prop">
               <ShieldCheck size={18} />
-              <span>Multi-lingual voice AI assistant</span>
+              <span>{t("landing.farmerAdvantage", "Multi-lingual voice AI assistant")}</span>
             </div>
           </div>
         </div>
         <div className="auth-visual-footer">
           <ShieldCheck size={14} />
-          <span>Smart India Hackathon 2026 · SIH26132</span>
+          <span>{t("nav.credit", "Smart India Hackathon · SIH26132")}</span>
         </div>
       </div>
 
       <div className="auth-form-side">
         <div className="auth-box">
-          <h2>Welcome Back</h2>
+          <h2>{t("auth.loginTitle", "Welcome Back")}</h2>
           <p className="auth-subtitle">
-            Sign in to access your agricultural decision dashboard.
+            {t("auth.loginSubtitle", "Sign in to access your agricultural decision dashboard.")}
           </p>
 
           {/* Role selector */}
@@ -95,14 +92,14 @@ export function LoginPage() {
                 tabIndex={0}
                 onKeyDown={(e) => e.key === "Enter" && handleRoleSelect(r)}
               >
-                {r === "farmer" ? "🌾 Farmer" : r === "fpo" ? "🏛 FPO" : "🏪 Buyer"}
+                {r === "farmer" ? `🌾 ${t("auth.roleFarmer", "Farmer")}` : r === "fpo" ? `🏛 ${t("auth.roleFpo", "FPO")}` : `🏪 ${t("auth.roleBuyer", "Buyer")}`}
               </div>
             ))}
           </div>
 
           <form onSubmit={onSubmit}>
             <div className="field">
-              <label htmlFor="email">Mobile Number or Email</label>
+              <label htmlFor="email">{t("auth.mobile", "Mobile Number or Email")}</label>
               <input
                 id="email"
                 value={email}
@@ -114,7 +111,7 @@ export function LoginPage() {
             </div>
 
             <div className="field">
-              <label htmlFor="password">Password</label>
+              <label htmlFor="password">{t("auth.password", "Password")}</label>
               <div className="password-wrapper">
                 <input
                   id="password"
@@ -138,20 +135,21 @@ export function LoginPage() {
             </div>
 
             <a href="#" className="auth-forgot-link" onClick={(e) => e.preventDefault()}>
-              Forgot password?
+              {t("auth.forgotPassword", "Forgot password?")}
             </a>
 
             <div className="field">
-              <label htmlFor="lang">Preferred Language</label>
+              <label htmlFor="lang">{t("profile.languagePref", "Preferred Language")}</label>
               <select
                 id="lang"
                 value={lang}
                 onChange={(e) => setLang(e.target.value as LanguageCode)}
               >
-                <option value="en">English</option>
-                <option value="hi">हिन्दी (Hindi)</option>
-                <option value="mr">मराठी (Marathi)</option>
-                <option value="te">తెలుగు (Telugu)</option>
+                {(Object.keys(languages) as LanguageCode[]).map((code) => (
+                  <option key={code} value={code}>
+                    {languages[code].native} ({languages[code].name})
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -165,16 +163,18 @@ export function LoginPage() {
               className={`btn btn-primary btn-block btn-lg ${busy ? "btn-loading" : ""}`}
               disabled={busy}
             >
-              {busy ? "Signing In…" : "Sign In"}
+              {busy ? `${t("common.loading", "Signing In...")}` : t("auth.loginButton", "Sign In")}
             </button>
           </form>
 
           <div className="auth-footer-link">
-            New to KissanSetu AI?{" "}
-            <Link to="/register">Create Account</Link>
+            {t("auth.noAccount", "New to KissanSetu AI?")}{" "}
+            <Link to="/register">{t("auth.registerButton", "Create Account")}</Link>
           </div>
         </div>
       </div>
     </div>
   );
 }
+
+export default LoginPage;

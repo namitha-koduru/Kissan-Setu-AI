@@ -2,10 +2,12 @@ import { useState, useEffect, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Camera, Check, Sparkles } from "lucide-react";
 import { useAppState } from "../context/AppStateContext";
+import { useLanguage } from "../context/LanguageContext";
 import { cropOptions, locationOptions } from "../data/demo";
 import type { CropRecord, CropStage } from "../types";
 
 export function AddCropPage() {
+  const { t } = useLanguage();
   const { addCrop } = useAppState();
   const navigate = useNavigate();
 
@@ -112,9 +114,9 @@ export function AddCropPage() {
   return (
     <div className="wrap" style={{ maxWidth: 720 }}>
       <div className="page-header" style={{ padding: "20px 0 16px" }}>
-        <h1 style={{ fontSize: "24px", fontWeight: 800 }}>Register New Crop</h1>
+        <h1 style={{ fontSize: "24px", fontWeight: 800 }}>{t("crops.addCrop")}</h1>
         <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 2 }}>
-          Provide crop and farm details so KisanSetu can compute the optimal harvest window and net realization.
+          {t("crops.subtitle")}
         </p>
       </div>
 
@@ -122,7 +124,7 @@ export function AddCropPage() {
         <form onSubmit={handleSubmit}>
           <div className="form-grid">
             <div className="field">
-              <label htmlFor="crop-select">Crop Name</label>
+              <label htmlFor="crop-select">{t("crops.cropName")}</label>
               <select
                 id="crop-select"
                 value={cropName}
@@ -137,7 +139,7 @@ export function AddCropPage() {
             </div>
 
             <div className="field">
-              <label htmlFor="crop-variety">Variety / Hybrid</label>
+              <label htmlFor="crop-variety">{t("crops.variety")}</label>
               <input
                 id="crop-variety"
                 value={variety}
@@ -148,7 +150,7 @@ export function AddCropPage() {
             </div>
 
             <div className="field">
-              <label htmlFor="crop-qty">Estimated Quantity (kg)</label>
+              <label htmlFor="crop-qty">{t("crops.quantity")}</label>
               <input
                 id="crop-qty"
                 type="number"
@@ -160,7 +162,7 @@ export function AddCropPage() {
             </div>
 
             <div className="field">
-              <label htmlFor="crop-loc">Farm Location</label>
+              <label htmlFor="crop-loc">{t("auth.location")}</label>
               <select
                 id="crop-loc"
                 value={location}
@@ -175,7 +177,7 @@ export function AddCropPage() {
             </div>
 
             <div className="field">
-              <label htmlFor="crop-sow">Sowing Date</label>
+              <label htmlFor="crop-sow">{t("crops.sowingDate")}</label>
               <input
                 id="crop-sow"
                 type="date"
@@ -186,7 +188,7 @@ export function AddCropPage() {
             </div>
 
             <div className="field">
-              <label htmlFor="crop-stage">Current Growth Stage</label>
+              <label htmlFor="crop-stage">{t("crops.growthStage")}</label>
               <select
                 id="crop-stage"
                 value={stage}
@@ -221,7 +223,7 @@ export function AddCropPage() {
           </div>
 
           <button className="btn btn-primary btn-block" type="submit" style={{ marginTop: 12, padding: "12px 20px" }}>
-            <Sparkles size={16} /> Analyze Crop & Generate Decision
+            <Sparkles size={16} /> {t("common.submit")}
           </button>
         </form>
       </div>

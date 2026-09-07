@@ -7,32 +7,25 @@ import type { LanguageCode } from "../types";
 
 export function ProfilePage() {
   const { user, logout } = useAuth();
-  const { lang, setLang } = useLanguage();
+  const { lang, setLang, t, languages } = useLanguage();
   const { onboardData, showToast } = useAppState();
 
   const [priceAlerts, setPriceAlerts] = useState(true);
   const [weatherAlerts, setWeatherAlerts] = useState(true);
   const [offerAlerts, setOfferAlerts] = useState(true);
 
-  const languages: { code: LanguageCode; label: string }[] = [
-    { code: "en", label: "English" },
-    { code: "hi", label: "हिन्दी (Hindi)" },
-    { code: "mr", label: "मराठी (Marathi)" },
-    { code: "te", label: "తెలుగు (Telugu)" },
-  ];
-
   const handleLanguageChange = (code: LanguageCode) => {
     setLang(code);
-    showToast(`Language switched to ${languages.find((l) => l.code === code)?.label}`);
+    showToast(t("profile.success", "Language updated successfully!"));
   };
 
   return (
     <div className="wrap" style={{ maxWidth: 720 }}>
       <div className="page-header">
         <div>
-          <h1>Profile & Farm Settings</h1>
+          <h1>{t("profile.title", "Profile & Farm Settings")}</h1>
           <p className="page-subtitle">
-            Manage your account, farm details, language, and notification preferences.
+            {t("profile.subtitle", "Manage your account, farm details, language, and notification preferences.")}
           </p>
         </div>
       </div>
@@ -49,25 +42,25 @@ export function ProfilePage() {
           <div>
             <h2 style={{ fontSize: "20px", fontWeight: 800 }}>{user?.name || "Ramesh Patil"}</h2>
             <p style={{ color: "var(--ink-soft)", fontSize: "13.5px" }}>
-              Registered Role: <strong>{user?.role?.toUpperCase() || "FARMER"}</strong> · {user?.location || (user?.district ? `${user.district}, ${user.state}` : "India")}
+              {t("nav.accountRole", "Registered Role")}: <strong>{user?.role?.toUpperCase() || "FARMER"}</strong> · {user?.location || (user?.district ? `${user.district}, ${user.state}` : "India")}
             </p>
           </div>
         </div>
 
         <div className="pf-row">
-          <span className="l">Registered Mobile Number</span>
+          <span className="l">{t("auth.mobile", "Registered Mobile Number")}</span>
           <span className="v">{user?.mobile || "98765 43210"}</span>
         </div>
         <div className="pf-row">
-          <span className="l">Email Address</span>
+          <span className="l">{t("auth.email", "Email Address")}</span>
           <span className="v">{user?.email || "farmer@kisansetu.in"}</span>
         </div>
         <div className="pf-row">
-          <span className="l">Farm Parcel Location</span>
+          <span className="l">{t("onboarding.village", "Farm Parcel Location")}</span>
           <span className="v">{onboardData.village || "—"}, {onboardData.district || "—"}, {user?.state || onboardData.state || "—"}</span>
         </div>
         <div className="pf-row">
-          <span className="l">Land Under Cultivation</span>
+          <span className="l">{t("onboarding.landAcreage", "Land Under Cultivation")}</span>
           <span className="v">{user?.landAcreage || onboardData.land || "2.5 acres"}</span>
         </div>
       </div>
@@ -75,14 +68,14 @@ export function ProfilePage() {
       {/* Crops & Preferred Markets */}
       <div className="card card-pad mb-lg">
         <h3 style={{ fontSize: "16px", fontWeight: 800, marginBottom: 14 }}>
-          Crops & Preferred Mandis
+          {t("crops.title", "Crops & Preferred Mandis")}
         </h3>
         <div className="pf-row">
-          <span className="l">Registered Crops</span>
+          <span className="l">{t("onboarding.primaryCrops", "Registered Crops")}</span>
           <span className="v">{onboardData.crops.join(", ") || "Tomato, Onion, Potato"}</span>
         </div>
         <div className="pf-row">
-          <span className="l">Tracked Mandi Hubs</span>
+          <span className="l">{t("market.nearbyMandis", "Tracked Mandi Hubs")}</span>
           <span className="v">{onboardData.markets.join(", ") || "Nashik, Ahmednagar, Pune"}</span>
         </div>
       </div>
@@ -90,19 +83,19 @@ export function ProfilePage() {
       {/* Language Selection Grid */}
       <div className="card card-pad mb-lg">
         <h3 style={{ fontSize: "16px", fontWeight: 800, marginBottom: 14 }}>
-          Application Language Preference
+          {t("profile.languagePref", "Application Language Preference")}
         </h3>
         <div className="lang-grid">
-          {languages.map((l) => {
-            const isSelected = lang === l.code;
+          {(Object.keys(languages) as LanguageCode[]).map((code) => {
+            const isSelected = lang === code;
             return (
               <div
-                key={l.code}
+                key={code}
                 className={`lang-opt ${isSelected ? "selected" : ""}`}
-                onClick={() => handleLanguageChange(l.code)}
+                onClick={() => handleLanguageChange(code)}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span>{l.label}</span>
+                  <span>{languages[code].native} ({languages[code].name})</span>
                   {isSelected && <Check size={16} color="#176B45" />}
                 </div>
               </div>
@@ -114,10 +107,10 @@ export function ProfilePage() {
       {/* Notification Preferences */}
       <div className="card card-pad mb-xl">
         <h3 style={{ fontSize: "16px", fontWeight: 800, marginBottom: 14 }}>
-          Notification & Alert Preferences
+          {t("nav.notifications", "Notification & Alert Preferences")}
         </h3>
         <div className="pf-row">
-          <span className="l">Real-time Mandi Price Surge Alerts</span>
+          <span className="l">{t("market.title", "Real-time Mandi Price Surge Alerts")}</span>
           <button
             type="button"
             className={`btn btn-sm ${priceAlerts ? "btn-primary" : "btn-secondary"}`}
@@ -127,7 +120,7 @@ export function ProfilePage() {
           </button>
         </div>
         <div className="pf-row">
-          <span className="l">Severe Weather Risk & Harvest Window Warnings</span>
+          <span className="l">{t("weather.title", "Severe Weather Risk & Harvest Window Warnings")}</span>
           <button
             type="button"
             className={`btn btn-sm ${weatherAlerts ? "btn-primary" : "btn-secondary"}`}
@@ -137,7 +130,7 @@ export function ProfilePage() {
           </button>
         </div>
         <div className="pf-row">
-          <span className="l">Instant Direct Buyer Procurement Offers</span>
+          <span className="l">{t("offers.title", "Instant Direct Buyer Procurement Offers")}</span>
           <button
             type="button"
             className={`btn btn-sm ${offerAlerts ? "btn-primary" : "btn-secondary"}`}
@@ -154,8 +147,10 @@ export function ProfilePage() {
         onClick={logout}
         style={{ color: "var(--danger)", borderColor: "#F5C6C2", marginBottom: 30 }}
       >
-        <LogOut size={16} /> Sign Out of Session
+        <LogOut size={16} /> {t("nav.signOut", "Sign Out of Session")}
       </button>
     </div>
   );
 }
+
+export default ProfilePage;

@@ -181,112 +181,58 @@ class LLMService:
         error_context: Optional[str] = None
     ) -> str:
         """
-        Intelligent context-aware fallback assistant that parses user queries (irrigation, weather, harvest, pests, mandi)
-        and responds in the farmer's selected language.
+        Transparent offline/fallback message indicating AI service status in the user's language.
         """
-        last_message = messages[-1]["content"].lower() if messages else ""
-
-        # Language specific templates
+        service_msg = f" (Ollama / {self.model})" if self.provider == "ollama" else ""
+        
         if language == "hi":
-            if "water" in last_message or "सिंचाई" in last_message or "irrigation" in last_message:
-                return (
-                    "🌾 **सिंचाई सलाह (Tomato & General Crops):**\n\n"
-                    "1. **मिट्टी की नमी:** ड्रिप सिंचाई द्वारा सुबह के समय 1.5–2 घंटे पानी देना सबसे उत्तम है।\n"
-                    "2. **मौसम पूर्वानुमान:** यदि अगले 48 घंटों में बारिश की संभावना हो, तो सिंचाई 1–2 दिन के लिए टाल दें ताकि जलभराव से जड़ सड़न न हो।\n"
-                    "3. **फल पकने की अवस्था:** अत्यधिक पानी से टमाटर फटने (cracking) का खतरा रहता है, इसलिए नियमित और नियंत्रित नमी बनाए रखें।"
-                )
-            elif "harvest" in last_message or "कटाई" in last_message or "मंडी" in last_message:
-                return (
-                    "🚜 **फसल कटाई एवं मंडी सलाह:**\n\n"
-                    "1. **तुड़ाई का सही समय:** टमाटर जब 70-80% लाल (Breaker to Turning stage) हों, तब सुबह 7 से 10 बजे के बीच तुड़ाई करें।\n"
-                    "2. **मंडी चयन:** नासिक और लासलगांव मंडियों में इस समय थोक मांग अच्छी है। पास के संग्रह केंद्र पर ले जाने से परिवहन खर्च कम होगा।"
-                )
-            elif "pest" in last_message or "कीट" in last_message or "रोग" in last_message:
-                return (
-                    "🌿 **कीट एवं रोग नियंत्रण मार्गदर्शिका:**\n\n"
-                    "1. **प्रारंभिक लक्षण:** पत्तियों पर धब्बे या सिकुड़न फंगल इन्फेक्शन या थ्रिप्स/सफेद मक्खी का संकेत हो सकते हैं।\n"
-                    "2. **जैविक उपचार:** 5 मिली नीम तेल प्रति लीटर पानी में मिलाकर शाम के समय छिड़काव करें।\n"
-                    "3. **सलाह:** सटीक निदान के लिए स्थानीय कृषि विज्ञान केंद्र (KVK) से संपर्क करें।"
-                )
-            else:
-                return (
-                    "नमस्ते किसान भाई! मैं **किसान सेतु AI** सहायक हूँ।\n\n"
-                    "आप अपनी फसल की सिंचाई, मौसम जोखिम, मंडी भाव, खाद प्रबंधन अथवा कीट नियंत्रण के बारे में कोई भी प्रश्न पूछ सकते हैं।"
-                )
-
-        elif language == "mr":
-            if "water" in last_message or "पाणी" in last_message or "सिंचन" in last_message or "irrigation" in last_message:
-                return (
-                    "🌾 **पाणी व्यवस्थापन व सिंचन सल्ला:**\n\n"
-                    "1. **ठिबक सिंचन:** टोमॅटो पिकास सकाळी लवकर 1 ते 2 तास ठिबक सिंचनाने पाणी द्यावे.\n"
-                    "2. **हवामान अंदाज:** नाशिक परिसरात पुढील 2 दिवसांत पावसाची शक्यता असल्यास पाणी देणे थांबवावे.\n"
-                    "3. **फळ तडकणे टाळा:** काढणीच्या काळात जास्त पाणी दिल्यास फळे तडकण्याची शक्यता असते."
-                )
-            elif "harvest" in last_message or "काढणी" in last_message or "मंडी" in last_message:
-                return (
-                    "🚜 **काढणी व बाजारपेठ सल्ला:**\n\n"
-                    "1. टोमॅटोची काढणी फळे 70-80% लाल रंगावर असताना (ब्रेकर स्टेज) करावी.\n"
-                    "2. नाशिक व पिंपळगाव कृषी उत्पन्न बाजार समितीत (APMC) सध्या चांगला भाव मिळत आहे."
-                )
-            else:
-                return (
-                    "नमस्कार शेतकरी बंधूंनो! मी **किसान सेतू AI** शेती सल्लागार आहे.\n\n"
-                    "आपण पीक नियोजन, खत व्यवस्थापन, हवामान अंदाज आणि बाजारभावाबाबत माहिती विचारू शकता."
-                )
-
+            return (
+                f"⚠️ **AI सलाहकार सेवा वर्तमान में ऑफ़लाइन है**{service_msg}\n\n"
+                "स्थानीय AI मॉडल से संपर्क नहीं हो पा रहा है। कृपया सुनिश्चित करें कि Ollama सेवा सक्रिय है (`ollama run qwen3:4b`).\n\n"
+                "फसल सुरक्षा अथवा त्वरित आपातकालीन सहायता के लिए आप अपने स्थानीय **कृषि विज्ञान केंद्र (KVK)** या किसान कॉल सेंटर (1800-180-1551) से संपर्क कर सकते हैं।"
+            )
         elif language == "te":
-            if "water" in last_message or "నీరు" in last_message or "irrigation" in last_message:
-                return (
-                    "🌾 **నీటి యాజమాన్యం మరియు సూచనలు:**\n\n"
-                    "1. **బిందు సేద్యం (Drip):** ఉదయం పూట 1.5 నుండి 2 గంటల పాటు డ్రిప్ ద్వారా నీటిని అందించడం ఉత్తమం.\n"
-                    "2. **వాతావరణం:** రాబోయే 48 గంటల్లో వర్ష సూచన ఉంటే నీరు పెట్టడం వాయిదా వేయండి.\n"
-                    "3. **పండ్ల నాణ్యత:** అధిక తేమ వల్ల కాయలు పగిలిపోయే ప్రమాదం ఉంది, కాబట్టి సమతుల్య తేమను కొనసాగించండి."
-                )
-            else:
-                return (
-                    "నమస్కారం రైతు సోదరులారా! నేను మీ **కిసాన్ సేతు AI** వ్యవసాయ సహాయకుడిని.\n\n"
-                    "మీ పంట సాగు, నీటి పారుదల, మార్కెట్ ధరలు మరియు వాతావరణ సమాచారం గురించి ఏవైనా ప్రశ్నలు అడగవచ్చు."
-                )
+            return (
+                f"⚠️ **AI సేవ ప్రస్తుతం అందుబాటులో లేదు**{service_msg}\n\n"
+                "స్థానిక AI మోడల్‌తో కనెక్ట్ కాలేకపోతున్నాము. దయచేసి Ollama సర్వర్ రన్ అవుతోందో లేదో నిర్ధారించుకోండి (`ollama run qwen3:4b`).\n\n"
+                "అత్యవసర వ్యవసాయ సలహాల కోసం మీ స్థానిక **రైతు భరోసా కేంద్రం (RBK)** లేదా కిసాన్ కాల్ సెంటర్ (1800-180-1551) ను సంప్రదించండి."
+            )
+        elif language == "mr":
+            return (
+                f"⚠️ **AI सल्लागार सेवा सध्या ऑफलाइन आहे**{service_msg}\n\n"
+                "स्थानिक AI मॉडेलशी संपर्क होऊ शकत नाही. कृपया Ollama सुरू असल्याची खात्री करा (`ollama run qwen3:4b`).\n\n"
+                "तातडीच्या शेती सल्ल्यासाठी कृपया स्थानिक **कृषी विज्ञान केंद्र (KVK)** किंवा किसान कॉल सेंटर (1800-180-1551) शी संपर्क साधावा."
+            )
+        elif language == "ta":
+            return (
+                f"⚠️ **AI சேவை தற்போது கிடைக்கவில்லை**{service_msg}\n\n"
+                "உள்ளூர் AI மாதிரியுடன் இணைக்க முடியவில்லை. Ollama இயங்குகிறதா என்பதை உறுதிப்படுத்தவும் (`ollama run qwen3:4b`).\n\n"
+                "அவசர விவசாய ஆலோசனைகளுக்கு உங்கள் உள்ளூர் வேளாண் அறிவியல் மையத்தை (KVK) தொடர்பு கொள்ளவும்."
+            )
+        elif language == "kn":
+            return (
+                f"⚠️ **AI ಸೇವೆ ಪ್ರಸ್ತುತ ಲಭ್ಯವಿಲ್ಲ**{service_msg}\n\n"
+                "ಸ್ಥಳೀಯ AI ಮಾದರಿಯೊಂದಿಗೆ ಸಂಪರ್ಕ ಸಾಧಿಸಲು ಸಾಧ್ಯವಾಗುತ್ತಿಲ್ಲ. ದಯವಿಟ್ಟು Ollama ಚಾಲನೆಯಲ್ಲಿದೆಯೇ ಎಂದು ಪರಿಶೀಲಿಸಿ (`ollama run qwen3:4b`).\n\n"
+                "ತುರ್ತು ಕೃಷಿ ಸಲಹೆಗಾಗಿ ಸ್ಥಳೀಯ ಕೃಷಿ ವಿಜ್ಞಾನ ಕೇಂದ್ರವನ್ನು (KVK) ಸಂಪರ್ಕಿಸಿ."
+            )
+        elif language == "bn":
+            return (
+                f"⚠️ **AI উপদেষ্টা পরিষেবা বর্তমানে অফলাইনে রয়েছে**{service_msg}\n\n"
+                "স্থানীয় AI মডেলের সাথে সংযোগ করা যাচ্ছে না। অনুগ্রহ করে নিশ্চিত করুন যে Ollama চলছে (`ollama run qwen3:4b`)।\n\n"
+                "জরুরী কৃষি নির্দেশিকার জন্য স্থানীয় কৃষি বিজ্ঞান কেন্দ্রের (KVK) সাথে যোগাযোগ করুন।"
+            )
+        elif language == "ml":
+            return (
+                f"⚠️ **AI സേവനം ഇപ്പോൾ ലഭ്യമല്ല**{service_msg}\n\n"
+                "പ്രാദേശിക AI മോഡലിലേക്ക് കണക്റ്റുചെയ്യാനാകുന്നില്ല. Ollama പ്രവർത്തിക്കുന്നുണ്ടെന്ന് ഉറപ്പാക്കുക (`ollama run qwen3:4b`).\n\n"
+                "അടിയന്തര കാർഷിക മാർഗ്ഗനിർദ്ദേശങ്ങൾക്ക് പ്രാദേശിക കൃഷി വിജ്ഞാന കേന്ദ്രവുമായി (KVK) ബന്ധപ്പെടുക."
+            )
 
-        # Default English response
-        if "water" in last_message or "irrigate" in last_message or "irrigation" in last_message:
-            return (
-                "💧 **Irrigation Advisory (Tomato & Field Crops):**\n\n"
-                "1. **Moisture Timing:** Irrigate during the early morning hours (6:00 AM – 8:30 AM) via drip irrigation for 1.5 to 2 hours.\n"
-                "2. **Weather Alignment:** Given the forecast showing increased rain probability in 48 hours, consider reducing scheduled irrigation volume by 30-40% to prevent root saturation and fungal development.\n"
-                "3. **Fruit Ripening Stage:** If your tomatoes are in the 70–80% color-turning stage, maintain consistent, moderate moisture to avoid fruit cracking."
-            )
-        elif "harvest" in last_message or "cut" in last_message or "market" in last_message:
-            return (
-                "🚜 **Harvest & Mandi Timing Guidance:**\n\n"
-                "1. **Optimal Maturity Window:** Harvest tomatoes at the 'Breaker to Turning' stage (pinkish-red bottom) for optimal transit shelf-life.\n"
-                "2. **Market Realization:** Local wholesale demand at Nashik APMC is currently strong. Direct transport to collection hubs will yield higher net realization after accounting for freight deductions.\n"
-                "3. **Rain Precaution:** Completing harvest before heavy shower periods protects skin firmness and Grade A classification."
-            )
-        elif "pest" in last_message or "leaf" in last_message or "disease" in last_message or "spot" in last_message:
-            return (
-                "🌿 **Foliar Health & Pest Assessment:**\n\n"
-                "1. **Observation:** Yellowing leaf margins or small dark spots commonly suggest early blight or sucking pest pressure (such as thrips or whiteflies).\n"
-                "2. **Safe First Step:** Apply 5 ml cold-pressed Neem oil (10,000 ppm) per liter of water during the late afternoon.\n"
-                "3. **Expert Verification:** Because visual verification is critical, consult your local Krishi Vigyan Kendra (KVK) or extension officer with a physical leaf sample."
-            )
-        elif "rain" in last_message or "weather" in last_message:
-            return (
-                "🌦️ **Weather Impact Analysis:**\n\n"
-                "1. **Forecast Check:** Precipitation probability increases across the region in 2–3 days.\n"
-                "2. **Field Actions:** Clear field drainage furrows to avoid waterlogging around roots.\n"
-                "3. **Fertilizer Spraying:** Avoid foliar spraying within 4 hours of expected rain."
-            )
-        else:
-            return (
-                "Hello Farmer! I am your **KissanSetuAI Agricultural Assistant**.\n\n"
-                "I am ready to help you with:\n"
-                "• **Irrigation & Soil Moisture** schedules\n"
-                "• **Harvest Timing** based on crop maturity & rain forecasts\n"
-                "• **Mandi Price Discovery** and net realization calculation\n"
-                "• **Safe Organic Pest & Disease Management**\n\n"
-                "Feel free to ask a question in English, Hindi, Telugu, Marathi, Tamil, or your preferred language!"
-            )
+        return (
+            f"⚠️ **AI Advisory Service is Temporarily Unavailable**{service_msg}\n\n"
+            "Unable to connect to the local LLM inference engine. Please ensure that Ollama is running (`ollama run qwen3:4b`) at http://localhost:11434.\n\n"
+            "For urgent agricultural field queries, you can also consult your local Krishi Vigyan Kendra (KVK) or the Kisan Call Centre (1800-180-1551)."
+        )
 
     def detect_language(self, text: str) -> str:
         """

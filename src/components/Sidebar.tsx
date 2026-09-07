@@ -20,19 +20,19 @@ import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 
 const navItems = [
-  { to: "/dashboard", label: "Dashboard", labelKey: "dashboard", icon: LayoutDashboard, roles: ["farmer", "fpo", "buyer", "admin"], group: "main" },
-  { to: "/chat", label: "Ask KissanSetu AI", icon: Sparkles, roles: ["farmer", "fpo", "buyer", "admin"], group: "main" },
-  { to: "/crops", label: "My Crops", labelKey: "myCrops", icon: Sprout, roles: ["farmer", "fpo"], group: "farm" },
-  { to: "/recommendation", label: "Decision Center", labelKey: "recommendations", icon: Lightbulb, roles: ["farmer", "fpo"], group: "farm" },
-  { to: "/market", label: "Market Intel", labelKey: "market", icon: Store, roles: ["farmer", "fpo", "buyer", "admin"], group: "market" },
-  { to: "/buyers", label: "Buyer Marketplace", labelKey: "buyers", icon: Users, roles: ["farmer", "fpo", "admin"], group: "market" },
-  { to: "/lots", label: "My Lots", icon: Package, roles: ["farmer", "fpo", "buyer"], group: "trade" },
-  { to: "/offers", label: "Buyer Offers", labelKey: "offers", icon: Handshake, roles: ["farmer", "fpo", "buyer"], group: "trade" },
-  { to: "/transactions", label: "Transactions", icon: Truck, roles: ["farmer", "fpo", "buyer"], group: "trade" },
-  { to: "/weather", label: "Weather Intel", icon: CloudSun, roles: ["farmer", "fpo", "buyer", "admin"], group: "insights" },
-  { to: "/analytics", label: "Farm Analytics", icon: LineChart, roles: ["farmer", "fpo", "admin"], group: "insights" },
-  { to: "/fpo", label: "FPO Pooling", icon: Building2, roles: ["farmer", "fpo", "admin"], group: "insights" },
-  { to: "/profile", label: "Profile & Settings", icon: UserCheck, roles: ["farmer", "fpo", "buyer", "admin"], group: "settings" },
+  { to: "/dashboard", labelKey: "nav.dashboard", defaultLabel: "Dashboard", icon: LayoutDashboard, roles: ["farmer", "fpo", "buyer", "admin"], group: "main" },
+  { to: "/chat", labelKey: "nav.askAi", defaultLabel: "Ask KissanSetu AI", icon: Sparkles, roles: ["farmer", "fpo", "buyer", "admin"], group: "main" },
+  { to: "/crops", labelKey: "nav.myCrops", defaultLabel: "My Crops", icon: Sprout, roles: ["farmer", "fpo"], group: "farm" },
+  { to: "/recommendation", labelKey: "nav.recommendations", defaultLabel: "Decision Center", icon: Lightbulb, roles: ["farmer", "fpo"], group: "farm" },
+  { to: "/market", labelKey: "nav.market", defaultLabel: "Market Intel", icon: Store, roles: ["farmer", "fpo", "buyer", "admin"], group: "market" },
+  { to: "/buyers", labelKey: "nav.buyers", defaultLabel: "Buyer Marketplace", icon: Users, roles: ["farmer", "fpo", "admin"], group: "market" },
+  { to: "/lots", labelKey: "nav.lots", defaultLabel: "My Lots", icon: Package, roles: ["farmer", "fpo", "buyer"], group: "trade" },
+  { to: "/offers", labelKey: "nav.offers", defaultLabel: "Buyer Offers", icon: Handshake, roles: ["farmer", "fpo", "buyer"], group: "trade" },
+  { to: "/transactions", labelKey: "nav.transactions", defaultLabel: "Transactions", icon: Truck, roles: ["farmer", "fpo", "buyer"], group: "trade" },
+  { to: "/weather", labelKey: "nav.weather", defaultLabel: "Weather Intel", icon: CloudSun, roles: ["farmer", "fpo", "buyer", "admin"], group: "insights" },
+  { to: "/analytics", labelKey: "nav.analytics", defaultLabel: "Farm Analytics", icon: LineChart, roles: ["farmer", "fpo", "admin"], group: "insights" },
+  { to: "/fpo", labelKey: "nav.fpo", defaultLabel: "FPO Pooling", icon: Building2, roles: ["farmer", "fpo", "admin"], group: "insights" },
+  { to: "/profile", labelKey: "nav.profile", defaultLabel: "Profile & Settings", icon: UserCheck, roles: ["farmer", "fpo", "buyer", "admin"], group: "settings" },
 ] as const;
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
@@ -42,7 +42,6 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   const filteredItems = navItems.filter((i) => (i.roles as readonly string[]).includes(role));
 
-  // Group items for visual separation
   let lastGroup = "";
 
   return (
@@ -51,7 +50,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <nav className="sidebar-nav" aria-label="Main Navigation">
         {filteredItems.map((item) => {
           const Icon = item.icon;
-          const label = "labelKey" in item && item.labelKey ? t(item.labelKey) : item.label;
+          const label = t(item.labelKey, item.defaultLabel);
           const showDivider = lastGroup && item.group !== lastGroup;
           lastGroup = item.group;
 
@@ -75,7 +74,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
       <div className="sidebar-foot">
         <div className="sidebar-foot-role">
-          {user?.role} Account
+          {user?.role ? `${user.role.toUpperCase()} ${t("nav.accountRole", "Account")}` : t("nav.accountRole", "Account")}
         </div>
         <button
           className="btn btn-secondary btn-sm btn-block"
@@ -84,10 +83,10 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           style={{ gap: 6 }}
         >
           <LogOut size={14} />
-          <span>Sign out</span>
+          <span>{t("nav.signOut", "Sign Out")}</span>
         </button>
         <div className="sidebar-foot-credit">
-          Skill Squad · SIH26132
+          {t("nav.credit", "Skill Squad · SIH26132")}
         </div>
       </div>
     </aside>
@@ -95,12 +94,13 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 export function MobileNav() {
+  const { t } = useLanguage();
   const mobileLinks = [
-    { to: "/dashboard", label: "Home", icon: LayoutDashboard },
-    { to: "/crops", label: "Crops", icon: Sprout },
-    { to: "/recommendation", label: "Decide", icon: Lightbulb },
-    { to: "/market", label: "Markets", icon: Store },
-    { to: "/buyers", label: "Buyers", icon: Users },
+    { to: "/dashboard", label: t("nav.home", "Home"), icon: LayoutDashboard },
+    { to: "/crops", label: t("nav.myCrops", "Crops"), icon: Sprout },
+    { to: "/recommendation", label: t("nav.decide", "Decide"), icon: Lightbulb },
+    { to: "/market", label: t("nav.market", "Markets"), icon: Store },
+    { to: "/buyers", label: t("nav.buyers", "Buyers"), icon: Users },
   ];
 
   return (

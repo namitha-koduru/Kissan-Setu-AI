@@ -3,8 +3,10 @@ import { ArrowLeft, ArrowRight, Store, TrendingUp, Sparkles } from "lucide-react
 import { DecisionBadge } from "../components/DecisionBadge";
 import { HarvestTimeline } from "../components/HarvestTimeline";
 import { useAppState } from "../context/AppStateContext";
+import { useLanguage } from "../context/LanguageContext";
 
 export function CropDetailsPage() {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const { crops, setActiveCropId } = useAppState();
   const navigate = useNavigate();
@@ -31,7 +33,7 @@ export function CropDetailsPage() {
     <div className="wrap">
       <div style={{ marginBottom: 12, paddingTop: 10 }}>
         <Link to="/crops" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--ink-soft)", fontWeight: 600 }}>
-          <ArrowLeft size={14} /> Back to My Crops
+          <ArrowLeft size={14} /> {t("nav.myCrops")}
         </Link>
       </div>
 
@@ -51,12 +53,12 @@ export function CropDetailsPage() {
             {crop.icon || "🌱"} {crop.name}
           </h1>
           <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 2 }}>
-            {crop.quantityKg} {crop.unit || "kg"} · Variety: {crop.variety || "Hybrid"} · Farm: {crop.location}
+            {crop.quantityKg} {crop.unit || "kg"} · {t("crops.variety")}: {crop.variety || "Hybrid"} · {t("auth.location")}: {crop.location}
           </p>
         </div>
 
         <button className="btn btn-primary" type="button" onClick={handleOpenDecision}>
-          <Sparkles size={16} /> View AI Recommendation <ArrowRight size={16} />
+          <Sparkles size={16} /> {t("recommendations.title")} <ArrowRight size={16} />
         </button>
       </div>
 

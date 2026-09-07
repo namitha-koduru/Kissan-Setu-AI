@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { MetricCard } from "../components/MetricCard";
+import { useLanguage } from "../context/LanguageContext";
 
 const realizationTrendData = [
   { week: "Week 1", traditional: 22, kisansetu: 25 },
@@ -30,22 +31,24 @@ const cropPerfData = [
 ];
 
 export function AnalyticsPage() {
+  const { t } = useLanguage();
+
   return (
     <div className="wrap">
       <div className="page-header" style={{ padding: "20px 0 14px" }}>
-        <h1 style={{ fontSize: "24px", fontWeight: 800 }}>Farm & Sales Analytics</h1>
+        <h1 style={{ fontSize: "24px", fontWeight: 800 }}>{t("analytics.title", "Farm & Sales Analytics")}</h1>
         <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 2 }}>
-          Cumulative price realization, volume sold, and transport savings compared against traditional mandi commission agents.
+          {t("analytics.subtitle", "Cumulative price realization, volume sold, and transport savings compared against traditional mandi commission agents.")}
         </p>
       </div>
 
       {/* Metric Cards Grid */}
       <div className="metric-grid" style={{ marginTop: 6, marginBottom: 20 }}>
-        <MetricCard label="Total Harvest Volume" value="8,000 kg" hint="+18% YoY" />
-        <MetricCard label="Avg. Net Realization" value="₹26.4/kg" hint="vs ₹22.1/kg traditional" />
-        <MetricCard label="Top Realization Mandi" value="Nashik APMC" hint="₹29.0/kg avg" />
-        <MetricCard label="Active Trade Lots" value="2 Lots" hint="500 kg tomato live" />
-        <MetricCard label="Completed Direct Trades" value="9 Sales" hint="100% on-time settlement" />
+        <MetricCard label={t("crops.quantity", "Total Harvest Volume")} value="8,000 kg" hint="+18% YoY" />
+        <MetricCard label={t("crops.netRealization", "Avg. Net Realization")} value="₹26.4/kg" hint="vs ₹22.1/kg traditional" />
+        <MetricCard label={t("crops.bestMarket", "Top Realization Mandi")} value="Nashik APMC" hint="₹29.0/kg avg" />
+        <MetricCard label={t("lots.title", "Active Trade Lots")} value="2 Lots" hint="500 kg tomato live" />
+        <MetricCard label={t("transactions.title", "Completed Direct Trades")} value="9 Sales" hint="100% on-time settlement" />
       </div>
 
       {/* Charts Grid */}
@@ -53,9 +56,9 @@ export function AnalyticsPage() {
         <div className="card card-pad">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <h3 style={{ fontSize: "15.5px", fontWeight: 800 }}>
-              Price Realization: KisanSetu vs Traditional Mandi
+              {t("market.title", "Price Realization: KissanSetu vs Traditional Mandi")}
             </h3>
-            <span className="demo-tag">DEMO METRICS</span>
+            <span className="demo-tag">{t("common.demo", "DEMO METRICS")}</span>
           </div>
           <div style={{ height: 260 }}>
             <ResponsiveContainer width="100%" height="100%">
@@ -77,8 +80,8 @@ export function AnalyticsPage() {
                   contentStyle={{ backgroundColor: "#fff", borderRadius: 8, border: "1px solid #E2E7DE", fontSize: 13 }}
                 />
                 <Legend />
-                <Area type="monotone" dataKey="kisansetu" name="KisanSetu Net Realization" stroke="#176B45" strokeWidth={2.5} fill="url(#colorKs)" />
-                <Area type="monotone" dataKey="traditional" name="Traditional Agent Realization" stroke="#A85D35" strokeWidth={2} strokeDasharray="4 4" fill="transparent" />
+                <Area type="monotone" dataKey="kisansetu" name="KissanSetu Net Realization" stroke="#176B45" strokeWidth={2.5} fill="url(#colorKs)" />
+                <Area type="monotone" dataKey="traditional" name="Traditional Mandi Net" stroke="#C87A38" strokeWidth={2} fillOpacity={0} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -87,24 +90,21 @@ export function AnalyticsPage() {
         <div className="card card-pad">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <h3 style={{ fontSize: "15.5px", fontWeight: 800 }}>
-              Crop-wise Realization (₹/kg)
+              {t("crops.title", "Volume & Realization by Crop")}
             </h3>
-            <span className="demo-tag">ALL CROPS</span>
+            <span className="demo-tag">{t("common.demo", "DEMO METRICS")}</span>
           </div>
           <div style={{ height: 260 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={cropPerfData}>
                 <CartesianGrid stroke="#EEF1EA" vertical={false} />
                 <XAxis dataKey="crop" stroke="#88988E" fontSize={12} tickLine={false} />
-                <YAxis stroke="#88988E" fontSize={12} tickLine={false} tickFormatter={(v) => `₹${v}`} />
+                <YAxis stroke="#88988E" fontSize={12} tickLine={false} />
                 <Tooltip
-                  formatter={(val: unknown) => {
-                    const num = typeof val === "number" ? val : Number(val);
-                    return [`₹${num}/kg`, "Avg Net Realization"];
-                  }}
                   contentStyle={{ backgroundColor: "#fff", borderRadius: 8, border: "1px solid #E2E7DE", fontSize: 13 }}
                 />
-                <Bar dataKey="avgNet" name="Average Net Realization (₹/kg)" fill="#2E8B57" radius={[6, 6, 0, 0]} />
+                <Legend />
+                <Bar dataKey="avgNet" name="Avg Net Rate (₹/kg)" fill="#176B45" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -113,3 +113,5 @@ export function AnalyticsPage() {
     </div>
   );
 }
+
+export default AnalyticsPage;

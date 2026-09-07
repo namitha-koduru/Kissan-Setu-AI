@@ -4,9 +4,11 @@ import { Plus } from "lucide-react";
 import { LotCard } from "../components/LotCard";
 import { EmptyState } from "../components/States";
 import { useAppState } from "../context/AppStateContext";
+import { useLanguage } from "../context/LanguageContext";
 
 export function LotsPage() {
   const { lots } = useAppState();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<"Active" | "Sold" | "Expired">("Active");
 
   const filteredLots = lots.filter((l) => {
@@ -19,14 +21,14 @@ export function LotsPage() {
     <div className="wrap">
       <div className="page-header">
         <div>
-          <h1 style={{ fontSize: "24px", fontWeight: 800 }}>My Lots</h1>
+          <h1 style={{ fontSize: "24px", fontWeight: 800 }}>{t("lots.title", "My Lots")}</h1>
           <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 2 }}>
-            Manage published lots, buyer inquiries, and active selling tenders.
+            {t("lots.openForOffers", "Manage published lots, buyer inquiries, and active selling tenders.")}
           </p>
         </div>
 
         <Link className="btn btn-primary" to="/lots/create">
-          <Plus size={16} /> Create New Lot
+          <Plus size={16} /> {t("lots.createLot", "Create New Lot")}
         </Link>
       </div>
 
@@ -38,7 +40,7 @@ export function LotsPage() {
             className={`status-tab ${activeTab === tab ? "active" : ""}`}
             onClick={() => setActiveTab(tab)}
           >
-            {tab} Lots ({lots.filter((l) => {
+            {tab} ({lots.filter((l) => {
               if (tab === "Active") return l.status === "Open for Offers" || l.status === "Offer Accepted";
               if (tab === "Sold") return l.status === "Sold" || l.status === "Closed";
               return l.status === "Expired";
@@ -51,11 +53,11 @@ export function LotsPage() {
       <div>
         {filteredLots.length === 0 ? (
           <EmptyState
-            title={`No ${activeTab.toLowerCase()} lots found`}
-            text="Published lots and buyer inquiries will appear here."
+            title={t("lots.noLots", `No ${activeTab.toLowerCase()} lots found`)}
+            text={t("lots.openForOffers", "Published lots and buyer inquiries will appear here.")}
             action={
               <Link className="btn btn-primary" to="/lots/create">
-                Create a Lot
+                {t("lots.createLot", "Create a Lot")}
               </Link>
             }
           />
@@ -66,3 +68,5 @@ export function LotsPage() {
     </div>
   );
 }
+
+export default LotsPage;

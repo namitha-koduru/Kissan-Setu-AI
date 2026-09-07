@@ -16,19 +16,13 @@ import { FarmTodayCard } from "../components/FarmTodayCard";
 import { MarketIntelligenceSummaryCard } from "../components/MarketIntelligenceSummaryCard";
 import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
+import { useLanguage } from "../context/LanguageContext";
 import { weatherByLocation, marketsByCrop } from "../data/demo";
-
-
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
-}
 
 export function DashboardPage() {
   const { user } = useAuth();
   const { crops, setActiveCropId } = useAppState();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const weather = weatherByLocation.Nashik;
@@ -41,23 +35,23 @@ export function DashboardPage() {
       <div className="page-header">
         <div>
           <h1>
-            {getGreeting()}, {user?.name?.split(" ")[0] || "Farmer"}
+            {t("dashboard.greeting", "Welcome back")}, {user?.name?.split(" ")[0] || "Farmer"}
           </h1>
           <div className="page-subtitle flex flex-center gap-sm">
             <MapPin size={14} color="var(--green-deep)" />
-            <span>{user?.location || user?.district && user?.state ? `${user.district}, ${user.state}` : "Your Farm"}</span>
+            <span>{user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : t("nav.setLocation", "Your Farm"))}</span>
           </div>
         </div>
 
         <div className="action-bar">
           <Link to="/chat?mode=voice" className="btn btn-outline">
             <span>🎙</span>
-            <span>Speak to AI</span>
+            <span>{t("chat.enableVoice", "Speak to AI")}</span>
           </Link>
 
           <Link to="/chat" className="btn btn-primary">
             <Sparkles size={16} />
-            <span>Ask KissanSetu AI</span>
+            <span>{t("nav.askAi", "Ask KissanSetu AI")}</span>
           </Link>
 
           <Link
@@ -68,7 +62,7 @@ export function DashboardPage() {
             <div>
               <div className="weather-mini-temp">{weather.currentTempC}°C</div>
               <div className="weather-mini-detail">
-                {weather.condition} · {weather.rainProbability}% rain risk
+                {weather.condition} · {weather.rainProbability}% {t("weather.rainProb", "rain risk")}
               </div>
             </div>
           </Link>
@@ -95,7 +89,7 @@ export function DashboardPage() {
               <div className="reco-head">
                 <div>
                   <div className="reco-eyebrow">
-                    YOUR NEXT HIGH-VALUE DECISION
+                    {t("dashboard.todayAction", "YOUR NEXT HIGH-VALUE DECISION")}
                   </div>
                   <h3 className="reco-title">
                     {focusCrop.name} · {focusCrop.quantityKg} {focusCrop.unit || "kg"}
@@ -108,15 +102,15 @@ export function DashboardPage() {
                 <div className="reco-header-row">
                   <div>
                     <div className="reco-label">
-                      AI RECOMMENDATION
+                      {t("recommendations.decision", "AI RECOMMENDATION")}
                     </div>
                     <DecisionBadge decision={focusCrop.recommendation || "SELL"} size="md" />
                   </div>
                   <div className="reco-confidence">
                     <div className="reco-stat">
-                      <div className="label">Confidence Score</div>
+                      <div className="label">{t("buyers.matchScore", "Confidence Score")}</div>
                       <div className="val text-green">
-                        {focusCrop.confidence || 86}% (High)
+                        {focusCrop.confidence || 86}% ({t("buyers.matchScore", "High")})
                       </div>
                     </div>
                   </div>
@@ -124,13 +118,13 @@ export function DashboardPage() {
 
                 <div className="reco-grid">
                   <div className="reco-stat">
-                    <div className="label">Best Market Option</div>
+                    <div className="label">{t("market.bestMarket", "Best Market Option")}</div>
                     <div className="val fw-800">
                       {focusCrop.bestMarket || "Nashik Market"}
                     </div>
                   </div>
                   <div className="reco-stat">
-                    <div className="label">Expected Net Realization</div>
+                    <div className="label">{t("market.netInHand", "Expected Net Realization")}</div>
                     <div className="val text-green fw-800 reco-price">
                       ₹{focusCrop.netRealization || 29}/kg
                     </div>
@@ -138,7 +132,7 @@ export function DashboardPage() {
                 </div>
 
                 <div className="reco-reason">
-                  ✓ <strong>Reasoning:</strong> High wholesale buyer demand in Nashik yielding ₹29/kg net realization. Freight to Pune is ₹2,800 resulting in lower net (₹24/kg) despite higher raw price. Rain probability rises after 2 days.
+                  ✓ <strong>{t("recommendations.reasons", "Reasoning")}:</strong> High wholesale buyer demand in Nashik yielding ₹29/kg net realization. Freight to Pune is ₹2,800 resulting in lower net (₹24/kg) despite higher raw price. Rain probability rises after 2 days.
                 </div>
 
                 <button
@@ -149,7 +143,7 @@ export function DashboardPage() {
                     navigate("/recommendation");
                   }}
                 >
-                  Open AI Decision Center <ArrowRight size={16} />
+                  {t("nav.recommendations", "Open AI Decision Center")} <ArrowRight size={16} />
                 </button>
               </div>
             </div>
@@ -157,9 +151,9 @@ export function DashboardPage() {
 
           {/* Crops List */}
           <div className="section-header">
-            <h3>Active Crops Under Management</h3>
+            <h3>{t("crops.title", "Active Crops Under Management")}</h3>
             <Link to="/crops" className="section-link">
-              See all crops →
+              {t("dashboard.viewAll", "See all crops")} →
             </Link>
           </div>
 
@@ -177,9 +171,9 @@ export function DashboardPage() {
 
           {/* Mandi Price Snapshot */}
           <div className="section-header">
-            <h3>Mandi Price Snapshot — Tomato</h3>
+            <h3>{t("market.title", "Mandi Price Snapshot")} — Tomato</h3>
             <Link to="/market" className="section-link">
-              Full market intel →
+              {t("market.subtitle", "Full market intel")} →
             </Link>
           </div>
 
@@ -187,11 +181,11 @@ export function DashboardPage() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Market</th>
-                  <th>Price</th>
-                  <th>Demand</th>
-                  <th>Distance</th>
-                  <th>Expected Net</th>
+                  <th>{t("market.mandiName", "Market")}</th>
+                  <th>{t("market.currentPrice", "Price")}</th>
+                  <th>{t("buyers.demand", "Demand")}</th>
+                  <th>{t("market.distance", "Distance")}</th>
+                  <th>{t("market.netInHand", "Expected Net")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -201,7 +195,7 @@ export function DashboardPage() {
                       <strong>{m.name}</strong>
                       {m.id === "nashik" && (
                         <span className="best-net-badge">
-                          ★ Best Net
+                          ★ {t("market.bestMarket", "Best Net")}
                         </span>
                       )}
                     </td>
@@ -227,34 +221,34 @@ export function DashboardPage() {
         <div>
           <div className="weather-section">
             <h4 className="weather-section-title">
-              Weather Risk — Next 3 Days
+              {t("weather.title", "Weather Risk — Next 3 Days")}
             </h4>
             <div className="wx-strip">
               {weather.forecast.slice(0, 3).map((w, i) => (
                 <div key={w.day} className="wx-day" data-first={i === 0 ? "true" : undefined}>
                   <div className="d">{w.day}</div>
                   <div className="t">{w.tempC}°</div>
-                  <div className="r">{w.rainProbability}% rain</div>
+                  <div className="r">{w.rainProbability}% {t("weather.rainProb", "rain")}</div>
                 </div>
               ))}
             </div>
             <div className="alert-box">
               <AlertTriangle size={18} color="#A85D35" />
               <span>
-                Rain probability increases significantly after Day 2. Consider harvesting near-maturity crops before high-risk period begins.
+                {t("weather.advisory", "Rain probability increases significantly after Day 2. Consider harvesting near-maturity crops before high-risk period begins.")}
               </span>
             </div>
           </div>
 
           <div className="quick-actions-section">
             <h4 className="quick-actions-title">
-              Quick Farm-to-Market Actions
+              {t("dashboard.todayAction", "Quick Farm-to-Market Actions")}
             </h4>
 
             {/* Smart Buyer Match Highlight */}
             <div className="buyer-match-highlight">
               <div className="buyer-match-header">
-                <Users size={14} /> 3 Verified Buyers Active
+                <Users size={14} /> 3 {t("buyers.verified", "Verified Buyers Active")}
               </div>
               <div className="buyer-match-detail">
                 Sahyadri FPO & Reliance Fresh demanding Tomato at <strong>₹32.00/kg</strong> (+₹3.50/kg vs mandi).
@@ -263,22 +257,22 @@ export function DashboardPage() {
                 to="/buyers?crop=Tomato"
                 className="buyer-match-link"
               >
-                View Matched Buyers →
+                {t("buyers.viewDetail", "View Matched Buyers")} →
               </Link>
             </div>
 
             <div className="action-links">
               <Link className="btn btn-outline btn-block action-link" to="/crops/add">
-                <Sprout size={18} color="#176B45" /> Register New Crop
+                <Sprout size={18} color="#176B45" /> {t("crops.addCrop", "Register New Crop")}
               </Link>
               <Link className="btn btn-outline btn-block action-link" to="/buyers">
-                <Users size={18} color="#176B45" /> Find Verified Buyers
+                <Users size={18} color="#176B45" /> {t("buyers.title", "Find Verified Buyers")}
               </Link>
               <Link className="btn btn-outline btn-block action-link" to="/lots/create">
-                <Package size={18} color="#176B45" /> Create Selling Lot
+                <Package size={18} color="#176B45" /> {t("lots.createLot", "Create Selling Lot")}
               </Link>
               <Link className="btn btn-secondary btn-block action-link" to="/recommendation">
-                <TrendingUp size={18} color="#E88922" /> AI Net Realization Matrix
+                <TrendingUp size={18} color="#E88922" /> {t("recommendations.title", "AI Net Realization Matrix")}
               </Link>
             </div>
           </div>
@@ -287,3 +281,5 @@ export function DashboardPage() {
     </div>
   );
 }
+
+export default DashboardPage;

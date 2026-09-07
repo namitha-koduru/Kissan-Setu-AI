@@ -6,6 +6,8 @@ import ChatInput from "../components/chat/ChatInput";
 import SuggestedQuestions from "../components/chat/SuggestedQuestions";
 import chatApi, { type ChatMessageItem, type ConversationDetail } from "../services/chatApi";
 import voiceApi from "../services/voiceApi";
+import { useLanguage } from "../context/LanguageContext";
+import type { LanguageCode } from "../types";
 import { Mic } from "lucide-react";
 
 export const ChatPage: React.FC = () => {
@@ -14,10 +16,11 @@ export const ChatPage: React.FC = () => {
   const cropNameParam = searchParams.get("crop_name");
   const modeParam = searchParams.get("mode");
 
+  const { lang, setLang, t } = useLanguage();
+
   const [messages, setMessages] = useState<ChatMessageItem[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<ConversationDetail[]>([]);
-  const [selectedLanguage, setSelectedLanguage] = useState<string>("en");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [loadingStage, setLoadingStage] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +39,9 @@ export const ChatPage: React.FC = () => {
 
   const handleSelectConversation = async (conv: ConversationDetail) => {
     setConversationId(conv.id);
-    setSelectedLanguage(conv.language || "en");
+    if (conv.language && conv.language !== lang) {
+      setLang(conv.language as LanguageCode);
+    }
     setError(null);
     const full = await chatApi.getConversation(conv.id);
     if (full && full.messages) {
@@ -50,6 +55,10 @@ export const ChatPage: React.FC = () => {
     setConversationId(null);
     setMessages([]);
     setError(null);
+  };
+
+  const handleLanguageChange = (code: string) => {
+    setLang(code as LanguageCode);
   };
 
   const handleSendMessage = async (text: string, imageFile?: File | null) => {
@@ -71,31 +80,20 @@ export const ChatPage: React.FC = () => {
 
       setMessages((prev) => [...prev, userMsg]);
       setIsLoading(true);
-      setLoadingStage("Uploading crop image...");
+      setLoadingStage(t("chat.analyzing", "Analyzing with AI..."));
 
       try {
-        setTimeout(() => {
-          setLoadingStage("Analyzing visible symptoms with Vision AI...");
-        }, 1200);
-
-        setTimeout(() => {
-          setLoadingStage("Preparing localized guidance...");
-        }, 2800);
-
         const cropIdNum = cropIdParam ? parseInt(cropIdParam, 10) : undefined;
         const response = await chatApi.analyzeImage({
           image: imageFile,
           message: text.trim() || undefined,
-          language: selectedLanguage,
+          language: lang,
           conversation_id: conversationId,
           farmer_id: 1,
           crop_id: cropIdNum,
         });
 
         setConversationId(response.conversation_id);
-        if (response.language) {
-          setSelectedLanguage(response.language);
-        }
 
         const asstMsg: ChatMessageItem = {
           id: `asst_${Date.now()}`,
@@ -108,7 +106,7 @@ export const ChatPage: React.FC = () => {
         setMessages((prev) => [...prev, asstMsg]);
         loadConversations();
       } catch (err: any) {
-        setError(err.message || "Failed to analyze crop image. Please check image format and try again.");
+        setError(err.message || t("common.error", "Failed to analyze crop image. Please check image format and try again."));
       } finally {
         setIsLoading(false);
         setLoadingStage("");
@@ -126,20 +124,17 @@ export const ChatPage: React.FC = () => {
 
     setMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
-    setLoadingStage("Analyzing field data & weather risks...");
+    setLoadingStage(t("chat.analyzing", "Analyzing with AI..."));
 
     try {
       const response = await chatApi.sendMessage({
         message: text,
-        language: selectedLanguage,
+        language: lang,
         conversation_id: conversationId,
         farmer_id: 1,
       });
 
       setConversationId(response.conversation_id);
-      if (response.language) {
-        setSelectedLanguage(response.language);
-      }
 
       const asstMsg: ChatMessageItem = {
         id: `asst_${Date.now()}`,
@@ -152,13 +147,12 @@ export const ChatPage: React.FC = () => {
       setMessages((prev) => [...prev, asstMsg]);
       loadConversations();
     } catch (err: any) {
-      setError("Unable to reach KissanSetu AI right now. Please try again.");
+      setError(t("common.error", "Unable to reach KissanSetu AI right now. Please try again."));
     } finally {
       setIsLoading(false);
       setLoadingStage("");
     }
   };
-
 
   const handleSendVoice = async (audioBlob: Blob, imageFile?: File | null) => {
     if (isLoading) return;
@@ -171,29 +165,21 @@ export const ChatPage: React.FC = () => {
     const userMsg: ChatMessageItem = {
       id: tempUserMsgId,
       role: "user",
-      content: "🎙 Transcribing speech...",
+      content: `🎙 ${t("chat.analyzing", "Transcribing speech...")}`,
       image_url: previewUrl,
       created_at: new Date().toISOString(),
     };
 
     setMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
-    setLoadingStage("Transcribing spoken audio...");
+    setLoadingStage(t("chat.analyzing", "Processing voice input with AI..."));
 
     try {
-      setTimeout(() => {
-        setLoadingStage("Querying farm intelligence & market data...");
-      }, 1000);
-
-      setTimeout(() => {
-        setLoadingStage("Generating voice advisory response...");
-      }, 2400);
-
       const cropIdNum = cropIdParam ? parseInt(cropIdParam, 10) : undefined;
       const res = await voiceApi.voiceChat({
         audio: audioBlob,
         image: imageFile,
-        language: selectedLanguage,
+        language: lang,
         conversation_id: conversationId,
         farmer_id: 1,
         crop_id: cropIdNum,
@@ -209,9 +195,6 @@ export const ChatPage: React.FC = () => {
       );
 
       setConversationId(res.conversation_id);
-      if (res.language) {
-        setSelectedLanguage(res.language);
-      }
 
       // Add assistant response with audio playback & verified knowledge citations
       const asstMsg: ChatMessageItem = {
@@ -226,13 +209,12 @@ export const ChatPage: React.FC = () => {
       setMessages((prev) => [...prev, asstMsg]);
       loadConversations();
     } catch (err: any) {
-      setError("Failed to process voice query. Please try speaking again or use text chat.");
+      setError(t("common.error", "Failed to process voice query. Please try speaking again or use text chat."));
     } finally {
       setIsLoading(false);
       setLoadingStage("");
     }
   };
-
 
   const handleRetry = () => {
     if (lastPrompt.text || lastPrompt.image) {
@@ -248,16 +230,16 @@ export const ChatPage: React.FC = () => {
           <div className="flex flex-center gap-md">
             <span style={{ fontSize: "24px" }}>🌾</span>
             <h1 style={{ fontSize: "24px", fontWeight: 800, color: "var(--ink)", margin: 0 }}>
-              Ask KissanSetu
+              {t("chat.title", "Ask KissanSetu AI")}
             </h1>
             <span className="page-tag">
-              Phase 7 Voice AI
+              Qwen 3 • Ollama AI
             </span>
           </div>
           <p style={{ fontSize: "13px", color: "var(--ink-soft)", marginTop: "2px", margin: 0 }}>
             {cropNameParam
-              ? `Focused on ${cropNameParam} • Speak naturally or upload leaf photos for comprehensive guidance`
-              : "Your multilingual AI farming companion with speech recognition, vision AI, and guaranteed in-hand market intelligence"}
+              ? `${t("crops.cropName", "Crop")}: ${cropNameParam} • ${t("chat.subtitle", "Multilingual AI farming companion")}`
+              : t("chat.subtitle", "Multilingual AI farming companion powered by Qwen & real-time farm intelligence")}
           </p>
         </div>
 
@@ -268,12 +250,12 @@ export const ChatPage: React.FC = () => {
             className={`voice-mode-btn ${voiceModeActive ? "active" : ""}`}
           >
             <Mic size={14} />
-            <span>{voiceModeActive ? "Voice Mode Active" : "Enable Voice Mode"}</span>
+            <span>{voiceModeActive ? t("chat.voiceActive", "Voice Mode Active") : t("chat.enableVoice", "Enable Voice Mode")}</span>
           </button>
 
           <LanguageSelector
-            selectedLanguage={selectedLanguage}
-            onSelectLanguage={setSelectedLanguage}
+            selectedLanguage={lang}
+            onSelectLanguage={handleLanguageChange}
             disabled={isLoading}
           />
         </div>
@@ -289,17 +271,17 @@ export const ChatPage: React.FC = () => {
             className="new-advisory-btn"
           >
             <span>+</span>
-            <span>New Advisory</span>
+            <span>{t("chat.newAdvisory", "New Advisory")}</span>
           </button>
 
           <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--ink-soft)", textTransform: "uppercase", padding: "8px 6px 0" }}>
-            Recent Discussions
+            {t("chat.recentDiscussions", "Recent Discussions")}
           </div>
 
           <div className="conversation-list">
             {conversations.length === 0 ? (
               <p style={{ fontSize: "12px", color: "var(--ink-soft)", padding: "10px", fontStyle: "italic" }}>
-                No past discussions yet. Tap the mic to speak your question!
+                {t("chat.noDiscussions", "No past discussions yet. Type or tap the mic to speak!")}
               </p>
             ) : (
               conversations.map((conv) => {
@@ -314,7 +296,7 @@ export const ChatPage: React.FC = () => {
                     className={`conversation-item ${isActive ? "active" : ""}`}
                   >
                     <span className="conversation-title">
-                      {isVoice ? "🎙 " : isVision ? "📷 " : "💬 "}{conv.title || "Farming Advisory"}
+                      {isVoice ? "🎙 " : isVision ? "📷 " : "💬 "}{conv.title || t("chat.title", "Farming Advisory")}
                     </span>
                     <span className="conversation-meta">
                       {conv.created_at ? conv.created_at.slice(0, 10) : "Today"} • {conv.language?.toUpperCase() || "EN"}
@@ -326,7 +308,7 @@ export const ChatPage: React.FC = () => {
           </div>
 
           <div style={{ padding: "10px 6px", borderTop: "1px solid var(--line)", fontSize: "11px", color: "var(--ink-soft)" }}>
-            ⚡ <strong>Farm Context:</strong> Ramesh Kumar (Nashik) • Tomatoes, Onions
+            ⚡ <strong>KissanSetu AI:</strong> {t("landing.verifiedIntelligence", "Verified ICAR & APMC Data")}
           </div>
         </div>
 
@@ -336,10 +318,10 @@ export const ChatPage: React.FC = () => {
           <div className="chat-top-bar">
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>
-                {conversationId ? "Active Discussion" : "New Discussion"}
+                {conversationId ? t("chat.title", "Active Discussion") : t("chat.newAdvisory", "New Discussion")}
               </span>
               <span style={{ fontSize: "12px", color: "var(--ink-soft)" }}>
-                • Language: {selectedLanguage.toUpperCase()}
+                • {t("profile.languagePref", "Language")}: {lang.toUpperCase()}
               </span>
               {cropNameParam && (
                 <span
@@ -371,7 +353,7 @@ export const ChatPage: React.FC = () => {
                   cursor: "pointer",
                 }}
               >
-                Clear
+                {t("chat.clear", "Clear")}
               </button>
             )}
           </div>
@@ -384,7 +366,7 @@ export const ChatPage: React.FC = () => {
             error={error}
             onRetry={handleRetry}
             onSelectQuestion={(q) => handleSendMessage(q)}
-            language={selectedLanguage}
+            language={lang}
           />
 
           {/* Persistent Suggested Questions */}
@@ -392,7 +374,7 @@ export const ChatPage: React.FC = () => {
             <div style={{ padding: "0 20px" }}>
               <SuggestedQuestions
                 onSelect={(q) => handleSendMessage(q)}
-                language={selectedLanguage}
+                language={lang}
                 disabled={isLoading}
               />
             </div>
@@ -405,7 +387,8 @@ export const ChatPage: React.FC = () => {
               onSendVoice={handleSendVoice}
               isLoading={isLoading}
               loadingStage={loadingStage}
-              language={selectedLanguage}
+              language={lang}
+              placeholder={t("chat.placeholder", "Ask any question about crops, irrigation, weather, markets, or general topics...")}
             />
           </div>
         </div>

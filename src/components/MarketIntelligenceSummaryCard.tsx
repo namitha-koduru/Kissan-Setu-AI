@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import marketIntelligenceApi from "../services/marketIntelligenceApi";
 import type { MarketIntelligenceOverview } from "../services/marketIntelligenceApi";
+import { useLanguage } from "../context/LanguageContext";
 
 interface Props {
   cropName?: string;
@@ -22,6 +23,7 @@ export function MarketIntelligenceSummaryCard({
   cropName = "Tomato",
   quantityQuintals = 30,
 }: Props) {
+  const { t } = useLanguage();
   const [overview, setOverview] = useState<MarketIntelligenceOverview | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -241,7 +243,7 @@ export function MarketIntelligenceSummaryCard({
                 gap: 4,
               }}
             >
-              <Store size={13} /> Full Intel
+              <Store size={13} /> {t("nav.market")}
             </Link>
             <Link
               to="/lots/create"
@@ -254,7 +256,7 @@ export function MarketIntelligenceSummaryCard({
                 gap: 4,
               }}
             >
-              Sell Now <ArrowRight size={13} />
+              {t("decision.sell")} <ArrowRight size={13} />
             </Link>
           </div>
         </div>

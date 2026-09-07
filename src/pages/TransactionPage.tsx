@@ -9,6 +9,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useAppState } from "../context/AppStateContext";
+import { useLanguage } from "../context/LanguageContext";
 import buyerMatchingApi, {
   type TransactionDetailResponse,
 } from "../services/buyerMatchingApi";
@@ -17,6 +18,7 @@ import { DisputeModal } from "../components/DisputeModal";
 export function TransactionPage() {
   const [params] = useSearchParams();
   const { transaction: localTx, showToast } = useAppState();
+  const { t } = useLanguage();
 
   const txIdParam = params.get("id") || "1";
 
@@ -101,9 +103,8 @@ export function TransactionPage() {
         setIsLogisticsOpen(false);
         loadTransaction();
       }
-    } catch (err) {
-      showToast("Updated logistics locally.");
-      setIsLogisticsOpen(false);
+    } catch (err: any) {
+      showToast(err.message || "Failed to update logistics");
     }
   };
 
@@ -115,119 +116,108 @@ export function TransactionPage() {
           paid_amount: Number(paidAmount),
           payment_status: paymentStatus,
           payment_reference: paymentRef,
-          payment_date: new Date().toISOString().split("T")[0],
         });
-        showToast("Payment record updated successfully!");
+        showToast("Payment milestone recorded successfully!");
         setIsPaymentOpen(false);
         loadTransaction();
       }
-    } catch (err) {
-      showToast("Updated payment record locally.");
-      setIsPaymentOpen(false);
+    } catch (err: any) {
+      showToast(err.message || "Failed to record payment");
     }
   };
 
-  const advanceNextStage = () => {
+  const advanceNextStage = async () => {
     if (!txDetail) return;
-    const nextIdx = txDetail.events.findIndex((s) => !s.done);
-    if (nextIdx !== -1) {
-      const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-      const updatedEvents = txDetail.events.map((s, idx) =>
-        idx === nextIdx ? { ...s, done: true, created_at: `Today, ${now}` } : s
-      );
-      setTxDetail({
-        ...txDetail,
-        events: updatedEvents,
-        status: nextIdx === updatedEvents.length - 1 ? "COMPLETED" : txDetail.status,
+    const nextUnfinished = txDetail.events.find((e) => !e.done);
+    if (!nextUnfinished) return;
+
+    try {
+      await buyerMatchingApi.advanceTransactionStage(txDetail.id, {
+        stage_id: nextUnfinished.id,
+        stage_label: nextUnfinished.stage_label,
+        description: `Stage completed at ${new Date().toLocaleTimeString()}`,
       });
-      showToast(`Fulfillment stage "${txDetail.events[nextIdx].stage_label}" completed.`);
-    } else {
-      showToast("Transaction is already fully settled & completed!");
+      showToast(`Advanced to next step: ${nextUnfinished.stage_label}`);
+      loadTransaction();
+    } catch (err: any) {
+      showToast(err.message || "Could not advance lifecycle step");
     }
   };
 
   const isComplete = txDetail?.events.every((e) => e.done);
 
   return (
-    <div className="wrap" style={{ maxWidth: 780 }}>
-      {/* Back link */}
+    <div className="wrap" style={{ maxWidth: 840 }}>
       <div className="mb-md" style={{ paddingTop: 10 }}>
-        <Link
-          to="/offers"
-          className="back-link"
-        >
-          <ArrowLeft size={14} /> Back to Offers
+        <Link to="/buyers" className="back-link">
+          <ArrowLeft size={14} /> {t("common.back", "Back to Marketplace")}
         </Link>
       </div>
 
-      {/* Page Header */}
-      <div className="page-header" style={{ paddingBottom: 16 }}>
-        <div className="flex-between flex-start flex-wrap gap-md">
-          <div>
-            <div className="flex flex-center gap-md">
-              <span className="page-tag">
-                Contract #TX-2026-00{txDetail?.id || 1}
-              </span>
-              <h1 style={{ fontSize: "24px", fontWeight: 800, margin: 0 }}>Digital Transaction & Settlement</h1>
-            </div>
-            <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 4 }}>
-              {txDetail?.crop_name} · {txDetail?.quantity_kg.toLocaleString("en-IN")} kg · Buyer: <strong>{txDetail?.buyer_name}</strong>
-            </p>
-          </div>
-
+      {/* Header */}
+      <div className="page-header">
+        <div>
           <div className="flex flex-center gap-md">
-            <button
-              className="btn btn-outline"
-              style={{ fontSize: "12.5px", color: "var(--danger)", border: "1px solid #F8D7DA" }}
-              onClick={() => setIsDisputeOpen(true)}
-            >
-              <AlertTriangle size={14} /> Report Grievance
-            </button>
-            <span
-              className={`badge-pill ${isComplete ? "badge-high" : "badge-medium"}`}
-              style={{ fontSize: "13px", padding: "5px 12px" }}
-            >
-              {isComplete ? "Settlement Completed" : txDetail?.status || "In Execution"}
+            <span className="page-tag">
+              KissanSetu Trade
             </span>
+            <h1 style={{ fontSize: "24px", fontWeight: 800, margin: 0 }}>
+              {t("transactions.title", "Digital Transactions & Logistics")} #{txDetail?.id || txIdParam}
+            </h1>
           </div>
+          <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 4 }}>
+            {t("transactions.subtitle", "Track trade fulfillment, delivery verification, and payment milestones")}
+          </p>
+        </div>
+
+        <div className="action-bar">
+          <button
+            className="btn btn-outline"
+            style={{ color: "var(--terracotta)", borderColor: "#F3D8C8" }}
+            onClick={() => setIsDisputeOpen(true)}
+          >
+            <AlertTriangle size={15} /> {t("transactions.initiateDispute", "Report Issue / Dispute")}
+          </button>
         </div>
       </div>
 
-      {/* Contract & Payout Summary Card */}
+      {/* Transaction Details Overview Card */}
       <div className="card card-pad mb-lg">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <h3 style={{ fontSize: "16px", fontWeight: 800, margin: 0 }}>Trade Agreement Summary</h3>
-          <span style={{ fontSize: "12px", color: "var(--ink-soft)" }}>
-            Created: {new Date(txDetail?.created_at || "").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-          </span>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
+          <div>
+            <span className="badge-pill badge-high" style={{ fontSize: "11px", marginBottom: 6 }}>
+              {txDetail?.status || "CONFIRMED"}
+            </span>
+            <h2 style={{ fontSize: "20px", fontWeight: 800, margin: "4px 0 0" }}>
+              {txDetail?.crop_name} · {txDetail?.quantity_kg.toLocaleString()} kg
+            </h2>
+            <div style={{ fontSize: "13px", color: "var(--ink-soft)", marginTop: 2 }}>
+              {t("transactions.buyer", "Buyer")}: <strong>{txDetail?.buyer_name}</strong> ({txDetail?.buyer_organization})
+            </div>
+          </div>
+
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: "12px", color: "var(--ink-soft)" }}>{t("transactions.amount", "Total Contract Value")}</div>
+            <div style={{ fontSize: "22px", fontWeight: 900, color: "var(--green-deep)" }}>
+              ₹{txDetail?.total_amount.toLocaleString("en-IN")}
+            </div>
+          </div>
         </div>
 
         <div className="pf-row">
-          <span className="l">Trade Lot ID</span>
-          <span className="v" style={{ fontWeight: 800 }}>KS-2026-00{txDetail?.lot_id || 1}</span>
-        </div>
-        <div className="pf-row">
-          <span className="l">Buyer Name & Enterprise</span>
-          <span className="v">{txDetail?.buyer_name} ({txDetail?.buyer_organization || "Enterprise Procurer"})</span>
-        </div>
-        <div className="pf-row">
-          <span className="l">Produce Volume & Grade</span>
-          <span className="v">{txDetail?.crop_name} · {txDetail?.quantity_kg.toLocaleString("en-IN")} kg (Grade A)</span>
-        </div>
-        <div className="pf-row">
-          <span className="l">Agreed Unit Selling Rate</span>
-          <span className="v" style={{ color: "var(--green-deep)", fontWeight: 800, fontSize: "17px" }}>
+          <span className="l">{t("market.grossPrice", "Contracted Agreed Price")}</span>
+          <span className="v" style={{ fontWeight: 800 }}>
             ₹{txDetail?.final_price.toFixed(2)}/kg
           </span>
         </div>
         <div className="pf-row">
-          <span className="l">Total Contract Value</span>
+          <span className="l">{t("transactions.amount", "Total Contract Value")}</span>
           <span className="v" style={{ color: "var(--green-deep)", fontWeight: 900, fontSize: "20px" }}>
             ₹{txDetail?.total_amount.toLocaleString("en-IN")}
           </span>
         </div>
         <div className="pf-row">
-          <span className="l">Payment Status</span>
+          <span className="l">{t("transactions.payment", "Payment Status")}</span>
           <span className="v" style={{ fontWeight: 800, color: txDetail?.payment_status === "PAID" ? "var(--green-deep)" : "#B06000" }}>
             {txDetail?.payment_status === "PAID" ? "PAID (Direct Bank Transfer)" : "PENDING (Upon Weighing & Acceptance)"}
           </span>
@@ -240,14 +230,14 @@ export function TransactionPage() {
             style={{ flex: 1, justifyContent: "center", fontSize: "13px" }}
             onClick={() => setIsLogisticsOpen(true)}
           >
-            <Truck size={15} /> Update Logistics & Pickup
+            <Truck size={15} /> {t("transactions.logistics", "Update Logistics & Pickup")}
           </button>
           <button
             className="btn btn-outline"
             style={{ flex: 1, justifyContent: "center", fontSize: "13px" }}
             onClick={() => setIsPaymentOpen(true)}
           >
-            <CreditCard size={15} /> Record Payment Milestone
+            <CreditCard size={15} /> {t("transactions.payment", "Record Payment Milestone")}
           </button>
         </div>
       </div>
@@ -256,9 +246,9 @@ export function TransactionPage() {
       <div className="card card-pad mb-lg">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
           <div>
-            <h3 style={{ fontSize: "16px", fontWeight: 800, margin: 0 }}>Digital Fulfillment Lifecycle</h3>
+            <h3 style={{ fontSize: "16px", fontWeight: 800, margin: 0 }}>{t("transactions.timeline", "Digital Fulfillment Lifecycle")}</h3>
             <div style={{ fontSize: "12.5px", color: "var(--ink-soft)", marginTop: 2 }}>
-              Immutable audit timeline tracking contract execution from farm dispatch to final credit.
+              {t("transactions.subtitle", "Immutable audit timeline tracking contract execution from farm dispatch to final credit.")}
             </div>
           </div>
 
@@ -269,7 +259,7 @@ export function TransactionPage() {
               onClick={advanceNextStage}
               style={{ gap: 6, fontSize: "12px" }}
             >
-              <RefreshCw size={13} /> Advance Next Step
+              <RefreshCw size={13} /> {t("common.next", "Advance Next Step")}
             </button>
           )}
         </div>
@@ -308,7 +298,7 @@ export function TransactionPage() {
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
             <AlertTriangle size={18} color="var(--terracotta)" />
             <h3 style={{ fontSize: "15px", fontWeight: 800, margin: 0, color: "var(--terracotta)" }}>
-              Registered Transaction Disputes & Inquiries
+              {t("transactions.initiateDispute", "Registered Transaction Disputes & Inquiries")}
             </h3>
           </div>
           {txDetail.disputes.map((d) => (
@@ -346,10 +336,10 @@ export function TransactionPage() {
           }}
         >
           <div className="card card-pad" style={{ maxWidth: 480, width: "100%", background: "#FFFFFF", borderRadius: 14 }}>
-            <h3 style={{ fontSize: "17px", fontWeight: 800, marginBottom: 14 }}>Update Logistics & Dispatch</h3>
+            <h3 style={{ fontSize: "17px", fontWeight: 800, marginBottom: 14 }}>{t("transactions.logistics", "Update Logistics & Dispatch")}</h3>
             <form onSubmit={handleUpdateLogistics}>
               <div className="field" style={{ marginBottom: 12 }}>
-                <label>Logistics Status</label>
+                <label>{t("transactions.logistics", "Logistics Status")}</label>
                 <select value={logisticsStatus} onChange={(e) => setLogisticsStatus(e.target.value)}>
                   <option value="PICKUP_SCHEDULED">Pickup Scheduled</option>
                   <option value="IN_TRANSIT">In Transit / Vehicle Dispatched</option>
@@ -374,8 +364,8 @@ export function TransactionPage() {
               </div>
 
               <div style={{ display: "flex", gap: 10 }}>
-                <button className="btn btn-primary" type="submit" style={{ flex: 1 }}>Save Logistics</button>
-                <button className="btn btn-ghost" type="button" onClick={() => setIsLogisticsOpen(false)} style={{ flex: 0.5 }}>Cancel</button>
+                <button className="btn btn-primary" type="submit" style={{ flex: 1 }}>{t("common.save", "Save Logistics")}</button>
+                <button className="btn btn-ghost" type="button" onClick={() => setIsLogisticsOpen(false)} style={{ flex: 0.5 }}>{t("common.cancel", "Cancel")}</button>
               </div>
             </form>
           </div>
@@ -400,10 +390,10 @@ export function TransactionPage() {
           }}
         >
           <div className="card card-pad" style={{ maxWidth: 480, width: "100%", background: "#FFFFFF", borderRadius: 14 }}>
-            <h3 style={{ fontSize: "17px", fontWeight: 800, marginBottom: 14 }}>Record Payment Settlement</h3>
+            <h3 style={{ fontSize: "17px", fontWeight: 800, marginBottom: 14 }}>{t("transactions.payment", "Record Payment Settlement")}</h3>
             <form onSubmit={handleRecordPayment}>
               <div className="field" style={{ marginBottom: 12 }}>
-                <label>Settlement Status</label>
+                <label>{t("transactions.payment", "Settlement Status")}</label>
                 <select value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)}>
                   <option value="PAID">Full Payment Received</option>
                   <option value="PARTIALLY_PAID">Partially Paid</option>
@@ -412,7 +402,7 @@ export function TransactionPage() {
               </div>
 
               <div className="field" style={{ marginBottom: 12 }}>
-                <label>Paid Amount (₹)</label>
+                <label>{t("transactions.amount", "Paid Amount (₹)")}</label>
                 <input type="number" value={paidAmount} onChange={(e) => setPaidAmount(Number(e.target.value))} required />
               </div>
 
@@ -428,8 +418,8 @@ export function TransactionPage() {
               </div>
 
               <div style={{ display: "flex", gap: 10 }}>
-                <button className="btn btn-primary" type="submit" style={{ flex: 1 }}>Record Payment</button>
-                <button className="btn btn-ghost" type="button" onClick={() => setIsPaymentOpen(false)} style={{ flex: 0.5 }}>Cancel</button>
+                <button className="btn btn-primary" type="submit" style={{ flex: 1 }}>{t("common.save", "Record Payment")}</button>
+                <button className="btn btn-ghost" type="button" onClick={() => setIsPaymentOpen(false)} style={{ flex: 0.5 }}>{t("common.cancel", "Cancel")}</button>
               </div>
             </form>
           </div>
@@ -448,10 +438,10 @@ export function TransactionPage() {
       <div className="card card-pad" style={{ marginTop: 20, background: "var(--cream)", border: "1px solid #EADBBE" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <ShieldCheck size={22} color="#176B45" />
-          <h4 style={{ fontSize: "15px", fontWeight: 800 }}>KissanSetu Verified Settlement Guarantee</h4>
+          <h4 style={{ fontSize: "15px", fontWeight: 800 }}>{t("landing.verifiedIntelligence", "KissanSetu Verified Settlement Guarantee")}</h4>
         </div>
         <p style={{ fontSize: "13px", color: "var(--ink-soft)", marginTop: 6, lineHeight: 1.5 }}>
-          Buyer funds and procurement contracts are governed by KissanSetu digital trade policies. Produce delivery verification triggers direct account credits without intermediate commission deductions.
+          {t("landing.heroSubtitle", "Buyer funds and procurement contracts are governed by KissanSetu digital trade policies. Produce delivery verification triggers direct account credits without intermediate commission deductions.")}
         </p>
       </div>
     </div>

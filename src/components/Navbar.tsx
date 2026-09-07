@@ -5,9 +5,11 @@ import { LanguageSelector } from "./LanguageSelector";
 import { Logo } from "./Logo";
 import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
+import { useLanguage } from "../context/LanguageContext";
 
 export function Topbar({ onMenu }: { onMenu: () => void }) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { notifications, unreadNotifsCount, markNotificationAsRead } = useAppState();
   const [notifOpen, setNotifOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -22,7 +24,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const locationDisplay = user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : "Set Location");
+  const locationDisplay = user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : t("nav.setLocation", "Set Location"));
 
   return (
     <header className="topbar">
@@ -44,7 +46,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
 
         <div className="top-actions" ref={panelRef}>
           <LanguageSelector />
-          <Link className="icon-btn" to="/weather" title="Weather Intelligence" aria-label="Weather">
+          <Link className="icon-btn" to="/weather" title={t("nav.weather", "Weather Intel")} aria-label="Weather">
             <CloudSun size={18} />
           </Link>
 
@@ -52,7 +54,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
             <button
               className="icon-btn"
               type="button"
-              title="Notifications"
+              title={t("nav.notifications", "Notifications")}
               aria-label={`Notifications${unreadNotifsCount > 0 ? ` (${unreadNotifsCount} unread)` : ""}`}
               onClick={() => setNotifOpen((prev) => !prev)}
             >
@@ -63,7 +65,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
             {notifOpen && (
               <div className="dropdown-panel">
                 <div className="flex flex-between flex-center" style={{ padding: "4px 4px 10px", borderBottom: "1px solid var(--line)" }}>
-                  <span style={{ fontWeight: 700, fontSize: "var(--text-base)" }}>Notifications</span>
+                  <span style={{ fontWeight: 700, fontSize: "var(--text-base)" }}>{t("nav.notifications", "Notifications")}</span>
                   {unreadNotifsCount > 0 && (
                     <button
                       type="button"
@@ -71,14 +73,14 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
                       className="btn btn-ghost btn-sm"
                       style={{ padding: "4px 8px", gap: 4 }}
                     >
-                      <Check size={13} /> Mark all read
+                      <Check size={13} /> {t("nav.markAllRead", "Mark all read")}
                     </button>
                   )}
                 </div>
                 <div style={{ maxHeight: 280, overflowY: "auto", marginTop: 4 }}>
                   {notifications.length === 0 ? (
                     <div style={{ padding: "var(--space-xl)", textAlign: "center", color: "var(--ink-muted)", fontSize: "var(--text-sm)" }}>
-                      No notifications yet
+                      {t("nav.noNotifications", "No notifications yet")}
                     </div>
                   ) : (
                     notifications.map((n) => (
@@ -103,7 +105,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
 
           <Link className="profile-chip" to="/profile" aria-label="Profile">
             <span className="avatar">{user?.initials || user?.name?.slice(0, 2).toUpperCase() || "KS"}</span>
-            <span>{user?.name?.split(" ")[0] || "Profile"}</span>
+            <span>{user?.name?.split(" ")[0] || t("nav.profile", "Profile")}</span>
           </Link>
         </div>
       </div>
@@ -112,20 +114,22 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
 }
 
 export function PublicNav() {
+  const { t } = useLanguage();
+
   return (
     <header className="public-topbar">
       <div className="topbar-inner">
         <Logo to="/" />
         <nav className="public-nav-links">
-          <a className="public-nav-link" href="#problem">The Problem</a>
-          <a className="public-nav-link" href="#how">How It Works</a>
-          <a className="public-nav-link" href="#decision">Smart Decision</a>
-          <a className="public-nav-link" href="#features">Features</a>
+          <a className="public-nav-link" href="#problem">{t("landing.theProblem", "The Problem")}</a>
+          <a className="public-nav-link" href="#how">{t("landing.howItWorks", "How It Works")}</a>
+          <a className="public-nav-link" href="#decision">{t("landing.smartDecision", "Smart Decision")}</a>
+          <a className="public-nav-link" href="#features">{t("landing.features", "Features")}</a>
         </nav>
         <div className="flex flex-center gap-sm">
           <LanguageSelector />
-          <Link className="btn btn-outline btn-sm" to="/login">Sign In</Link>
-          <Link className="btn btn-primary btn-sm" to="/register">Get Started</Link>
+          <Link className="btn btn-outline btn-sm" to="/login">{t("landing.signIn", "Sign In")}</Link>
+          <Link className="btn btn-primary btn-sm" to="/register">{t("landing.getStarted", "Get Started")}</Link>
         </div>
       </div>
     </header>

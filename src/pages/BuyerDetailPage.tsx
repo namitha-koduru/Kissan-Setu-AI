@@ -14,8 +14,10 @@ import {
 } from "lucide-react";
 import buyerMatchingApi, { type BuyerMatchResult } from "../services/buyerMatchingApi";
 import { buyers as demoBuyers } from "../data/demo";
+import { useLanguage } from "../context/LanguageContext";
 
 export function BuyerDetailPage() {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const [params] = useSearchParams();
   const navigate = useNavigate();

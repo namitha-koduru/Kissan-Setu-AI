@@ -129,7 +129,7 @@ async def chat_with_assistant(
             language=lang
         )
     except Exception as exc:
-        reply_text = "I apologize, but I am having trouble connecting to the advisory server. Please try asking again in a moment."
+        reply_text = llm_service._generate_fallback_response(llm_messages, language=lang, error_context=str(exc))
 
     # 8. Save Assistant Response
     asst_msg = ChatMessage(

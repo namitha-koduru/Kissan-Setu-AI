@@ -10,6 +10,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import type { BuyerMatchResult } from "../services/buyerMatchingApi";
+import { useLanguage } from "../context/LanguageContext";
 
 interface Props {
   match: BuyerMatchResult;
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export function SmartBuyerCard({ match, cropName, quantityQtl }: Props) {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
 
@@ -246,7 +248,7 @@ export function SmartBuyerCard({ match, cropName, quantityQtl }: Props) {
           className="btn btn-outline"
           style={{ flex: 1, justifyContent: "center", fontSize: "12.5px" }}
         >
-          View Full Profile
+          {t("buyers.viewDetail")}
         </Link>
         <button
           type="button"
@@ -258,7 +260,7 @@ export function SmartBuyerCard({ match, cropName, quantityQtl }: Props) {
             )
           }
         >
-          Create Lot for Buyer <ArrowRight size={14} />
+          {t("buyers.connect")} <ArrowRight size={14} />
         </button>
       </div>
     </div>

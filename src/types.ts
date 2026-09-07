@@ -14,7 +14,7 @@ export type CropStage =
   | "Ready to harvest"
   | "Harvested";
 
-export type LanguageCode = "en" | "hi" | "mr" | "te";
+export type LanguageCode = "en" | "hi" | "te" | "mr" | "ta" | "kn" | "bn" | "ml";
 
 export interface User {
   id: string;

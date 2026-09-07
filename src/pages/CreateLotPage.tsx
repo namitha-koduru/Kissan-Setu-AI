@@ -2,11 +2,13 @@ import { useState, useEffect, type FormEvent, type ChangeEvent } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { CheckCircle2, Package, ArrowLeft, Building2, UploadCloud, X } from "lucide-react";
 import { useAppState } from "../context/AppStateContext";
+import { useLanguage } from "../context/LanguageContext";
 import { buyers as demoBuyers, cropOptions } from "../data/demo";
 import apiClient from "../services/api";
 import type { LotRecord } from "../types";
 
 export function CreateLotPage() {
+  const { t } = useLanguage();
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const { addLot, addOffer, lots } = useAppState();
@@ -187,7 +189,7 @@ export function CreateLotPage() {
 
       {/* Header */}
       <div className="page-header" style={{ padding: "10px 0 16px" }}>
-        <h1 style={{ fontSize: "24px", fontWeight: 800 }}>Create & Publish Selling Lot</h1>
+        <h1 style={{ fontSize: "24px", fontWeight: 800 }}>{t("lots.createLot")}</h1>
         {targetBuyer ? (
           <div className="target-buyer-highlight">
             <Building2 size={16} /> Targeted Buyer: {targetBuyer.name} (Offered: ₹{expectedPrice}/kg)
@@ -203,7 +205,7 @@ export function CreateLotPage() {
         <form onSubmit={handleSubmit}>
           <div className="form-grid">
             <div className="field">
-              <label htmlFor="lot-crop">Crop Type</label>
+              <label htmlFor="lot-crop">{t("lots.crop")}</label>
               <select
                 id="lot-crop"
                 value={crop}
@@ -218,7 +220,7 @@ export function CreateLotPage() {
             </div>
 
             <div className="field">
-              <label htmlFor="lot-qty">Lot Volume (kg)</label>
+              <label htmlFor="lot-qty">{t("lots.quantity")}</label>
               <input
                 id="lot-qty"
                 type="number"
@@ -230,7 +232,7 @@ export function CreateLotPage() {
             </div>
 
             <div className="field">
-              <label htmlFor="lot-grade">Quality Classification</label>
+              <label htmlFor="lot-grade">{t("lots.qualityGrade")}</label>
               <select
                 id="lot-grade"
                 value={quality}

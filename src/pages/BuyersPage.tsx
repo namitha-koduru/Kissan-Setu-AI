@@ -4,8 +4,10 @@ import { SmartBuyerCard } from "../components/SmartBuyerCard";
 import buyerMatchingApi from "../services/buyerMatchingApi";
 import type { BuyerMatchResult } from "../services/buyerMatchingApi";
 import { cropOptions } from "../data/demo";
+import { useLanguage } from "../context/LanguageContext";
 
 export function BuyersPage() {
+  const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCrop, setSelectedCrop] = useState("Tomato");
   const [quantityQtl, setQuantityQtl] = useState(20);
@@ -58,12 +60,12 @@ export function BuyersPage() {
         <div>
           <div className="flex flex-center gap-md">
             <span className="page-tag">
-              Phase 6 Smart Matching
+              KissanSetu Buyers
             </span>
-            <h1 style={{ fontSize: "24px", fontWeight: 800, margin: 0 }}>Verified Buyer Marketplace</h1>
+            <h1 style={{ fontSize: "24px", fontWeight: 800, margin: 0 }}>{t("buyers.title", "Verified Buyer Marketplace")}</h1>
           </div>
           <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 2 }}>
-            AI-matched institutional procurers, food processing units, and retail chains with transparent scoring and net realization comparisons.
+            {t("buyers.subtitle", "AI-matched institutional procurers, food processing units, and retail chains with transparent scoring and net realization comparisons.")}
           </p>
         </div>
 
@@ -71,7 +73,7 @@ export function BuyersPage() {
           <button
             className="btn btn-outline"
             onClick={fetchBuyers}
-            title="Refresh matching list"
+            title={t("common.loading", "Refresh matching list")}
           >
             <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
           </button>
@@ -83,7 +85,7 @@ export function BuyersPage() {
         <div style={{ position: "relative", flex: 1.5 }}>
           <input
             type="text"
-            placeholder="Search by buyer name, FPC, or location (e.g. Sahyadri, Reliance, Nashik)..."
+            placeholder={t("market.searchPlaceholder", "Search by buyer name, FPC, or location (e.g. Sahyadri, Reliance, Nashik)...")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -97,7 +99,7 @@ export function BuyersPage() {
           >
             {cropOptions.map((c) => (
               <option key={c} value={c}>
-                Crop: {c}
+                {t("crops.cropName", "Crop")}: {c}
               </option>
             ))}
           </select>
@@ -125,20 +127,20 @@ export function BuyersPage() {
           onClick={() => setVerifiedOnly(!verifiedOnly)}
         >
           <CheckCircle2 size={15} color={verifiedOnly ? "#176B45" : "inherit"} />
-          Verified Enterprise Buyers Only
+          {t("buyers.verified", "Verified Enterprise Buyers Only")}
         </div>
 
         <div className="ml-auto flex flex-center gap-md">
-          <span className="text-xs fw-700 text-muted">Sort:</span>
+          <span className="text-xs fw-700 text-muted">{t("common.filter", "Sort")}:</span>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as "match" | "price" | "rating")}
             className="form-control"
             style={{ padding: "6px 10px", fontSize: "12.5px" }}
           >
-            <option value="match">Highest Match Score</option>
-            <option value="price">Highest Indicative Rate (₹/kg)</option>
-            <option value="rating">Top Rated Procurers</option>
+            <option value="match">{t("buyers.matchScore", "Highest Match Score")}</option>
+            <option value="price">{t("buyers.indicativePrice", "Highest Indicative Rate (₹/kg)")}</option>
+            <option value="rating">{t("buyers.verified", "Top Rated Procurers")}</option>
           </select>
         </div>
       </div>
@@ -148,16 +150,16 @@ export function BuyersPage() {
         {loading && buyers.length === 0 ? (
           <div className="card card-pad market-loading">
             <RefreshCw size={28} className="animate-spin" color="var(--green-deep)" style={{ margin: "0 auto 10px" }} />
-            <h3 style={{ fontSize: "16px", fontWeight: 700 }}>Calculating Smart Buyer Match Scores...</h3>
+            <h3 style={{ fontSize: "16px", fontWeight: 700 }}>{t("common.loading", "Calculating Smart Buyer Match Scores...")}</h3>
             <p style={{ color: "var(--ink-soft)", fontSize: "13px" }}>
-              Evaluating crop compatibility, tender volumes, distance freight, and net realization.
+              {t("buyers.subtitle", "Evaluating crop compatibility, tender volumes, distance freight, and net realization.")}
             </p>
           </div>
         ) : filteredBuyers.length === 0 ? (
           <div className="card card-pad market-loading">
-            <h3 style={{ fontSize: "16px" }}>No buyers found matching your criteria</h3>
+            <h3 style={{ fontSize: "16px" }}>{t("buyers.noBuyers", "No buyers found matching your criteria")}</h3>
             <p style={{ color: "var(--ink-soft)", marginTop: 4, fontSize: "13px" }}>
-              Try adjusting your volume or toggling the verified enterprise filter.
+              {t("buyers.subtitle", "Try adjusting your volume or toggling the verified enterprise filter.")}
             </p>
           </div>
         ) : (

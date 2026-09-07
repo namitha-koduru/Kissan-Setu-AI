@@ -16,12 +16,14 @@ import {
 import { farmIntelligenceApi } from "../services/farmIntelligenceApi";
 import type { FarmIntelligenceOverview } from "../services/farmIntelligenceApi";
 import { SoilFormModal } from "./SoilFormModal";
+import { useLanguage } from "../context/LanguageContext";
 
 interface FarmTodayCardProps {
   farmerId?: number;
 }
 
 export function FarmTodayCard({ farmerId = 1 }: FarmTodayCardProps) {
+  const { t } = useLanguage();
   const [overview, setOverview] = useState<FarmIntelligenceOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [showSoilModal, setShowSoilModal] = useState(false);
@@ -103,7 +105,7 @@ export function FarmTodayCard({ farmerId = 1 }: FarmTodayCardProps) {
               Farm Intelligence Engine
             </span>
           </div>
-          <h2 style={{ fontSize: "18px", fontWeight: 800, margin: 0 }}>Your Farm Today</h2>
+          <h2 style={{ fontSize: "18px", fontWeight: 800, margin: 0 }}>{t("dashboard.todayAction")}</h2>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

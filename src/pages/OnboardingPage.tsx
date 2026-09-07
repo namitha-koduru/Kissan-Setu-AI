@@ -12,6 +12,7 @@ import {
 import { Logo } from "../components/Logo";
 import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
+import { useLanguage } from "../context/LanguageContext";
 import { apiClient } from "../services/api";
 import { ALL_INDIAN_STATES, getDistrictsForState } from "../data/indiaLocations";
 
@@ -49,6 +50,7 @@ const QUALITY_GRADES = [
 ];
 
 export function OnboardingPage() {
+  const { t } = useLanguage();
   const { user, updateUserProfile } = useAuth();
   const { updateOnboardData, showToast } = useAppState();
   const navigate = useNavigate();
@@ -1169,7 +1171,7 @@ export function OnboardingPage() {
         >
           {step > 1 ? (
             <button className="btn btn-ghost" type="button" onClick={handleBack}>
-              <ArrowLeft size={16} /> Back
+              <ArrowLeft size={16} /> {t("onboarding.back")}
             </button>
           ) : (
             <div />
@@ -1178,10 +1180,10 @@ export function OnboardingPage() {
           <button className="btn btn-primary" type="button" onClick={handleNext}>
             {step < totalSteps ? (
               <>
-                Continue <ArrowRight size={16} />
+                {t("onboarding.continue")} <ArrowRight size={16} />
               </>
             ) : (
-              "Complete Setup & View Dashboard"
+              t("onboarding.complete")
             )}
           </button>
         </div>

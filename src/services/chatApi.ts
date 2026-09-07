@@ -157,30 +157,24 @@ export const chatApi = {
   },
 };
 
-function generateLocalAdvisory(message: string, language: string): string {
-  const lower = message.toLowerCase();
+function generateLocalAdvisory(_message: string, language: string): string {
   if (language === "hi") {
-    if (lower.includes("water") || lower.includes("सिंचाई") || lower.includes("irrigation")) {
-      return "🌾 **सिंचाई सलाह:** ड्रिप सिंचाई द्वारा सुबह के समय 1.5–2 घंटे पानी देना सर्वोत्तम है। अगले 48 घंटों में बारिश की संभावना हो तो सिंचाई टाल दें।";
-    }
-    return "नमस्ते किसान भाई! मैं **किसान सेतु AI** सहायक हूँ। आप फसल सिंचाई, कीट प्रबंधन, मौसम जोखिम और मंडी भाव के बारे में कोई भी प्रश्न पूछ सकते हैं।";
-  } else if (language === "mr") {
-    return "नमस्कार शेतकरी बंधूंनो! मी **किसान सेतू AI** शेती सल्लागार आहे. टोमॅटो पिकास सकाळी ठिबक सिंचनाने पाणी द्यावे आणि पावसाच्या अंदाजानुसार नियोजन करावे.";
+    return "⚠️ **सर्वर से संपर्क नहीं हो सका**\n\nAI सलाहकार सेवा वर्तमान में ऑफ़लाइन है। कृपया सुनिश्चित करें कि बैकएंड सर्वर और Ollama सक्रिय हैं।";
   } else if (language === "te") {
-    return "నమస్కారం రైతు సోదరులారా! నేను **కిసాన్ సేతు AI** వ్యవసాయ సహాయకుడిని. బిందు సేద్యం (Drip) ద్వారా ఉదయం పూట నీటిని అందించడం ఉత్తమం.";
+    return "⚠️ **సర్వర్ అందుబాటులో లేదు**\n\nAI సేవ ప్రస్తుతం ఆఫ్ లైన్ లో ఉంది. దయచేసి బ్యాకెండ్ సర్వర్ మరియు Ollama ప్రారంభించబడి ఉన్నాయని నిర్ధారించుకోండి.";
+  } else if (language === "mr") {
+    return "⚠️ **सर्व्हरशी संपर्क होऊ शकला नाही**\n\nAI सल्लागार सेवा सध्या ऑफलाइन आहे. कृपया बॅकएंड आणि Ollama सेवा सुरू असल्याची खात्री करा.";
+  } else if (language === "ta") {
+    return "⚠️ **சேவையகத்துடன் இணைக்க முடியவில்லை**\n\nAI ஆலோசனை சேவை தற்போது ஆஃப்லைனில் உள்ளது. பின்னணி சேவையகம் மற்றும் Ollama இயங்குகிறதா என்பதை உறுதிப்படுத்தவும்.";
+  } else if (language === "kn") {
+    return "⚠️ **ಸರ್ವರ್ ಸಂಪರ್ಕ ವಿಫಲವಾಗಿದೆ**\n\nAI ಸಲಹಾ ಸೇವೆ ಪ್ರಸ್ತುತ ಆಫ್‌ಲೈನ್‌ನಲ್ಲಿದೆ. ದಯವಿಟ್ಟು ಬ್ಯಾಕೆಂಡ್ ಸರ್ವರ್ ಮತ್ತು Ollama ಚಾಲನೆಯಲ್ಲಿದೆಯೇ ಎಂದು ಪರಿಶೀಲಿಸಿ.";
+  } else if (language === "bn") {
+    return "⚠️ **সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি**\n\nAI উপদেষ্টা পরিষেবা বর্তমানে অফলাইনে রয়েছে। অনুগ্রহ করে ব্যাকএন্ড সার্ভার এবং Ollama সক্রিয় আছে কি না পরীক্ষা করুন।";
+  } else if (language === "ml") {
+    return "⚠️ **സെർവറുമായി ബന്ധപ്പെടാൻ കഴിഞ്ഞില്ല**\n\nAI ഉപദേശക സേവനം നിലവിൽ ഓഫ്‌ലൈനിലാണ്. ബാക്കെൻഡ് സെർവറും Ollamaയും പ്രവർത്തിക്കുന്നുണ്ടെന്ന് ഉറപ്പാക്കുക.";
   }
 
-  if (lower.includes("water") || lower.includes("irrigation")) {
-    return "💧 **Irrigation Advisory:**\n\n1. **Morning Drip Schedule:** Irrigate between 6:00 AM – 8:30 AM for 1.5–2 hours to maximize root zone absorption.\n2. **Rain Forecast:** Given rain risks in 48 hours, reduce irrigation volume to avoid waterlogging.\n3. **Maturity Stage:** Maintain steady, moderate moisture to prevent tomato skin splitting.";
-  }
-  if (lower.includes("harvest") || lower.includes("market") || lower.includes("mandi")) {
-    return "🚜 **Harvest & Market Advisory:**\n\n1. **Harvest Stage:** Pick tomatoes at 70–80% color turning stage (pink bottom) for optimal transport durability.\n2. **Best Returns:** Nashik APMC currently offers higher net realization after accounting for transport deductions.";
-  }
-  if (lower.includes("pest") || lower.includes("leaf") || lower.includes("disease")) {
-    return "🌿 **Pest & Crop Health Guidance:**\n\n1. **Organic Remedy:** Spray 5 ml cold-pressed Neem Oil (10,000 ppm) per liter of water during late afternoon.\n2. **Foliar Check:** Yellowing edges indicate early blight or sucking pest pressure. Consult your local KVK for verified lab checks.";
-  }
-
-  return "Hello Farmer! I am your **KissanSetuAI Agricultural Assistant**.\n\nI can help you analyze:\n• **Optimal Irrigation Schedules**\n• **Weather Risk & Harvest Windows**\n• **Mandi Price Realization vs Freight Costs**\n• **Safe Pest & Disease Management**\n\nHow can I assist your farm today?";
+  return "⚠️ **AI Assistant Offline / Connection Error**\n\nUnable to reach the backend advisory service. Please make sure the KissanSetuAI backend and Ollama (qwen3:4b) are running.";
 }
 
 export default chatApi;

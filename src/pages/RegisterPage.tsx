@@ -3,10 +3,12 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import { Sprout, Building2, Store, ArrowRight, ShieldCheck, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 import type { UserRole } from "../types";
 
 export function RegisterPage() {
   const { user, register } = useAuth();
+  const { t } = useLanguage();
   const nav = useNavigate();
   
   const [selectedRole, setSelectedRole] = useState<UserRole>("farmer");
@@ -69,11 +71,11 @@ export function RegisterPage() {
       confirmPassword = farmerConfirmPassword;
 
       if (!name) {
-        setError("Please enter your full name.");
+        setError(t("common.error", "Please enter your full name."));
         return;
       }
       if (!mobile) {
-        setError("Please enter your mobile number for account verification.");
+        setError(t("common.error", "Please enter your mobile number for account verification."));
         return;
       }
     } else if (selectedRole === "fpo") {
@@ -86,19 +88,19 @@ export function RegisterPage() {
       confirmPassword = fpoConfirmPassword;
 
       if (!organizationName) {
-        setError("Please enter your FPO / Collective name.");
+        setError(t("common.error", "Please enter your FPO / Collective name."));
         return;
       }
       if (!contactPerson) {
-        setError("Please enter the authorized representative's name.");
+        setError(t("common.error", "Please enter the authorized representative's name."));
         return;
       }
       if (!mobile) {
-        setError("Please enter the primary mobile number.");
+        setError(t("common.error", "Please enter the primary mobile number."));
         return;
       }
       if (!email) {
-        setError("Please enter the official FPO email address.");
+        setError(t("common.error", "Please enter the official email address."));
         return;
       }
     } else if (selectedRole === "buyer") {
@@ -111,37 +113,40 @@ export function RegisterPage() {
       confirmPassword = buyerConfirmPassword;
 
       if (!organizationName) {
-        setError("Please enter your Business / Organization name.");
+        setError(t("common.error", "Please enter your Business / Organization name."));
         return;
       }
       if (!contactPerson) {
-        setError("Please enter the primary procurement contact person.");
+        setError(t("common.error", "Please enter the primary contact person's name."));
         return;
       }
       if (!mobile) {
-        setError("Please enter your mobile number.");
+        setError(t("common.error", "Please enter the business mobile number."));
         return;
       }
       if (!email) {
-        setError("Please enter your business email address.");
+        setError(t("common.error", "Please enter the official business email."));
         return;
       }
     }
 
     if (!password || password.length < 6) {
-      setError("Password must be at least 6 characters long.");
+      setError(t("common.error", "Password must be at least 6 characters long."));
       return;
     }
     if (password !== confirmPassword) {
-      setError("Passwords do not match. Please re-enter.");
+      setError(t("common.error", "Passwords do not match. Please re-enter carefully."));
       return;
     }
 
+    // Auto-generate placeholder email if farmer leaves it blank
+    const finalEmail = email || `farmer_${mobile}@kissansetu.in`;
+
     setBusy(true);
-    const registerError = await register({
+    const regError = await register({
       name,
-      email: email || undefined,
-      mobile: mobile || undefined,
+      email: finalEmail,
+      mobile,
       password,
       role: selectedRole,
       organizationName: organizationName || undefined,
@@ -149,20 +154,19 @@ export function RegisterPage() {
     });
     setBusy(false);
 
-    if (registerError) {
-      setError(registerError);
-      return;
+    if (regError) {
+      setError(regError);
+    } else {
+      // Direct newly registered user straight into tailored onboarding flow
+      nav("/onboarding");
     }
-
-    // Direct user into role-specific onboarding
-    nav("/onboarding");
   }
 
   const renderPasswordField = (
     id: string,
     label: string,
     value: string,
-    onChange: (v: string) => void,
+    setter: (val: string) => void,
     placeholder: string,
     isConfirm = false
   ) => (
@@ -175,20 +179,22 @@ export function RegisterPage() {
           id={id}
           type={showPassword ? "text" : "password"}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => setter(e.target.value)}
           placeholder={placeholder}
           autoComplete={isConfirm ? "new-password" : "new-password"}
           required
         />
-        <button
-          type="button"
-          className="password-toggle"
-          onClick={() => setShowPassword(!showPassword)}
-          aria-label={showPassword ? "Hide password" : "Show password"}
-          tabIndex={-1}
-        >
-          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-        </button>
+        {!isConfirm && (
+          <button
+            type="button"
+            className="password-toggle"
+            onClick={() => setShowPassword(!showPassword)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            tabIndex={-1}
+          >
+            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -199,38 +205,37 @@ export function RegisterPage() {
         <Logo to="/" />
         <div>
           <h2>
-            Join India's AI-Powered Agricultural Intelligence Network
+            {t("landing.heroTitle", "Join India's AI-Powered Agricultural Intelligence Network")}
           </h2>
           <p>
-            Connect with verified institutional buyers, track real-time mandi prices
-            across all Indian states, and receive trusted agronomic decisions.
+            {t("landing.heroSubtitle", "Connect with verified institutional buyers, track real-time mandi prices across all Indian states, and receive trusted agronomic decisions.")}
           </p>
           <div className="auth-value-props">
             <div className="auth-value-prop">
               <CheckCircle2 size={18} />
-              <span>Zero middlemen — direct farm-to-buyer transactions</span>
+              <span>{t("landing.directBuyerLink", "Zero middlemen — direct farm-to-buyer transactions")}</span>
             </div>
             <div className="auth-value-prop">
               <CheckCircle2 size={18} />
-              <span>AI Sell / Wait recommendations grounded in ICAR data</span>
+              <span>{t("landing.verifiedIntelligence", "AI Sell / Wait recommendations grounded in ICAR data")}</span>
             </div>
             <div className="auth-value-prop">
               <CheckCircle2 size={18} />
-              <span>Multi-lingual voice assistant in 8+ Indian languages</span>
+              <span>{t("landing.farmerAdvantage", "Multi-lingual voice assistant in 8+ Indian languages")}</span>
             </div>
           </div>
         </div>
         <div className="auth-visual-footer">
           <ShieldCheck size={14} />
-          <span>Secure, Verified National Agriculture Infrastructure</span>
+          <span>{t("nav.credit", "Secure, Verified National Agriculture Infrastructure")}</span>
         </div>
       </div>
 
       <div className="auth-form-side">
         <div className="auth-box">
-          <h2>Create Your Account</h2>
+          <h2>{t("auth.registerTitle", "Create Your Account")}</h2>
           <p className="auth-subtitle">
-            Select your role to get started with KissanSetu AI.
+            {t("auth.registerSubtitle", "Select your role to get started with KissanSetu AI.")}
           </p>
 
           {/* Role Selection */}
@@ -243,7 +248,7 @@ export function RegisterPage() {
               onKeyDown={(e) => e.key === "Enter" && setSelectedRole("farmer")}
             >
               <Sprout size={16} />
-              Farmer
+              {t("auth.roleFarmer", "Farmer")}
             </div>
             <div
               className={`role-tab ${selectedRole === "fpo" ? "active" : ""}`}
@@ -253,7 +258,7 @@ export function RegisterPage() {
               onKeyDown={(e) => e.key === "Enter" && setSelectedRole("fpo")}
             >
               <Building2 size={16} />
-              FPO
+              {t("auth.roleFpo", "FPO")}
             </div>
             <div
               className={`role-tab ${selectedRole === "buyer" ? "active" : ""}`}
@@ -263,7 +268,7 @@ export function RegisterPage() {
               onKeyDown={(e) => e.key === "Enter" && setSelectedRole("buyer")}
             >
               <Store size={16} />
-              Buyer
+              {t("auth.roleBuyer", "Buyer")}
             </div>
           </div>
 
@@ -272,7 +277,7 @@ export function RegisterPage() {
             {selectedRole === "farmer" && (
               <>
                 <div className="field">
-                  <label htmlFor="farmer-name">Full Name <span className="required">*</span></label>
+                  <label htmlFor="farmer-name">{t("auth.fullName", "Full Name")} <span className="required">*</span></label>
                   <input
                     id="farmer-name"
                     value={fullName}
@@ -283,7 +288,7 @@ export function RegisterPage() {
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="farmer-mobile">Mobile Number <span className="required">*</span></label>
+                  <label htmlFor="farmer-mobile">{t("auth.mobile", "Mobile Number")} <span className="required">*</span></label>
                   <input
                     id="farmer-mobile"
                     type="tel"
@@ -296,7 +301,7 @@ export function RegisterPage() {
                 </div>
                 <div className="field">
                   <label htmlFor="farmer-email">
-                    Email Address <span className="optional">(Optional)</span>
+                    {t("auth.email", "Email Address")} <span className="optional">(Optional)</span>
                   </label>
                   <input
                     id="farmer-email"
@@ -307,8 +312,8 @@ export function RegisterPage() {
                     autoComplete="email"
                   />
                 </div>
-                {renderPasswordField("farmer-pwd", "Create Password", farmerPassword, setFarmerPassword, "Min 6 characters")}
-                {renderPasswordField("farmer-confirm-pwd", "Confirm Password", farmerConfirmPassword, setFarmerConfirmPassword, "Re-enter password", true)}
+                {renderPasswordField("farmer-pwd", t("auth.password", "Create Password"), farmerPassword, setFarmerPassword, "Min 6 characters")}
+                {renderPasswordField("farmer-confirm-pwd", t("auth.confirmPassword", "Confirm Password"), farmerConfirmPassword, setFarmerConfirmPassword, "Re-enter password", true)}
               </>
             )}
 
@@ -316,7 +321,7 @@ export function RegisterPage() {
             {selectedRole === "fpo" && (
               <>
                 <div className="field">
-                  <label htmlFor="fpo-name">FPO / Collective Name <span className="required">*</span></label>
+                  <label htmlFor="fpo-name">{t("auth.orgName", "FPO / Collective Name")} <span className="required">*</span></label>
                   <input
                     id="fpo-name"
                     value={fpoName}
@@ -326,7 +331,7 @@ export function RegisterPage() {
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="fpo-lead">Authorized Representative <span className="required">*</span></label>
+                  <label htmlFor="fpo-lead">{t("auth.fullName", "Authorized Representative")} <span className="required">*</span></label>
                   <input
                     id="fpo-lead"
                     value={fpoLeadName}
@@ -337,7 +342,7 @@ export function RegisterPage() {
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="fpo-mobile">Official Mobile Number <span className="required">*</span></label>
+                  <label htmlFor="fpo-mobile">{t("auth.mobile", "Official Mobile Number")} <span className="required">*</span></label>
                   <input
                     id="fpo-mobile"
                     type="tel"
@@ -349,7 +354,7 @@ export function RegisterPage() {
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="fpo-email">Official Email Address <span className="required">*</span></label>
+                  <label htmlFor="fpo-email">{t("auth.email", "Official Email Address")} <span className="required">*</span></label>
                   <input
                     id="fpo-email"
                     type="email"
@@ -360,8 +365,8 @@ export function RegisterPage() {
                     required
                   />
                 </div>
-                {renderPasswordField("fpo-pwd", "Create Password", fpoPassword, setFpoPassword, "Min 6 characters")}
-                {renderPasswordField("fpo-confirm-pwd", "Confirm Password", fpoConfirmPassword, setFpoConfirmPassword, "Re-enter password", true)}
+                {renderPasswordField("fpo-pwd", t("auth.password", "Create Password"), fpoPassword, setFpoPassword, "Min 6 characters")}
+                {renderPasswordField("fpo-confirm-pwd", t("auth.confirmPassword", "Confirm Password"), fpoConfirmPassword, setFpoConfirmPassword, "Re-enter password", true)}
               </>
             )}
 
@@ -369,7 +374,7 @@ export function RegisterPage() {
             {selectedRole === "buyer" && (
               <>
                 <div className="field">
-                  <label htmlFor="buyer-org">Organization / Business Name <span className="required">*</span></label>
+                  <label htmlFor="buyer-org">{t("auth.orgName", "Organization / Business Name")} <span className="required">*</span></label>
                   <input
                     id="buyer-org"
                     value={buyerOrgName}
@@ -379,7 +384,7 @@ export function RegisterPage() {
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="buyer-contact">Primary Contact Person <span className="required">*</span></label>
+                  <label htmlFor="buyer-contact">{t("auth.fullName", "Primary Contact Person")} <span className="required">*</span></label>
                   <input
                     id="buyer-contact"
                     value={buyerContactPerson}
@@ -390,7 +395,7 @@ export function RegisterPage() {
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="buyer-mobile">Contact Mobile Number <span className="required">*</span></label>
+                  <label htmlFor="buyer-mobile">{t("auth.mobile", "Contact Mobile Number")} <span className="required">*</span></label>
                   <input
                     id="buyer-mobile"
                     type="tel"
@@ -402,7 +407,7 @@ export function RegisterPage() {
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="buyer-email">Business Email Address <span className="required">*</span></label>
+                  <label htmlFor="buyer-email">{t("auth.email", "Business Email Address")} <span className="required">*</span></label>
                   <input
                     id="buyer-email"
                     type="email"
@@ -413,8 +418,8 @@ export function RegisterPage() {
                     required
                   />
                 </div>
-                {renderPasswordField("buyer-pwd", "Create Password", buyerPassword, setBuyerPassword, "Min 6 characters")}
-                {renderPasswordField("buyer-confirm-pwd", "Confirm Password", buyerConfirmPassword, setBuyerConfirmPassword, "Re-enter password", true)}
+                {renderPasswordField("buyer-pwd", t("auth.password", "Create Password"), buyerPassword, setBuyerPassword, "Min 6 characters")}
+                {renderPasswordField("buyer-confirm-pwd", t("auth.confirmPassword", "Confirm Password"), buyerConfirmPassword, setBuyerConfirmPassword, "Re-enter password", true)}
               </>
             )}
 
@@ -428,9 +433,9 @@ export function RegisterPage() {
               className={`btn btn-primary btn-block btn-lg ${busy ? "btn-loading" : ""}`}
               disabled={busy}
             >
-              {busy ? "Creating Account…" : (
+              {busy ? t("common.loading", "Creating Account…") : (
                 <>
-                  <span>Create Account & Continue</span>
+                  <span>{t("auth.registerButton", "Create Account & Continue")}</span>
                   <ArrowRight size={16} />
                 </>
               )}
@@ -438,11 +443,13 @@ export function RegisterPage() {
           </form>
 
           <div className="auth-footer-link">
-            Already have an account?{" "}
-            <Link to="/login">Sign In</Link>
+            {t("auth.alreadyHaveAccount", "Already have an account?")}{" "}
+            <Link to="/login">{t("auth.loginButton", "Sign In")}</Link>
           </div>
         </div>
       </div>
     </div>
   );
 }
+
+export default RegisterPage;

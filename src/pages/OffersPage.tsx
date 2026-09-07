@@ -3,6 +3,7 @@ import { useSearchParams, Link } from "react-router-dom";
 import { OfferIntelligenceCard } from "../components/OfferIntelligenceCard";
 import { EmptyState } from "../components/States";
 import { useAppState } from "../context/AppStateContext";
+import { useLanguage } from "../context/LanguageContext";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 import type { OfferRecord } from "../types";
 import apiClient from "../services/api";
@@ -10,6 +11,7 @@ import apiClient from "../services/api";
 export function OffersPage() {
   const [params] = useSearchParams();
   const { offers: localOffers } = useAppState();
+  const { t } = useLanguage();
 
   const lotFilter = params.get("lot");
   const [offersList, setOffersList] = useState<OfferRecord[]>([]);
@@ -19,7 +21,6 @@ export function OffersPage() {
   const loadOffers = async () => {
     try {
       setLoading(true);
-      // Try to load from backend
       const res = await apiClient.get<any[]>("/offers");
       if (res && res.length > 0) {
         const mapped: OfferRecord[] = res.map((o: any) => ({
@@ -62,7 +63,7 @@ export function OffersPage() {
             to="/lots"
             className="back-link"
           >
-            <ArrowLeft size={14} /> Back to My Lots
+            <ArrowLeft size={14} /> {t("common.back", "Back to My Lots")}
           </Link>
         </div>
       )}
@@ -72,9 +73,9 @@ export function OffersPage() {
         <div>
           <div className="flex flex-center gap-md">
             <span className="page-tag">
-              Phase 6 Offer Intelligence
+              KissanSetu Offers
             </span>
-            <h1 style={{ fontSize: "24px", fontWeight: 800, margin: 0 }}>Buyer Offers & Negotiations</h1>
+            <h1 style={{ fontSize: "24px", fontWeight: 800, margin: 0 }}>{t("offers.title", "Buyer Offers & Negotiations")}</h1>
           </div>
           <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 4 }}>
             {lotFilter ? (
@@ -82,7 +83,7 @@ export function OffersPage() {
                 Active buyer bids and negotiation threads for <strong>Lot {lotFilter}</strong>
               </>
             ) : (
-              "Review, compare against APMC mandi rates, accept, or AI-counter incoming procurement offers."
+              t("offers.subtitle", "Review purchase offers, compare against mandi benchmarks, and negotiate")
             )}
           </p>
         </div>
@@ -90,7 +91,7 @@ export function OffersPage() {
         <button
           className="btn btn-outline"
           onClick={loadOffers}
-          title="Refresh offers"
+          title={t("common.loading", "Refresh offers")}
         >
           <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
         </button>
@@ -102,25 +103,25 @@ export function OffersPage() {
           className={`filter-chip ${statusFilter === "ALL" ? "active" : ""}`}
           onClick={() => setStatusFilter("ALL")}
         >
-          All Offers ({offersList.length})
+          {t("common.all", "All")} ({offersList.length})
         </div>
         <div
           className={`filter-chip ${statusFilter === "PENDING" ? "active" : ""}`}
           onClick={() => setStatusFilter("PENDING")}
         >
-          Pending Action
+          {t("offers.status", "Pending Action")}
         </div>
         <div
           className={`filter-chip ${statusFilter === "ACCEPTED" ? "active" : ""}`}
           onClick={() => setStatusFilter("ACCEPTED")}
         >
-          Accepted & Contracted
+          {t("offers.accept", "Accepted & Contracted")}
         </div>
         <div
           className={`filter-chip ${statusFilter === "COUNTERED" ? "active" : ""}`}
           onClick={() => setStatusFilter("COUNTERED")}
         >
-          In Negotiation
+          {t("offers.counter", "In Negotiation")}
         </div>
       </div>
 
@@ -128,8 +129,8 @@ export function OffersPage() {
       <div>
         {displayedOffers.length === 0 ? (
           <EmptyState
-            title="No offers matching criteria"
-            text="When institutional buyers inspect your published lots, their price bids and procurement terms will show up here."
+            title={t("offers.noOffers", "No offers matching criteria")}
+            text={t("offers.subtitle", "When institutional buyers inspect your published lots, their price bids and procurement terms will show up here.")}
           />
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
