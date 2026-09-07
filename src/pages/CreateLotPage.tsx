@@ -1,174 +1,154 @@
-import { useState, useEffect, type FormEvent, type ChangeEvent } from "react";
+import { useState, useEffect, useMemo, type FormEvent } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
-import { CheckCircle2, Package, ArrowLeft, Building2, UploadCloud, X } from "lucide-react";
+import { CheckCircle2, Package, ArrowLeft, ArrowRight, MapPin, Sparkles } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
-import { buyers as demoBuyers, cropOptions } from "../data/demo";
+import { cropOptions } from "../data/demo";
 import apiClient from "../services/api";
 import type { LotRecord } from "../types";
 
 export function CreateLotPage() {
+  const { user } = useAuth();
+  const { crops, addLot, lots } = useAppState();
   const { t } = useLanguage();
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const { addLot, addOffer, lots } = useAppState();
 
-  const buyerId = params.get("buyer");
   const paramCrop = params.get("crop");
   const paramQty = params.get("qty");
   const paramPrice = params.get("price");
 
-  // Matched target buyer info
-  const targetBuyer = demoBuyers.find((b) => b.id === buyerId || b.id === `b-${buyerId}`);
+  const availableCrops = useMemo(() => {
+    const list = [...cropOptions];
+    crops.forEach((c) => {
+      if (!list.includes(c.name as any)) list.push(c.name as any);
+    });
+    return list;
+  }, [crops]);
 
-  const [crop, setCrop] = useState(paramCrop || targetBuyer?.crop || "Tomato");
-  const [quantityKg, setQuantityKg] = useState<number | string>(paramQty ? Number(paramQty) : 2000);
+  const userDistrict = user?.district || (user?.location ? user.location.split(",")[0].trim() : "Guntur");
+  const userLocStr = user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : "Vadlamudi, Guntur, Andhra Pradesh");
+
+  const [crop, setCrop] = useState(paramCrop || crops[0]?.name || "Tomato");
+  const [quantityKg, setQuantityKg] = useState<number | string>(paramQty ? Number(paramQty) : 500);
   const [quality, setQuality] = useState("Grade A");
-  const [qualityDesc, setQualityDesc] = useState("Firm, uniform red harvest, sorted and packaged in 25kg ventilated crates.");
-  const [harvestDate, setHarvestDate] = useState("2026-09-08");
-  const [harvestWindow, setHarvestWindow] = useState("Immediate (Ready for Pickup)");
-  const [location, setLocation] = useState("Nashik, Maharashtra");
-  const [expectedPrice, setExpectedPrice] = useState<number | string>(paramPrice ? Number(paramPrice) : targetBuyer?.offeredPrice || 32);
-  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
-  const [photoName, setPhotoName] = useState<string>("");
+  const [harvestDate, setHarvestDate] = useState("2026-09-10");
+  const [readyDate, setReadyDate] = useState("2026-09-12");
+  const [expectedPrice, setExpectedPrice] = useState<number | string>(paramPrice ? Number(paramPrice) : 30);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCreated, setIsCreated] = useState(false);
   const [createdLotId, setCreatedLotId] = useState("");
-
-  useEffect(() => {
-    if (paramCrop) setCrop(paramCrop);
-    if (paramQty) setQuantityKg(Number(paramQty));
-    if (paramPrice) setExpectedPrice(Number(paramPrice));
-  }, [paramCrop, paramQty, paramPrice]);
-
-  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setPhotoName(file.name);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedPhoto(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const removePhoto = () => {
-    setSelectedPhoto(null);
-    setPhotoName("");
-  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     const generatedId = `KS-2026-00${lots.length + 1}`;
-    const qty = Number(quantityKg) || 2000;
-    const price = Number(expectedPrice) || 32;
+    const qty = Number(quantityKg) || 500;
+    const price = Number(expectedPrice) || 30;
 
     try {
-      // Try to create in backend API
       await apiClient.post("/lots", {
         crop,
         quantity_kg: qty,
         unit: "kg",
         quality,
-        quality_description: qualityDesc,
+        quality_description: `${quality} uniform harvest from ${userDistrict}`,
         harvest_date: harvestDate,
-        harvest_window: harvestWindow,
-        location,
+        harvest_window: "2–4 days",
+        location: userLocStr,
         expected_price: price,
-        preferred_buyer_id: buyerId ? Number(buyerId) || 1 : undefined,
       });
     } catch (err) {
-      console.warn("Backend lot creation fallback to local state", err);
+      console.warn("Backend lot creation fallback:", err);
     }
 
-    // Local state sync
     const newLot: LotRecord = {
       id: generatedId,
       crop,
       quantityKg: qty,
       quality,
       harvestDate,
-      location,
+      location: userLocStr,
       expectedPrice: price,
       status: "Open for Offers",
-      interests: buyerId ? 1 : 3,
+      interests: 3,
       createdDate: "Today",
     };
 
     addLot(newLot);
-
-    // If a target buyer was selected or generated, create initial offer
-    addOffer({
-      id: `off-${Date.now()}`,
-      lotId: generatedId,
-      buyerName: targetBuyer ? targetBuyer.name : "FreshFarm Wholesale Logistics",
-      verified: true,
-      pricePerKg: price >= 30 ? price : price + 1,
-      quantityKg: qty,
-      quality,
-      expiresInDays: "2 days",
-      status: "Pending",
-    });
-
     setCreatedLotId(generatedId);
-    setIsSubmitting(false);
     setIsCreated(true);
+    setIsSubmitting(false);
   };
 
   if (isCreated) {
     return (
-      <div className="wrap" style={{ maxWidth: 520, paddingTop: 30, textAlign: "center" }}>
-        <div className="card card-pad" style={{ padding: "36px 24px" }}>
-          <div className="success-icon-wrapper">
-            <CheckCircle2 size={36} color="#176B45" />
+      <div className="wrap" style={{ maxWidth: 560, padding: "40px 16px" }}>
+        <div
+          className="card card-pad text-center"
+          style={{ background: "#FFFFFF", border: "1.5px solid var(--line)", borderRadius: 16, padding: "32px 24px" }}
+        >
+          <div
+            style={{
+              width: 54,
+              height: 54,
+              borderRadius: "50%",
+              background: "rgba(23,107,69,0.12)",
+              color: "var(--green-deep)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 16px",
+            }}
+          >
+            <CheckCircle2 size={32} />
           </div>
 
-          <h2 style={{ fontSize: "22px", fontWeight: 800, marginBottom: "6px" }}>
-            TRADE LOT CREATED & PUBLISHED
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: "var(--navy)", marginBottom: 4 }}>
+            Harvest Lot Created Successfully!
           </h2>
-          <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginBottom: "20px" }}>
-            Your lot is now live on KissanSetu. Verified buyers matching your crop, grade, and volume have been notified.
-          </p>
-
-          <div className="pf-row">
-            <span className="l">Trade Lot ID</span>
-            <span className="v" style={{ fontWeight: 800 }}>{createdLotId}</span>
-          </div>
-          <div className="pf-row">
-            <span className="l">Crop & Volume</span>
-            <span className="v">{crop} · {quantityKg} kg ({Number(quantityKg) / 100} Qtl)</span>
-          </div>
-          <div className="pf-row">
-            <span className="l">Target Price</span>
-            <span className="v" style={{ fontWeight: 800, color: "var(--green-deep)" }}>
-              ₹{expectedPrice}/kg
-            </span>
-          </div>
-          <div className="pf-row">
-            <span className="l">Marketplace Status</span>
-            <span className="v" style={{ color: "var(--green-deep)", fontWeight: 800 }}>
-              Active · Direct Offers Incoming
-            </span>
+          <div style={{ fontSize: 13, color: "var(--ink-soft)", marginBottom: 20 }}>
+            Lot ID: <strong>{createdLotId}</strong> · {userLocStr}
           </div>
 
-          <div className="action-links" style={{ marginTop: 24 }}>
-            <button
-              className="btn btn-primary btn-block"
-              type="button"
-              onClick={() => navigate(`/offers?lot=${createdLotId}`)}
-            >
-              Inspect Incoming Buyer Offers
-            </button>
-            <button
-              className="btn btn-outline btn-block"
-              type="button"
-              onClick={() => navigate("/lots")}
-            >
-              View My Published Lots
-            </button>
+          <div
+            style={{
+              background: "var(--bg-warm)",
+              borderRadius: 12,
+              border: "1px solid var(--line)",
+              padding: "16px",
+              textAlign: "left",
+              marginBottom: 24,
+            }}
+          >
+            <div className="flex flex-between mb-xs">
+              <span style={{ fontSize: 13, color: "var(--ink-soft)" }}>Produce</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: "var(--navy)" }}>{crop} ({quality})</span>
+            </div>
+            <div className="flex flex-between mb-xs">
+              <span style={{ fontSize: 13, color: "var(--ink-soft)" }}>Quantity</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: "var(--navy)" }}>{quantityKg} kg</span>
+            </div>
+            <div className="flex flex-between mb-xs">
+              <span style={{ fontSize: 13, color: "var(--ink-soft)" }}>Expected Rate</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: "var(--green-deep)" }}>₹{expectedPrice} / kg (₹{Number(expectedPrice) * 100} / Qtl)</span>
+            </div>
+            <div className="flex flex-between" style={{ borderTop: "1px solid var(--line)", paddingTop: 8, marginTop: 8 }}>
+              <span style={{ fontSize: 13, color: "var(--ink-soft)" }}>Matched Buyers Nearby</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--sell)" }}>3 Buyers demanding this crop</span>
+            </div>
+          </div>
+
+          <div className="flex-col gap-sm">
+            <Link to="/offers" className="btn btn-primary btn-block">
+              <span>{t("offers.title", "View Buyer Offers")}</span>
+              <ArrowRight size={15} />
+            </Link>
+            <Link to="/dashboard" className="btn btn-secondary btn-block">
+              <span>{t("nav.home", "Return to Dashboard")}</span>
+            </Link>
           </div>
         </div>
       </div>
@@ -176,185 +156,138 @@ export function CreateLotPage() {
   }
 
   return (
-    <div className="wrap" style={{ maxWidth: 700 }}>
-      {/* Back link */}
-      <div className="mb-md" style={{ paddingTop: 10 }}>
-        <Link
-          to={buyerId ? `/buyers/${buyerId}` : "/buyers"}
-          className="back-link"
-        >
-          <ArrowLeft size={14} /> Back to {buyerId ? "Buyer Profile" : "Marketplace"}
+    <div className="wrap" style={{ maxWidth: 640, paddingBottom: 60 }}>
+      <div className="flex flex-between flex-center mb-lg">
+        <Link to="/lots" className="back-link">
+          <ArrowLeft size={16} />
+          <span>{t("common.back", "Back to Lots")}</span>
         </Link>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink-soft)" }}>
+          📍 {userDistrict} Farm Location
+        </div>
       </div>
 
-      {/* Header */}
-      <div className="page-header" style={{ padding: "10px 0 16px" }}>
-        <h1 style={{ fontSize: "24px", fontWeight: 800 }}>{t("lots.createLot")}</h1>
-        {targetBuyer ? (
-          <div className="target-buyer-highlight">
-            <Building2 size={16} /> Targeted Buyer: {targetBuyer.name} (Offered: ₹{expectedPrice}/kg)
+      <div className="card card-pad" style={{ background: "#FFFFFF", borderRadius: 16, border: "1px solid var(--line)" }}>
+        <div className="flex flex-center gap-sm mb-lg" style={{ borderBottom: "1px solid var(--line)", paddingBottom: 14 }}>
+          <div style={{ padding: 10, borderRadius: 10, background: "rgba(23,107,69,0.1)", color: "var(--green-deep)" }}>
+            <Package size={22} />
           </div>
-        ) : (
-          <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 2 }}>
-            Package your harvested or harvest-ready produce with grade, photos, and target price to receive direct offers.
-          </p>
-        )}
-      </div>
+          <div>
+            <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--navy)", margin: 0 }}>
+              {t("lots.create", "List Produce for Buyer Offers")}
+            </h1>
+            <p style={{ fontSize: 12.5, color: "var(--ink-soft)", margin: 0 }}>
+              Create an open lot to receive competitive bids from verified buyers & FPCs
+            </p>
+          </div>
+        </div>
 
-      <div className="card card-pad">
-        <form onSubmit={handleSubmit}>
-          <div className="form-grid">
-            <div className="field">
-              <label htmlFor="lot-crop">{t("lots.crop")}</label>
-              <select
-                id="lot-crop"
-                value={crop}
-                onChange={(e) => setCrop(e.target.value)}
-              >
-                {cropOptions.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <form onSubmit={handleSubmit} className="flex-col gap-md">
+          <div className="field">
+            <label>{t("crops.cropName", "Select Crop")}</label>
+            <select
+              value={crop}
+              onChange={(e) => setCrop(e.target.value)}
+              className="form-control"
+              required
+            >
+              {availableCrops.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
 
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div className="field">
-              <label htmlFor="lot-qty">{t("lots.quantity")}</label>
+              <label>{t("lots.quantity", "Quantity (kg)")}</label>
               <input
-                id="lot-qty"
                 type="number"
+                min={50}
+                step={50}
                 value={quantityKg}
                 onChange={(e) => setQuantityKg(e.target.value)}
-                placeholder="e.g. 2000"
+                placeholder="e.g. 500"
+                className="form-control"
                 required
               />
             </div>
 
             <div className="field">
-              <label htmlFor="lot-grade">{t("lots.qualityGrade")}</label>
+              <label>{t("lots.quality", "Quality Grade")}</label>
               <select
-                id="lot-grade"
                 value={quality}
                 onChange={(e) => setQuality(e.target.value)}
+                className="form-control"
               >
-                <option value="Grade A">Grade A (Premium / Export Table Grade)</option>
-                <option value="Grade B+">Grade B+ (Wholesale Table Quality)</option>
-                <option value="Grade B">Grade B (Processing & Puree Grade)</option>
+                <option value="Grade A">Grade A (Premium / Sorted)</option>
+                <option value="Grade B">Grade B (Standard Commercial)</option>
+                <option value="Export Grade">Export Grade (High Brix / Uniform)</option>
               </select>
             </div>
+          </div>
 
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div className="field">
-              <label htmlFor="lot-harvest-window">Availability Window</label>
-              <select
-                id="lot-harvest-window"
-                value={harvestWindow}
-                onChange={(e) => setHarvestWindow(e.target.value)}
-              >
-                <option value="Immediate (Ready for Pickup)">Immediate (Ready for Pickup)</option>
-                <option value="Next 24 to 48 Hours">Next 24 to 48 Hours</option>
-                <option value="Harvesting in 3-5 Days">Harvesting in 3-5 Days</option>
-                <option value="Next Week">Next Week</option>
-              </select>
-            </div>
-
-            <div className="field">
-              <label htmlFor="lot-harvest">Target Harvest / Pickup Date</label>
+              <label>{t("crops.sowingDate", "Expected Harvest Date")}</label>
               <input
-                id="lot-harvest"
                 type="date"
                 value={harvestDate}
                 onChange={(e) => setHarvestDate(e.target.value)}
+                className="form-control"
                 required
               />
             </div>
 
             <div className="field">
-              <label htmlFor="lot-price">Target Expected Price (₹/kg)</label>
+              <label>{t("crops.harvestWindow", "Available for Pickup From")}</label>
               <input
-                id="lot-price"
-                type="number"
-                step="0.5"
-                value={expectedPrice}
-                onChange={(e) => setExpectedPrice(e.target.value)}
-                placeholder="e.g. 32"
+                type="date"
+                value={readyDate}
+                onChange={(e) => setReadyDate(e.target.value)}
+                className="form-control"
                 required
               />
             </div>
           </div>
 
-          <div className="field mb-md">
-            <label htmlFor="lot-loc">Farm Pickup & Dispatch Location</label>
-            <input
-              id="lot-loc"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="e.g. Pimpalgaon Baswant, Nashik, Maharashtra"
-              required
-            />
+          <div className="field">
+            <label>{t("offers.offeredPrice", "Expected Price (₹ / kg)")}</label>
+            <div style={{ position: "relative" }}>
+              <input
+                type="number"
+                min={5}
+                max={500}
+                step={0.5}
+                value={expectedPrice}
+                onChange={(e) => setExpectedPrice(e.target.value)}
+                placeholder="e.g. 30"
+                className="form-control"
+                required
+              />
+              <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: "var(--ink-soft)" }}>
+                = ₹{Number(expectedPrice || 0) * 100} / Qtl
+              </span>
+            </div>
           </div>
 
-          <div className="field mb-md">
-            <label htmlFor="lot-desc">Produce Quality Details & Packaging Notes</label>
-            <textarea
-              id="lot-desc"
-              rows={2}
-              value={qualityDesc}
-              onChange={(e) => setQualityDesc(e.target.value)}
-              placeholder="Describe color, sizing, sorting, crate packaging, or moisture level..."
-              className="form-control"
-            />
-          </div>
-
-          {/* Photo Upload Attachment */}
-          <div className="field mb-md">
-            <label>Produce Photographs (Recommended for Fast Verification)</label>
-
-            {selectedPhoto ? (
-              <div className="photo-preview">
-                <img
-                  src={selectedPhoto}
-                  alt="Produce Preview"
-                />
-                <div style={{ flex: 1 }}>
-                  <div className="photo-preview-name">{photoName || "Produce Photo Attached"}</div>
-                  <div className="photo-preview-desc">Ready for digital verification inspection by buyers</div>
-                </div>
-                <button
-                  type="button"
-                  onClick={removePhoto}
-                  className="photo-remove-btn"
-                  title="Remove image"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            ) : (
-              <label className="photo-drop-zone">
-                <UploadCloud size={28} color="#176B45" style={{ marginBottom: 6 }} />
-                <div className="photo-drop-zone-title">
-                  Click or drag photo of produce lot
-                </div>
-                <div className="photo-drop-zone-desc">
-                  Show crate sorting, color maturity, and batch size
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  style={{ display: "none" }}
-                />
-              </label>
-            )}
+          <div style={{ background: "var(--bg-warm)", borderRadius: 10, padding: "12px 14px", border: "1px solid var(--line)" }}>
+            <div className="flex flex-center gap-xs text-sm fw-700" style={{ color: "var(--navy)" }}>
+              <MapPin size={15} color="var(--green-deep)" />
+              <span>Farm Pickup Origin: {userLocStr}</span>
+            </div>
+            <div style={{ fontSize: 11.5, color: "var(--ink-soft)", marginTop: 2 }}>
+              Buyers will provide quotes inclusive of farmgate logistics to this location.
+            </div>
           </div>
 
           <button
-            className="btn btn-primary btn-block"
             type="submit"
+            className="btn btn-primary btn-block btn-lg"
             disabled={isSubmitting}
-            style={{ marginTop: 20 }}
+            style={{ marginTop: 8 }}
           >
-            <Package size={16} /> {isSubmitting ? "Publishing Lot..." : "Publish Lot to Verified Buyers"}
+            <Package size={17} />
+            <span>{isSubmitting ? "Creating Lot..." : "List Harvest Lot for Bidding"}</span>
           </button>
         </form>
       </div>

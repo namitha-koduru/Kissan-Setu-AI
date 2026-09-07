@@ -20,18 +20,20 @@ import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 
 const navItems = [
-  { to: "/dashboard", labelKey: "nav.dashboard", defaultLabel: "Dashboard", icon: LayoutDashboard, roles: ["farmer", "fpo", "buyer", "admin"], group: "main" },
-  { to: "/chat", labelKey: "nav.askAi", defaultLabel: "Ask KissanSetu AI", icon: Sparkles, roles: ["farmer", "fpo", "buyer", "admin"], group: "main" },
-  { to: "/crops", labelKey: "nav.myCrops", defaultLabel: "My Crops", icon: Sprout, roles: ["farmer", "fpo"], group: "farm" },
-  { to: "/recommendation", labelKey: "nav.recommendations", defaultLabel: "Decision Center", icon: Lightbulb, roles: ["farmer", "fpo"], group: "farm" },
-  { to: "/market", labelKey: "nav.market", defaultLabel: "Market Intel", icon: Store, roles: ["farmer", "fpo", "buyer", "admin"], group: "market" },
-  { to: "/buyers", labelKey: "nav.buyers", defaultLabel: "Buyer Marketplace", icon: Users, roles: ["farmer", "fpo", "admin"], group: "market" },
-  { to: "/lots", labelKey: "nav.lots", defaultLabel: "My Lots", icon: Package, roles: ["farmer", "fpo", "buyer"], group: "trade" },
-  { to: "/offers", labelKey: "nav.offers", defaultLabel: "Buyer Offers", icon: Handshake, roles: ["farmer", "fpo", "buyer"], group: "trade" },
-  { to: "/transactions", labelKey: "nav.transactions", defaultLabel: "Transactions", icon: Truck, roles: ["farmer", "fpo", "buyer"], group: "trade" },
-  { to: "/weather", labelKey: "nav.weather", defaultLabel: "Weather Intel", icon: CloudSun, roles: ["farmer", "fpo", "buyer", "admin"], group: "insights" },
-  { to: "/analytics", labelKey: "nav.analytics", defaultLabel: "Farm Analytics", icon: LineChart, roles: ["farmer", "fpo", "admin"], group: "insights" },
-  { to: "/fpo", labelKey: "nav.fpo", defaultLabel: "FPO Pooling", icon: Building2, roles: ["farmer", "fpo", "admin"], group: "insights" },
+  // Primary Marketplace Flow
+  { to: "/dashboard", labelKey: "nav.home", defaultLabel: "Home", icon: LayoutDashboard, roles: ["farmer", "fpo", "buyer", "admin"], group: "main" },
+  { to: "/market", labelKey: "nav.market", defaultLabel: "Marketplace", icon: Store, roles: ["farmer", "fpo", "buyer", "admin"], group: "main" },
+  { to: "/lots", labelKey: "nav.lots", defaultLabel: "My Lots", icon: Package, roles: ["farmer", "fpo", "buyer"], group: "main" },
+  { to: "/offers", labelKey: "nav.offers", defaultLabel: "Buyer Offers", icon: Handshake, roles: ["farmer", "fpo", "buyer"], group: "main" },
+  { to: "/transactions", labelKey: "nav.transactions", defaultLabel: "Transactions & Receipts", icon: Truck, roles: ["farmer", "fpo", "buyer"], group: "main" },
+  
+  // Secondary Intelligence & Farm Tools
+  { to: "/chat", labelKey: "nav.askAi", defaultLabel: "Ask KissanSetu AI", icon: Sparkles, roles: ["farmer", "fpo", "buyer", "admin"], group: "tools" },
+  { to: "/crops", labelKey: "nav.myCrops", defaultLabel: "My Crops", icon: Sprout, roles: ["farmer", "fpo"], group: "tools" },
+  { to: "/weather", labelKey: "nav.weather", defaultLabel: "Weather & Risk", icon: CloudSun, roles: ["farmer", "fpo", "buyer", "admin"], group: "tools" },
+  { to: "/recommendation", labelKey: "nav.recommendations", defaultLabel: "Decision Center", icon: Lightbulb, roles: ["farmer", "fpo"], group: "tools" },
+  { to: "/buyers", labelKey: "nav.buyers", defaultLabel: "Direct Buyers", icon: Users, roles: ["farmer", "fpo", "admin"], group: "tools" },
+  { to: "/fpo", labelKey: "nav.fpo", defaultLabel: "FPO Pooling", icon: Building2, roles: ["farmer", "fpo", "admin"], group: "tools" },
   { to: "/profile", labelKey: "nav.profile", defaultLabel: "Profile & Settings", icon: UserCheck, roles: ["farmer", "fpo", "buyer", "admin"], group: "settings" },
 ] as const;
 
@@ -57,7 +59,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           return (
             <div key={item.to}>
               {showDivider && (
-                <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "6px 12px" }} />
+                <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "8px 12px" }} />
               )}
               <NavLink
                 to={item.to}
@@ -97,10 +99,10 @@ export function MobileNav() {
   const { t } = useLanguage();
   const mobileLinks = [
     { to: "/dashboard", label: t("nav.home", "Home"), icon: LayoutDashboard },
-    { to: "/crops", label: t("nav.myCrops", "Crops"), icon: Sprout },
-    { to: "/recommendation", label: t("nav.decide", "Decide"), icon: Lightbulb },
-    { to: "/market", label: t("nav.market", "Markets"), icon: Store },
-    { to: "/buyers", label: t("nav.buyers", "Buyers"), icon: Users },
+    { to: "/market", label: t("nav.market", "Market"), icon: Store },
+    { to: "/lots", label: t("nav.lots", "Lots"), icon: Package },
+    { to: "/transactions", label: t("nav.transactions", "Orders"), icon: Truck },
+    { to: "/chat", label: t("nav.askAi", "AI"), icon: Sparkles },
   ];
 
   return (

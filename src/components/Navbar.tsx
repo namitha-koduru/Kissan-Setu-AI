@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { Bell, CloudSun, Menu, MapPin, Check } from "lucide-react";
+import { Bell, CloudSun, Menu, MapPin, Check, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { LanguageSelector } from "./LanguageSelector";
+import { LocationSelectorModal } from "./LocationSelectorModal";
 import { Logo } from "./Logo";
 import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
@@ -12,6 +13,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
   const { t } = useLanguage();
   const { notifications, unreadNotifsCount, markNotificationAsRead } = useAppState();
   const [notifOpen, setNotifOpen] = useState(false);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -24,31 +26,51 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const locationDisplay = user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : t("nav.setLocation", "Set Location"));
+  const locationDisplay = user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : t("nav.setLocation", "Vadlamudi, Guntur"));
 
   return (
-    <header className="topbar">
-      <div className="topbar-inner">
-        <div className="flex flex-center gap-md">
-          <button
-            className="icon-btn hamburger"
-            type="button"
-            aria-label="Open navigation menu"
-            onClick={onMenu}
-          >
-            <Menu size={20} />
-          </button>
-          <div className="flex flex-center gap-sm" style={{ fontSize: "var(--text-base)", color: "var(--ink-soft)" }}>
-            <MapPin size={14} color="var(--green-deep)" />
-            <span style={{ fontWeight: 600, color: "var(--ink)" }}>{locationDisplay}</span>
+    <>
+      <header className="topbar">
+        <div className="topbar-inner">
+          <div className="flex flex-center gap-sm">
+            <button
+              className="icon-btn hamburger"
+              type="button"
+              aria-label="Open navigation menu"
+              onClick={onMenu}
+            >
+              <Menu size={20} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setLocationModalOpen(true)}
+              className="location-pill"
+              title="Click to change farm location"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                background: "rgba(23,107,69,0.06)",
+                border: "1px solid rgba(23,107,69,0.18)",
+                borderRadius: 20,
+                padding: "5px 12px",
+                cursor: "pointer",
+                textAlign: "left",
+              }}
+            >
+              <MapPin size={14} color="var(--green-deep)" />
+              <span style={{ fontWeight: 700, fontSize: 13, color: "var(--navy)" }}>{locationDisplay}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "var(--green-deep)", textDecoration: "underline", marginLeft: 2 }}>
+                {t("common.edit", "Change")}
+              </span>
+            </button>
           </div>
-        </div>
 
-        <div className="top-actions" ref={panelRef}>
-          <LanguageSelector />
-          <Link className="icon-btn" to="/weather" title={t("nav.weather", "Weather Intel")} aria-label="Weather">
-            <CloudSun size={18} />
-          </Link>
+          <div className="top-actions" ref={panelRef}>
+            <LanguageSelector />
+            <Link className="icon-btn" to="/weather" title={t("nav.weather", "Weather Intel")} aria-label="Weather">
+              <CloudSun size={18} />
+            </Link>
 
           <div style={{ position: "relative" }}>
             <button
@@ -105,11 +127,11 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
 
           <Link className="profile-chip" to="/profile" aria-label="Profile">
             <span className="avatar">{user?.initials || user?.name?.slice(0, 2).toUpperCase() || "KS"}</span>
-            <span>{user?.name?.split(" ")[0] || t("nav.profile", "Profile")}</span>
-          </Link>
         </div>
       </div>
     </header>
+    <LocationSelectorModal isOpen={locationModalOpen} onClose={() => setLocationModalOpen(false)} />
+    </>
   );
 }
 

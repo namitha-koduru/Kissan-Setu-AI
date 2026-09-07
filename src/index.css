@@ -2732,6 +2732,107 @@ table.data-table tr:hover td { background: rgba(23,107,69,0.02); }
 
 
 /* ================================================================
+   MODAL & OVERLAY SYSTEM
+   ================================================================ */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(14, 26, 18, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 16px;
+  animation: fadeIn 0.18s ease-out;
+}
+
+.modal-content {
+  position: relative;
+  background: #FFFFFF;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08);
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ================================================================
+   LOCATION PILL & AGRICULTURAL THEME
+   ================================================================ */
+.location-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.location-pill:hover {
+  background: #EAF4EE;
+  border-color: var(--green-deep);
+  color: var(--green-deep);
+}
+
+/* Print Styles for Digital Receipt */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .modal-backdrop {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+  .modal-content, .modal-content * {
+    visibility: visible;
+  }
+  .modal-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+  }
+  .btn, .icon-btn {
+    display: none !important;
+  }
+}
+
+/* ================================================================
    REDUCED MOTION
    ================================================================ */
 @media (prefers-reduced-motion: reduce) {
@@ -2741,3 +2842,4 @@ table.data-table tr:hover td { background: rgba(23,107,69,0.02); }
     transition-duration: 0.01ms !important;
   }
 }
+

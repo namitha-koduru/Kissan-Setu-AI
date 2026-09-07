@@ -7,6 +7,9 @@ import {
   Truck,
   CreditCard,
   AlertTriangle,
+  Receipt,
+  FileCheck,
+  CheckCircle2,
 } from "lucide-react";
 import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -14,6 +17,7 @@ import buyerMatchingApi, {
   type TransactionDetailResponse,
 } from "../services/buyerMatchingApi";
 import { DisputeModal } from "../components/DisputeModal";
+import { DigitalReceiptModal } from "../components/DigitalReceiptModal";
 
 export function TransactionPage() {
   const [params] = useSearchParams();
@@ -29,6 +33,7 @@ export function TransactionPage() {
   const [isDisputeOpen, setIsDisputeOpen] = useState(false);
   const [isLogisticsOpen, setIsLogisticsOpen] = useState(false);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
 
   // Form states for logistics & payment
   const [logisticsStatus, setLogisticsStatus] = useState("PICKUP_SCHEDULED");
@@ -72,11 +77,11 @@ export function TransactionPage() {
         payment_reference: "",
         created_at: new Date().toISOString(),
         events: [
-          { id: 1, stage_label: "Contract Confirmed & Verified", description: "Farmer Ramesh accepted procurement tender from Sahyadri FPO", done: true, created_at: "Today, 10:30 AM" },
+          { id: 1, stage_label: "Contract Confirmed & Verified", description: "Farmer accepted procurement offer at agreed farmgate terms", done: true, created_at: "Today, 10:30 AM" },
           { id: 2, stage_label: "Logistics & Pickup Scheduled", description: "Farm-gate pickup scheduled for 08 Sep 2026 (Vehicle: MH-15-EV-4021)", done: true, created_at: "Today, 11:15 AM" },
-          { id: 3, stage_label: "Produce In Transit", description: "Produce loaded and dispatched to processing unit", done: false, created_at: "Pending" },
-          { id: 4, stage_label: "Weighing & Quality Acceptance", description: "Digital weighing scale sync and Grade A confirmation", done: false, created_at: "Pending" },
-          { id: 5, stage_label: "Payment Record & Settlement", description: "Direct bank transfer credit to farmer HDFC account", done: false, created_at: "Pending" },
+          { id: 3, stage_label: "Produce In Transit", description: "Produce loaded and dispatched to processing hub", done: false, created_at: "Pending" },
+          { id: 4, stage_label: "Weighing & Quality Acceptance", description: "Digital weighing scale sync and Grade A quality verification", done: false, created_at: "Pending" },
+          { id: 5, stage_label: "Payment Record & Settlement", description: "Direct bank transfer credit to farmer registered bank account", done: false, created_at: "Pending" },
         ],
         disputes: [],
       });
@@ -143,7 +148,7 @@ export function TransactionPage() {
           logistics_status: "IN_TRANSIT",
           pickup_location: txDetail.pickup_location,
         });
-      } else if (stageLower.includes("delivery") || stageLower.includes("settlement")) {
+      } else if (stageLower.includes("delivery") || stageLower.includes("settlement") || stageLower.includes("weighing")) {
         await buyerMatchingApi.updateLogistics(txDetail.id, {
           logistics_status: "DELIVERED",
           pickup_location: txDetail.pickup_location,
@@ -151,7 +156,7 @@ export function TransactionPage() {
       } else if (stageLower.includes("payment")) {
         await buyerMatchingApi.recordPayment(txDetail.id, {
           paid_amount: txDetail.total_amount,
-          payment_status: "RECEIVED",
+          payment_status: "PAID",
         });
       } else {
         await buyerMatchingApi.updateLogistics(txDetail.id, {
@@ -166,6 +171,10 @@ export function TransactionPage() {
   };
 
   const isComplete = txDetail?.events.every((e) => e.done);
+  const totalVal = txDetail?.total_amount || 0;
+  const freightCost = txDetail?.transport_cost_actual || 0;
+  const handlingDeduction = 0; // Direct trade no middleman fee
+  const netInHand = totalVal - freightCost - handlingDeduction;
 
   return (
     <div className="wrap" style={{ maxWidth: 840 }}>
@@ -180,10 +189,10 @@ export function TransactionPage() {
         <div>
           <div className="flex flex-center gap-md">
             <span className="page-tag">
-              KissanSetu Trade
+              KissanSetu Deal #{txDetail?.id || txIdParam}
             </span>
             <h1 style={{ fontSize: "24px", fontWeight: 800, margin: 0 }}>
-              {t("transactions.title", "Digital Transactions & Logistics")} #{txDetail?.id || txIdParam}
+              {t("transactions.title", "Fulfillment, Logistics & Payment")}
             </h1>
           </div>
           <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 4 }}>
@@ -193,24 +202,36 @@ export function TransactionPage() {
 
         <div className="action-bar">
           <button
+            className="btn btn-primary"
+            onClick={() => setIsReceiptOpen(true)}
+            style={{ gap: 6 }}
+          >
+            <Receipt size={16} /> {t("transactions.viewReceipt", "View Digital Receipt")}
+          </button>
+          <button
             className="btn btn-outline"
             style={{ color: "var(--terracotta)", borderColor: "#F3D8C8" }}
             onClick={() => setIsDisputeOpen(true)}
           >
-            <AlertTriangle size={15} /> {t("transactions.initiateDispute", "Report Issue / Dispute")}
+            <AlertTriangle size={15} /> {t("transactions.initiateDispute", "Report Issue")}
           </button>
         </div>
       </div>
 
       {/* Transaction Details Overview Card */}
-      <div className="card card-pad mb-lg">
+      <div className="card card-pad mb-lg" style={{ borderRadius: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
           <div>
-            <span className="badge-pill badge-high" style={{ fontSize: "11px", marginBottom: 6 }}>
-              {txDetail?.status || "CONFIRMED"}
-            </span>
-            <h2 style={{ fontSize: "20px", fontWeight: 800, margin: "4px 0 0" }}>
-              {txDetail?.crop_name} · {txDetail?.quantity_kg.toLocaleString()} kg
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <span className="badge-pill badge-high" style={{ fontSize: "11px" }}>
+                {txDetail?.status || "CONFIRMED"}
+              </span>
+              <span style={{ fontSize: "12px", color: "var(--green-deep)", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+                <FileCheck size={14} /> Contract Verified
+              </span>
+            </div>
+            <h2 style={{ fontSize: "22px", fontWeight: 800, margin: "4px 0 0" }}>
+              {txDetail?.crop_name} · {txDetail?.quantity_kg.toLocaleString("en-IN")} kg
             </h2>
             <div style={{ fontSize: "13px", color: "var(--ink-soft)", marginTop: 2 }}>
               {t("transactions.buyer", "Buyer")}: <strong>{txDetail?.buyer_name}</strong> ({txDetail?.buyer_organization})
@@ -218,33 +239,56 @@ export function TransactionPage() {
           </div>
 
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: "12px", color: "var(--ink-soft)" }}>{t("transactions.amount", "Total Contract Value")}</div>
-            <div style={{ fontSize: "22px", fontWeight: 900, color: "var(--green-deep)" }}>
-              ₹{txDetail?.total_amount.toLocaleString("en-IN")}
+            <div style={{ fontSize: "12px", color: "var(--ink-soft)", fontWeight: 700 }}>NET IN-HAND PAYOUT</div>
+            <div style={{ fontSize: "26px", fontWeight: 900, color: "var(--green-deep)" }}>
+              ₹{netInHand.toLocaleString("en-IN")}
+            </div>
+            <div style={{ fontSize: "12px", color: "var(--ink-soft)" }}>
+              Rate: ₹{txDetail?.final_price.toFixed(2)}/kg (₹{((txDetail?.final_price || 0) * 100).toFixed(0)}/Qtl)
             </div>
           </div>
         </div>
 
-        <div className="pf-row">
-          <span className="l">{t("market.grossPrice", "Contracted Agreed Price")}</span>
-          <span className="v" style={{ fontWeight: 800 }}>
-            ₹{txDetail?.final_price.toFixed(2)}/kg
-          </span>
+        {/* Realization & Deductions Table */}
+        <div style={{ background: "var(--bg-warm)", borderRadius: 10, padding: "12px 14px", margin: "14px 0", border: "1px solid var(--line)" }}>
+          <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--navy)", marginBottom: 8, textTransform: "uppercase" }}>
+            Payment & Deduction Breakdown
+          </div>
+          <div className="flex flex-between text-sm mb-xs">
+            <span>Gross Contract Produce Value ({txDetail?.quantity_kg} kg @ ₹{txDetail?.final_price}/kg)</span>
+            <span style={{ fontWeight: 700 }}>₹{totalVal.toLocaleString("en-IN")}</span>
+          </div>
+          <div className="flex flex-between text-sm mb-xs" style={{ color: "var(--ink-soft)" }}>
+            <span>Farmgate Transport / Freight (Distance adjusted)</span>
+            <span style={{ color: freightCost > 0 ? "var(--danger)" : "var(--green-deep)" }}>
+              {freightCost > 0 ? `-₹${freightCost}` : "₹0 (Buyer pickup covered)"}
+            </span>
+          </div>
+          <div className="flex flex-between text-sm mb-xs" style={{ color: "var(--ink-soft)" }}>
+            <span>Middleman Commission / APMC Arthiya Fee</span>
+            <span style={{ color: "var(--green-deep)", fontWeight: 700 }}>₹0 (Direct KissanSetu Trade)</span>
+          </div>
+          <div className="flex flex-between" style={{ borderTop: "1.5px solid var(--line-strong)", paddingTop: 8, marginTop: 6, fontWeight: 800, fontSize: "15px", color: "var(--green-deep)" }}>
+            <span>Estimated Net Realization In-Hand</span>
+            <span>₹{netInHand.toLocaleString("en-IN")}</span>
+          </div>
         </div>
+
         <div className="pf-row">
-          <span className="l">{t("transactions.amount", "Total Contract Value")}</span>
-          <span className="v" style={{ color: "var(--green-deep)", fontWeight: 900, fontSize: "20px" }}>
-            ₹{txDetail?.total_amount.toLocaleString("en-IN")}
-          </span>
-        </div>
-        <div className="pf-row">
-          <span className="l">{t("transactions.payment", "Payment Status")}</span>
-          <span className="v" style={{ fontWeight: 800, color: txDetail?.payment_status === "PAID" ? "var(--green-deep)" : "#B06000" }}>
-            {txDetail?.payment_status === "PAID" ? "PAID (Direct Bank Transfer)" : "PENDING (Upon Weighing & Acceptance)"}
+          <span className="l">{t("transactions.payment", "Payment Settlement Status")}</span>
+          <span className="v" style={{ fontWeight: 800, color: txDetail?.payment_status === "PAID" ? "var(--green-deep)" : "#B06000", display: "flex", alignItems: "center", gap: 6 }}>
+            {txDetail?.payment_status === "PAID" ? (
+              <>
+                <CheckCircle2 size={15} color="var(--green-deep)" />
+                PAID via Direct Bank Transfer (UTR: {txDetail.payment_reference || "UTR-HDFC-98234190"})
+              </>
+            ) : (
+              "PENDING (Escrow released upon Hub delivery & weighing)"
+            )}
           </span>
         </div>
 
-        {/* Action buttons for logistics and payment record */}
+        {/* Action buttons for logistics, payment, and receipt */}
         <div className="action-bar" style={{ marginTop: 16, borderTop: "1px solid #EDF2EB", paddingTop: 14 }}>
           <button
             className="btn btn-outline"
@@ -259,6 +303,13 @@ export function TransactionPage() {
             onClick={() => setIsPaymentOpen(true)}
           >
             <CreditCard size={15} /> {t("transactions.payment", "Record Payment Milestone")}
+          </button>
+          <button
+            className="btn btn-primary"
+            style={{ flex: 1, justifyContent: "center", fontSize: "13px" }}
+            onClick={() => setIsReceiptOpen(true)}
+          >
+            <Receipt size={15} /> {t("transactions.viewReceipt", "Digital Receipt")}
           </button>
         </div>
       </div>
@@ -453,6 +504,25 @@ export function TransactionPage() {
         isOpen={isDisputeOpen}
         onClose={() => setIsDisputeOpen(false)}
         onDisputeFiled={() => loadTransaction()}
+      />
+
+      {/* Digital Receipt Modal */}
+      <DigitalReceiptModal
+        isOpen={isReceiptOpen}
+        onClose={() => setIsReceiptOpen(false)}
+        transaction={{
+          id: `TX-2026-${String(txDetail?.id || 1).padStart(4, "0")}`,
+          lotId: `KS-LOT-${String(txDetail?.lot_id || 1).padStart(3, "0")}`,
+          buyerName: txDetail?.buyer_name || localTx.buyerName || "Sahyadri FPO",
+          crop: txDetail?.crop_name || localTx.crop || "Tomato",
+          quantityKg: txDetail?.quantity_kg || localTx.quantityKg || 2500,
+          pricePerKg: txDetail?.final_price || localTx.pricePerKg || 32,
+          stages: (txDetail?.events || []).map((e) => ({
+            label: e.stage_label,
+            done: e.done,
+            date: e.created_at,
+          })),
+        }}
       />
 
       {/* Verified Assurance Note */}

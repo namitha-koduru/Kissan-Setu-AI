@@ -1,284 +1,434 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   MapPin,
-  CloudSun,
-  AlertTriangle,
-  Sprout,
-  Users,
-  Package,
+  Plus,
   ArrowRight,
-  TrendingUp,
+  Store,
+  Package,
+  Truck,
+  CheckCircle2,
+  Clock,
   Sparkles,
+  CloudSun,
+  ShieldCheck,
+  ChevronRight,
 } from "lucide-react";
-import { CropCard } from "../components/CropCard";
-import { DecisionBadge } from "../components/DecisionBadge";
-import { FarmTodayCard } from "../components/FarmTodayCard";
-import { MarketIntelligenceSummaryCard } from "../components/MarketIntelligenceSummaryCard";
 import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
-import { weatherByLocation, marketsByCrop } from "../data/demo";
+import { LocationSelectorModal } from "../components/LocationSelectorModal";
+import { weatherByLocation } from "../data/demo";
 
 export function DashboardPage() {
   const { user } = useAuth();
-  const { crops, setActiveCropId } = useAppState();
+  const { crops, lots, transaction } = useAppState();
   const { t } = useLanguage();
   const navigate = useNavigate();
 
-  const userLocKey = user?.district || (user?.location ? user.location.split(",")[0].trim() : "Guntur");
-  const weather = weatherByLocation[userLocKey] || weatherByLocation.Guntur || weatherByLocation.Nashik;
-  const tomatoMarkets = marketsByCrop.Tomato;
-  const focusCrop = crops[0] || { name: "Tomato", id: "crop-tomato" };
+  const [selectedCropIndex, setSelectedCropIndex] = useState(0);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
+
+  const activeCrop = crops[selectedCropIndex] || crops[0] || {
+    name: "Tomato",
+    icon: "🍅",
+    quantityKg: 500,
+    expectedPrice: 29,
+  };
+
+  const userDistrict = user?.district || (user?.location ? user.location.split(",")[0].trim() : "Guntur");
+  const userLocationStr = user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : "Vadlamudi, Guntur, AP");
+  const weather = weatherByLocation[userDistrict] || weatherByLocation.Guntur || weatherByLocation.Nashik;
+
+  // Nearby opportunities calculated for active crop
+  const basePrice = (activeCrop.expectedPrice || 28) * 100; // ₹/Qtl
+  const nearbyOpportunities = [
+    {
+      name: `${userDistrict} APMC Mandi`,
+      type: "Mandi Benchmark",
+      priceQtl: basePrice,
+      distanceKm: 14,
+      freightQtl: 110,
+      netRealizationQtl: basePrice - 110 - 25,
+      arrivalVolume: "1,400 Qtl",
+      isBest: false,
+    },
+    {
+      name: "Sahyadri / Regional FPC Direct",
+      type: "Institutional Buyer",
+      priceQtl: basePrice + 160,
+      distanceKm: 18,
+      freightQtl: 60,
+      netRealizationQtl: basePrice + 160 - 60,
+      arrivalVolume: "Direct Escrow",
+      isBest: true,
+    },
+    {
+      name: "FreshFarm Retail Procurement",
+      type: "Direct Retailer",
+      priceQtl: basePrice + 80,
+      distanceKm: 24,
+      freightQtl: 90,
+      netRealizationQtl: basePrice + 80 - 90,
+      arrivalVolume: "Prompt Payment",
+      isBest: false,
+    },
+  ];
 
   return (
-    <div className="wrap">
-      {/* Page Header */}
-      <div className="page-header">
+    <div className="wrap" style={{ maxWidth: 960, paddingBottom: 60 }}>
+      {/* 1. Header & Location Bar */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 12,
+          padding: "16px 0 20px",
+          borderBottom: "1px solid var(--line)",
+          marginBottom: 20,
+        }}
+      >
         <div>
-          <h1>
-            {t("dashboard.greeting", "Welcome back")}, {user?.name?.split(" ")[0] || "Farmer"}
-          </h1>
-          <div className="page-subtitle flex flex-center gap-sm">
-            <MapPin size={14} color="var(--green-deep)" />
-            <span>{user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : t("nav.setLocation", "Your Farm"))}</span>
+          <div style={{ fontSize: 13, color: "var(--ink-soft)", fontWeight: 600 }}>
+            {t("dashboard.greeting", "Good day")}, {user?.name?.split(" ")[0] || "Farmer"}
           </div>
+          <button
+            type="button"
+            onClick={() => setLocationModalOpen(true)}
+            style={{
+              background: "none",
+              border: "none",
+              padding: 0,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              cursor: "pointer",
+              marginTop: 2,
+            }}
+          >
+            <MapPin size={18} color="var(--green-deep)" />
+            <span style={{ fontSize: 18, fontWeight: 800, color: "var(--navy)" }}>{userLocationStr}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--green-deep)", textDecoration: "underline", marginLeft: 4 }}>
+              {t("common.edit", "Change")}
+            </span>
+          </button>
         </div>
 
-        <div className="action-bar">
-          <Link to="/chat?mode=voice" className="btn btn-outline">
-            <span>🎙</span>
-            <span>{t("chat.enableVoice", "Speak to AI")}</span>
+        <div className="flex gap-sm">
+          <Link to="/chat" className="btn btn-outline btn-sm" style={{ borderRadius: 20 }}>
+            <Sparkles size={14} color="var(--green-deep)" />
+            <span>{t("nav.askAi", "Ask AI Assistant")}</span>
           </Link>
-
-          <Link to="/chat" className="btn btn-primary">
-            <Sparkles size={16} />
-            <span>{t("nav.askAi", "Ask KissanSetu AI")}</span>
-          </Link>
-
           <Link
             to="/weather"
-            className="weather-mini"
+            className="flex flex-center gap-xs"
+            style={{
+              padding: "6px 12px",
+              borderRadius: 20,
+              background: "rgba(46,139,87,0.08)",
+              border: "1px solid rgba(46,139,87,0.2)",
+              fontSize: 12.5,
+              fontWeight: 700,
+              color: "var(--green-deep)",
+            }}
           >
-            <CloudSun size={28} color="#2E8B57" />
-            <div>
-              <div className="weather-mini-temp">{weather.currentTempC}°C</div>
-              <div className="weather-mini-detail">
-                {weather.condition} · {weather.rainProbability}% {t("weather.rainProb", "rain risk")}
-              </div>
-            </div>
+            <CloudSun size={16} />
+            <span>{weather.currentTempC}°C · {weather.condition}</span>
           </Link>
         </div>
       </div>
 
-      {/* Farm Intelligence Engine - Your Farm Today */}
-      <div className="content-section">
-        <FarmTodayCard farmerId={user?.id ? Number(user.id) : 1} />
-      </div>
+      {/* 2. "WHAT ARE YOU SELLING?" — Crop Selector */}
+      <div className="mb-xl">
+        <div className="flex flex-between flex-center mb-sm">
+          <div style={{ fontSize: 12, fontWeight: 800, color: "var(--ink-muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+            {t("crops.cropName", "What are you selling today?")}
+          </div>
+          <Link to="/crops/add" className="flex flex-center gap-xs text-sm fw-700" style={{ color: "var(--green-deep)" }}>
+            <Plus size={14} />
+            <span>{t("crops.addCrop", "Add Crop")}</span>
+          </Link>
+        </div>
 
-      {/* Market Intelligence & Price Discovery Summary */}
-      <div className="content-section">
-        <MarketIntelligenceSummaryCard cropName={focusCrop?.name || "Tomato"} quantityQuintals={30} />
-      </div>
-
-      {/* Main Grid: Decision + Crops on Left, Weather + Quick Actions on Right */}
-      <div className="grid-2" style={{ gridTemplateColumns: "1.25fr 0.75fr" }}>
-
-        <div>
-          {/* Main Decision Highlight Card */}
-          {focusCrop && (
-            <div className="reco-card">
-              <div className="reco-head">
-                <div>
-                  <div className="reco-eyebrow">
-                    {t("dashboard.todayAction", "YOUR NEXT HIGH-VALUE DECISION")}
-                  </div>
-                  <h3 className="reco-title">
-                    {focusCrop.name} · {focusCrop.quantityKg} {focusCrop.unit || "kg"}
-                  </h3>
-                </div>
-                <span className="stage-tag mature">{focusCrop.stage}</span>
-              </div>
-
-              <div className="reco-body">
-                <div className="reco-header-row">
-                  <div>
-                    <div className="reco-label">
-                      {t("recommendations.decision", "AI RECOMMENDATION")}
-                    </div>
-                    <DecisionBadge decision={focusCrop.recommendation || "SELL"} size="md" />
-                  </div>
-                  <div className="reco-confidence">
-                    <div className="reco-stat">
-                      <div className="label">{t("buyers.matchScore", "Confidence Score")}</div>
-                      <div className="val text-green">
-                        {focusCrop.confidence || 86}% ({t("buyers.matchScore", "High")})
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="reco-grid">
-                  <div className="reco-stat">
-                    <div className="label">{t("market.bestMarket", "Best Market Option")}</div>
-                    <div className="val fw-800">
-                      {focusCrop.bestMarket || "Nashik Market"}
-                    </div>
-                  </div>
-                  <div className="reco-stat">
-                    <div className="label">{t("market.netInHand", "Expected Net Realization")}</div>
-                    <div className="val text-green fw-800 reco-price">
-                      ₹{focusCrop.netRealization || 29}/kg
-                    </div>
-                  </div>
-                </div>
-
-                <div className="reco-reason">
-                  ✓ <strong>{t("recommendations.reasons", "Reasoning")}:</strong> High wholesale buyer demand in Nashik yielding ₹29/kg net realization. Freight to Pune is ₹2,800 resulting in lower net (₹24/kg) despite higher raw price. Rain probability rises after 2 days.
-                </div>
-
+        {crops.length === 0 ? (
+          <div
+            className="card card-pad text-center"
+            style={{ padding: "24px 16px", background: "var(--bg-warm)", border: "1.5px dashed var(--line-strong)" }}
+          >
+            <div style={{ fontSize: 24, marginBottom: 6 }}>🌱</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "var(--navy)" }}>No crops added to your farm profile yet</div>
+            <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: "4px 0 14px" }}>
+              Add your crop to see real-time price discovery and direct buyer bids near {userDistrict}.
+            </p>
+            <Link to="/crops/add" className="btn btn-primary btn-sm">
+              <Plus size={15} /> {t("crops.addCrop", "Add Your First Crop")}
+            </Link>
+          </div>
+        ) : (
+          <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4 }}>
+            {crops.map((c, idx) => {
+              const isSelected = idx === selectedCropIndex;
+              return (
                 <button
-                  className="btn btn-primary btn-block"
+                  key={c.id || idx}
                   type="button"
-                  onClick={() => {
-                    setActiveCropId(focusCrop.id);
-                    navigate("/recommendation");
+                  onClick={() => setSelectedCropIndex(idx)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "10px 16px",
+                    borderRadius: 14,
+                    border: isSelected ? "2px solid var(--green-deep)" : "1px solid var(--line)",
+                    background: isSelected ? "#FFFFFF" : "var(--bg-warm)",
+                    boxShadow: isSelected ? "0 4px 12px rgba(23,107,69,0.12)" : "none",
+                    cursor: "pointer",
+                    minWidth: 150,
+                    textAlign: "left",
+                    flexShrink: 0,
+                    transition: "all 0.15s ease",
                   }}
                 >
-                  {t("nav.recommendations", "Open AI Decision Center")} <ArrowRight size={16} />
+                  <span style={{ fontSize: 24 }}>{c.icon || "🌱"}</span>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: "var(--navy)" }}>{c.name}</div>
+                    <div style={{ fontSize: 11, color: "var(--ink-soft)" }}>{c.quantityKg || 500} kg ready</div>
+                  </div>
                 </button>
-              </div>
-            </div>
-          )}
+              );
+            })}
 
-          {/* Crops List */}
-          <div className="section-header">
-            <h3>{t("crops.title", "Active Crops Under Management")}</h3>
-            <Link to="/crops" className="section-link">
-              {t("dashboard.viewAll", "See all crops")} →
+            <Link
+              to="/crops/add"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                padding: "10px 16px",
+                borderRadius: 14,
+                border: "1.5px dashed var(--line-strong)",
+                background: "transparent",
+                color: "var(--ink-soft)",
+                fontSize: 13,
+                fontWeight: 700,
+                minWidth: 120,
+                flexShrink: 0,
+              }}
+            >
+              <Plus size={16} />
+              <span>{t("common.add", "Add")}</span>
             </Link>
           </div>
+        )}
+      </div>
 
+      {/* 3. "BEST PLACES TO SELL" — Ranked Opportunities */}
+      <div className="mb-xl">
+        <div className="flex flex-between flex-center mb-sm">
           <div>
-            {crops.slice(0, 3).map((c) => (
-              <CropCard
-                key={c.id}
-                crop={c}
-                harvestWindow={c.harvestWindow}
-                recommendation={c.recommendation}
-                onSelect={() => setActiveCropId(c.id)}
-              />
-            ))}
+            <div style={{ fontSize: 12, fontWeight: 800, color: "var(--ink-muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              {t("market.title", "Best Places to Sell Near You")}
+            </div>
+            <div style={{ fontSize: 12, color: "var(--ink-soft)" }}>
+              Ranked by net in-hand realization after freight & deductions
+            </div>
           </div>
-
-          {/* Mandi Price Snapshot */}
-          <div className="section-header">
-            <h3>{t("market.title", "Mandi Price Snapshot")} — Tomato</h3>
-            <Link to="/market" className="section-link">
-              {t("market.subtitle", "Full market intel")} →
-            </Link>
-          </div>
-
-          <div className="table-scroll">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>{t("market.mandiName", "Market")}</th>
-                  <th>{t("market.currentPrice", "Price")}</th>
-                  <th>{t("buyers.demand", "Demand")}</th>
-                  <th>{t("market.distance", "Distance")}</th>
-                  <th>{t("market.netInHand", "Expected Net")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tomatoMarkets.slice(0, 4).map((m) => (
-                  <tr key={m.id} className={m.id === "nashik" ? "highlight" : ""}>
-                    <td data-label="Market">
-                      <strong>{m.name}</strong>
-                      {m.id === "nashik" && (
-                        <span className="best-net-badge">
-                          ★ {t("market.bestMarket", "Best Net")}
-                        </span>
-                      )}
-                    </td>
-                    <td data-label="Price">₹{m.pricePerKg}/kg</td>
-                    <td data-label="Demand">
-                      <span className={`badge-pill badge-${m.demand.toLowerCase()}`}>{m.demand}</span>
-                    </td>
-                    <td data-label="Distance">{m.distanceKm} km</td>
-                    <td
-                      data-label="Expected Net"
-                      className={m.id === "nashik" ? "text-green fw-800" : "fw-800"}
-                    >
-                      ₹{m.netPerKg}/kg
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Link to="/market" className="flex flex-center gap-xs text-sm fw-700" style={{ color: "var(--green-deep)" }}>
+            <span>{t("common.viewAll", "Compare All")}</span>
+            <ChevronRight size={15} />
+          </Link>
         </div>
 
-        {/* Right Column: Weather Risk + Quick Actions */}
-        <div>
-          <div className="weather-section">
-            <h4 className="weather-section-title">
-              {t("weather.title", "Weather Risk — Next 3 Days")}
-            </h4>
-            <div className="wx-strip">
-              {weather.forecast.slice(0, 3).map((w, i) => (
-                <div key={w.day} className="wx-day" data-first={i === 0 ? "true" : undefined}>
-                  <div className="d">{w.day}</div>
-                  <div className="t">{w.tempC}°</div>
-                  <div className="r">{w.rainProbability}% {t("weather.rainProb", "rain")}</div>
+        <div className="flex-col gap-sm">
+          {nearbyOpportunities.map((op, i) => (
+            <div
+              key={op.name}
+              style={{
+                background: "#FFFFFF",
+                border: op.isBest ? "1.5px solid var(--green-deep)" : "1px solid var(--line)",
+                borderRadius: 14,
+                padding: "14px 18px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 12,
+                boxShadow: op.isBest ? "0 2px 8px rgba(23,107,69,0.08)" : "none",
+                position: "relative",
+              }}
+            >
+              {op.isBest && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: -10,
+                    right: 18,
+                    background: "var(--green-deep)",
+                    color: "#fff",
+                    fontSize: 10,
+                    fontWeight: 800,
+                    padding: "2px 8px",
+                    borderRadius: 6,
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  ★ Highest In-Hand Net
                 </div>
-              ))}
-            </div>
-            <div className="alert-box">
-              <AlertTriangle size={18} color="#A85D35" />
-              <span>
-                {t("weather.advisory", "Rain probability increases significantly after Day 2. Consider harvesting near-maturity crops before high-risk period begins.")}
-              </span>
-            </div>
-          </div>
+              )}
 
-          <div className="quick-actions-section">
-            <h4 className="quick-actions-title">
-              {t("dashboard.todayAction", "Quick Farm-to-Market Actions")}
-            </h4>
-
-            {/* Smart Buyer Match Highlight */}
-            <div className="buyer-match-highlight">
-              <div className="buyer-match-header">
-                <Users size={14} /> 3 {t("buyers.verified", "Verified Buyers Active")}
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 10,
+                    background: op.isBest ? "rgba(23,107,69,0.1)" : "var(--bg-soft)",
+                    color: op.isBest ? "var(--green-deep)" : "var(--navy)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 18,
+                    fontWeight: 800,
+                  }}
+                >
+                  {i + 1}
+                </div>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "var(--navy)" }}>{op.name}</div>
+                  <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 2 }}>
+                    📍 {op.distanceKm} km away · Est. Freight -₹{op.freightQtl}/Qtl · {op.arrivalVolume}
+                  </div>
+                </div>
               </div>
-              <div className="buyer-match-detail">
-                Sahyadri FPO & Reliance Fresh demanding Tomato at <strong>₹32.00/kg</strong> (+₹3.50/kg vs mandi).
-              </div>
-              <Link
-                to="/buyers?crop=Tomato"
-                className="buyer-match-link"
-              >
-                {t("buyers.viewDetail", "View Matched Buyers")} →
-              </Link>
-            </div>
 
-            <div className="action-links">
-              <Link className="btn btn-outline btn-block action-link" to="/crops/add">
-                <Sprout size={18} color="#176B45" /> {t("crops.addCrop", "Register New Crop")}
-              </Link>
-              <Link className="btn btn-outline btn-block action-link" to="/buyers">
-                <Users size={18} color="#176B45" /> {t("buyers.title", "Find Verified Buyers")}
-              </Link>
-              <Link className="btn btn-outline btn-block action-link" to="/lots/create">
-                <Package size={18} color="#176B45" /> {t("lots.createLot", "Create Selling Lot")}
-              </Link>
-              <Link className="btn btn-secondary btn-block action-link" to="/recommendation">
-                <TrendingUp size={18} color="#E88922" /> {t("recommendations.title", "AI Net Realization Matrix")}
-              </Link>
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: op.isBest ? "var(--green-deep)" : "var(--navy)" }}>
+                    ₹{op.netRealizationQtl.toLocaleString("en-IN")}
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "var(--ink-soft)" }}> / Qtl Net</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--ink-muted)" }}>
+                    Gross ₹{op.priceQtl.toLocaleString("en-IN")} / Qtl
+                  </div>
+                </div>
+
+                <Link
+                  to="/lots/create"
+                  className={`btn ${op.isBest ? "btn-primary" : "btn-outline"} btn-sm`}
+                  style={{ borderRadius: 8, padding: "7px 14px" }}
+                >
+                  <span>{t("lots.create", "Sell Lot")}</span>
+                  <ArrowRight size={13} />
+                </Link>
+              </div>
             </div>
-          </div>
+          ))}
         </div>
       </div>
+
+      {/* 4. ACTIVE LOTS & DEALS SUMMARY */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
+        {/* Active Lots */}
+        <div className="card card-pad" style={{ background: "#FFFFFF", border: "1px solid var(--line)" }}>
+          <div className="flex flex-between flex-center mb-sm">
+            <div className="flex flex-center gap-xs">
+              <Package size={17} color="var(--green-deep)" />
+              <span style={{ fontSize: 14, fontWeight: 800, color: "var(--navy)" }}>
+                {t("lots.title", "Active Harvest Lots")}
+              </span>
+            </div>
+            <span className="badge-pill badge-high" style={{ fontSize: 11 }}>
+              {lots.length} Open
+            </span>
+          </div>
+
+          <div style={{ fontSize: 13, color: "var(--ink-soft)", marginBottom: 12 }}>
+            {lots.length > 0
+              ? `${lots[0].crop} (${lots[0].quantityKg} kg) is open for institutional buyer bidding.`
+              : "No harvest lot created yet. Create a lot to receive verified buyer offers."}
+          </div>
+
+          <div className="flex gap-sm">
+            <Link to="/offers" className="btn btn-outline btn-sm flex-1">
+              <span>{t("offers.title", "View Offers (3)")}</span>
+            </Link>
+            <Link to="/lots/create" className="btn btn-primary btn-sm flex-1">
+              <Plus size={14} />
+              <span>{t("lots.create", "New Lot")}</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Active Transaction */}
+        <div className="card card-pad" style={{ background: "#FFFFFF", border: "1px solid var(--line)" }}>
+          <div className="flex flex-between flex-center mb-sm">
+            <div className="flex flex-center gap-xs">
+              <Truck size={17} color="var(--green-deep)" />
+              <span style={{ fontSize: 14, fontWeight: 800, color: "var(--navy)" }}>
+                {t("transactions.title", "Active Deal Tracker")}
+              </span>
+            </div>
+            <span className="badge-pill badge-medium" style={{ fontSize: 11 }}>
+              In Progress
+            </span>
+          </div>
+
+          <div style={{ fontSize: 13, color: "var(--ink)", fontWeight: 700 }}>
+            {transaction.buyerName} · {transaction.crop} ({transaction.quantityKg} kg)
+          </div>
+          <div style={{ fontSize: 12, color: "var(--ink-soft)", margin: "2px 0 12px" }}>
+            Pickup scheduled · Escrow locked: ₹{(transaction.pricePerKg * transaction.quantityKg).toLocaleString("en-IN")}
+          </div>
+
+          <Link to="/transactions" className="btn btn-secondary btn-sm btn-block">
+            <span>{t("transactions.timeline", "Track Deal & Receipt")}</span>
+            <ArrowRight size={14} />
+          </Link>
+        </div>
+      </div>
+
+      {/* 5. Concised Farm Weather Advisory */}
+      <div
+        style={{
+          background: "linear-gradient(90deg, #FFFDF8 0%, #F5FAF6 100%)",
+          border: "1px solid #E2EADF",
+          borderRadius: 14,
+          padding: "14px 18px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 12,
+        }}
+      >
+        <div className="flex flex-center gap-md">
+          <div style={{ padding: 10, borderRadius: 10, background: "rgba(46,139,87,0.12)", color: "var(--green-deep)" }}>
+            <CloudSun size={24} />
+          </div>
+          <div>
+            <div style={{ fontSize: 13.5, fontWeight: 800, color: "var(--navy)" }}>
+              {t("weather.advisory", "Farm Weather Advisory")} · {userDistrict}
+            </div>
+            <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 2 }}>
+              {weather.riskNote}
+            </div>
+          </div>
+        </div>
+
+        <Link to="/weather" className="btn btn-outline btn-sm" style={{ padding: "6px 12px", fontSize: 12 }}>
+          <span>{t("weather.forecast5d", "7-Day Forecast")}</span>
+          <ArrowRight size={12} />
+        </Link>
+      </div>
+
+      <LocationSelectorModal
+        isOpen={locationModalOpen}
+        onClose={() => setLocationModalOpen(false)}
+      />
     </div>
   );
 }
