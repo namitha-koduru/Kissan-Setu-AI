@@ -11,6 +11,7 @@ import {
   FileCheck,
   CheckCircle2,
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
 import buyerMatchingApi, {
@@ -20,9 +21,13 @@ import { DisputeModal } from "../components/DisputeModal";
 import { DigitalReceiptModal } from "../components/DigitalReceiptModal";
 
 export function TransactionPage() {
+  const { user } = useAuth();
   const [params] = useSearchParams();
   const { transaction: localTx, showToast } = useAppState();
   const { t } = useLanguage();
+
+  const userDistrict = user?.district || (user?.location ? user.location.split(",")[0].trim() : "Farm Location");
+  const userLocStr = user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : userDistrict || "Farm Gate");
 
   const txIdParam = params.get("id") || "1";
 
@@ -38,7 +43,7 @@ export function TransactionPage() {
   // Form states for logistics & payment
   const [logisticsStatus, setLogisticsStatus] = useState("PICKUP_SCHEDULED");
   const [pickupDate, setPickupDate] = useState("2026-09-08");
-  const [pickupLocation, setPickupLocation] = useState("Nashik Farm Gate");
+  const [pickupLocation, setPickupLocation] = useState(userLocStr);
   const [transportCost, setTransportCost] = useState(800);
 
   const [paidAmount, setPaidAmount] = useState(72000);
@@ -513,10 +518,20 @@ export function TransactionPage() {
         transaction={{
           id: `TX-2026-${String(txDetail?.id || 1).padStart(4, "0")}`,
           lotId: `KS-LOT-${String(txDetail?.lot_id || 1).padStart(3, "0")}`,
-          buyerName: txDetail?.buyer_name || localTx.buyerName || "Sahyadri FPO",
+          farmerName: user?.name || "Registered Farmer",
+          farmerLocation: user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : user?.district || "Farm Origin"),
+          buyerName: txDetail?.buyer_name || localTx.buyerName || "Sahyadri Farmers Producer Co.",
+          buyerLocation: txDetail?.delivery_location || "Regional Procurement Division",
           crop: txDetail?.crop_name || localTx.crop || "Tomato",
           quantityKg: txDetail?.quantity_kg || localTx.quantityKg || 2500,
           pricePerKg: txDetail?.final_price || localTx.pricePerKg || 32,
+          grossAmount: totalVal,
+          transportCharges: freightCost,
+          otherCharges: 0,
+          netRealization: netInHand,
+          paymentStatus: txDetail?.payment_status === "PAID" ? "Settled (Escrow Released)" : "Escrow Locked (Pending Delivery)",
+          paymentReference: txDetail?.payment_reference || "UTR-HDFC-98234190",
+          timestamp: txDetail?.created_at ? new Date(txDetail.created_at).toLocaleString() : new Date().toLocaleString(),
           stages: (txDetail?.events || []).map((e) => ({
             label: e.stage_label,
             done: e.done,

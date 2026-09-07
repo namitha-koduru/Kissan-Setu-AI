@@ -72,11 +72,11 @@ export function ProfilePage() {
         </h3>
         <div className="pf-row">
           <span className="l">{t("onboarding.primaryCrops", "Registered Crops")}</span>
-          <span className="v">{onboardData.crops.join(", ") || "Tomato, Onion, Potato"}</span>
+          <span className="v">{onboardData.crops.length > 0 ? onboardData.crops.join(", ") : "None registered yet"}</span>
         </div>
         <div className="pf-row">
           <span className="l">{t("market.nearbyMandis", "Tracked Mandi Hubs")}</span>
-          <span className="v">{onboardData.markets.join(", ") || "Nashik, Ahmednagar, Pune"}</span>
+          <span className="v">{onboardData.markets.length > 0 ? onboardData.markets.join(", ") : `${user?.district || "Local"} APMC Central Mandi`}</span>
         </div>
       </div>
 

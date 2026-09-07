@@ -13,13 +13,56 @@ export function DigitalReceiptModal({ isOpen, onClose, transaction }: Props) {
 
   if (!isOpen) return null;
 
-  const totalValue = transaction.pricePerKg * transaction.quantityKg;
-  const transportCost = 800;
-  const mandiFees = 200;
-  const netRealization = totalValue - transportCost - mandiFees;
+  const totalValue = transaction.grossAmount || (transaction.pricePerKg * transaction.quantityKg);
+  const transportCost = transaction.transportCharges !== undefined ? transaction.transportCharges : 800;
+  const mandiFees = transaction.otherCharges !== undefined ? transaction.otherCharges : 0;
+  const netRealization = transaction.netRealization !== undefined ? transaction.netRealization : (totalValue - transportCost - mandiFees);
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownload = () => {
+    const textContent = `
+========================================
+KISSANSETU AI — DIGITAL TRANSACTION RECEIPT
+========================================
+Receipt / Transaction ID: ${transaction.id}
+Lot Reference: ${transaction.lotId}
+Date & Timestamp: ${transaction.timestamp || new Date().toLocaleString()}
+
+FARMER / SELLER:
+Name: ${transaction.farmerName || "Registered Farmer"}
+Location: ${transaction.farmerLocation || "Farm Origin"}
+
+BUYER / INSTITUTIONAL PROCURER:
+Name: ${transaction.buyerName}
+Destination: ${transaction.buyerLocation || "Direct Procurement Division"}
+
+TRADE SPECIFICATIONS:
+Produce: ${transaction.crop} (Grade A)
+Quantity: ${transaction.quantityKg} kg (${(transaction.quantityKg / 100).toFixed(1)} Qtl)
+Contract Price: Rs. ${transaction.pricePerKg.toFixed(2)} / kg (Rs. ${(transaction.pricePerKg * 100).toFixed(0)} / Qtl)
+Gross Amount: Rs. ${totalValue.toLocaleString("en-IN")}
+
+DEDUCTIONS & SETTLEMENT:
+- Farmgate Logistics: -Rs. ${transportCost}
+- Platform & Intermediary Fees: Rs. 0 (Direct Trade)
+========================================
+FINAL NET IN-HAND REALIZATION: Rs. ${netRealization.toLocaleString("en-IN")}
+========================================
+Payment Status: ${transaction.paymentStatus || "Escrow Verified"}
+Payment Reference: ${transaction.paymentReference || "UTR-HDFC-98234190"}
+Smart Contract Escrow Hash: 0x9f4a28b1e7c0892a · SIH 2026
+========================================
+`;
+    const blob = new Blob([textContent], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `KissanSetu-Receipt-${transaction.id}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -61,7 +104,7 @@ export function DigitalReceiptModal({ isOpen, onClose, transaction }: Props) {
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 11, color: "var(--ink-muted)", textTransform: "uppercase" }}>Settlement Status</div>
               <div style={{ fontSize: 12, fontWeight: 700, color: "var(--sell)", display: "flex", alignItems: "center", gap: 4 }}>
-                <CheckCircle2 size={13} /> {t("transactions.paid", "Escrow Verified")}
+                <CheckCircle2 size={13} /> {transaction.paymentStatus || t("transactions.paid", "Escrow Verified")}
               </div>
             </div>
           </div>
@@ -70,12 +113,12 @@ export function DigitalReceiptModal({ isOpen, onClose, transaction }: Props) {
             <div>
               <div style={{ fontSize: 11, color: "var(--ink-muted)" }}>Farmer / Producer</div>
               <div style={{ fontSize: 13, fontWeight: 700 }}>{transaction.farmerName || "Registered Farmer"}</div>
-              <div style={{ fontSize: 11, color: "var(--ink-soft)" }}>Vadlamudi, Guntur, AP</div>
+              <div style={{ fontSize: 11, color: "var(--ink-soft)" }}>{transaction.farmerLocation || "Farm Location"}</div>
             </div>
             <div>
               <div style={{ fontSize: 11, color: "var(--ink-muted)" }}>Buyer / Institutional Procurer</div>
               <div style={{ fontSize: 13, fontWeight: 700 }}>{transaction.buyerName}</div>
-              <div style={{ fontSize: 11, color: "var(--ink-soft)" }}>Direct Procurement Division</div>
+              <div style={{ fontSize: 11, color: "var(--ink-soft)" }}>{transaction.buyerLocation || "Direct Procurement Division"}</div>
             </div>
           </div>
 
@@ -86,7 +129,7 @@ export function DigitalReceiptModal({ isOpen, onClose, transaction }: Props) {
             </div>
             <div className="flex flex-between text-sm" style={{ color: "var(--ink-soft)" }}>
               <span>Agreed Rate</span>
-              <span>₹{transaction.pricePerKg} / kg (₹{transaction.pricePerKg * 100} / Qtl)</span>
+              <span>₹{transaction.pricePerKg.toFixed(2)} / kg (₹{(transaction.pricePerKg * 100).toFixed(0)} / Qtl)</span>
             </div>
             <div className="flex flex-between text-sm" style={{ fontWeight: 700, marginTop: 4, borderTop: "1px solid var(--line)", paddingTop: 4 }}>
               <span>Gross Deal Value</span>
@@ -98,11 +141,13 @@ export function DigitalReceiptModal({ isOpen, onClose, transaction }: Props) {
           <div style={{ fontSize: 12, color: "var(--ink-soft)", marginBottom: 8 }}>
             <div className="flex flex-between mb-xs">
               <span>Direct Farmgate Logistics</span>
-              <span style={{ color: "var(--danger)" }}>-₹{transportCost}</span>
+              <span style={{ color: transportCost > 0 ? "var(--danger)" : "var(--green-deep)" }}>
+                {transportCost > 0 ? `-₹${transportCost}` : "₹0 (Buyer pickup)"}
+              </span>
             </div>
             <div className="flex flex-between mb-xs">
-              <span>Handling & Platform Processing</span>
-              <span style={{ color: "var(--danger)" }}>-₹{mandiFees}</span>
+              <span>APMC Cess / Middleman Commission</span>
+              <span style={{ color: "var(--green-deep)", fontWeight: 700 }}>₹0 (Direct KissanSetu Trade)</span>
             </div>
             <div className="flex flex-between" style={{ fontSize: 14, fontWeight: 800, color: "var(--green-deep)", borderTop: "1px solid var(--line-strong)", paddingTop: 8, marginTop: 6 }}>
               <span>Final Net In-Hand Realization</span>
@@ -112,7 +157,7 @@ export function DigitalReceiptModal({ isOpen, onClose, transaction }: Props) {
 
           <div style={{ fontSize: 10, color: "var(--ink-muted)", borderTop: "1px dashed var(--line)", paddingTop: 8, display: "flex", alignItems: "center", gap: 6 }}>
             <ShieldCheck size={14} color="var(--green-deep)" />
-            <span>Encrypted Smart Contract Escrow settlement ID: 0x9f4a...28b1 · SIH 2026</span>
+            <span>Encrypted Smart Contract Escrow ID: 0x9f4a...28b1 · Ref: {transaction.paymentReference || "UTR-HDFC-98234190"}</span>
           </div>
         </div>
 
@@ -120,11 +165,14 @@ export function DigitalReceiptModal({ isOpen, onClose, transaction }: Props) {
         <div className="flex gap-sm">
           <button className="btn btn-outline flex-1" type="button" onClick={handlePrint}>
             <Printer size={15} />
-            <span>{t("common.print", "Print / PDF")}</span>
+            <span>{t("common.print", "Print Receipt")}</span>
+          </button>
+          <button className="btn btn-outline flex-1" type="button" onClick={handleDownload}>
+            <Download size={15} />
+            <span>Download</span>
           </button>
           <button className="btn btn-primary flex-1" type="button" onClick={onClose}>
-            <Download size={15} />
-            <span>{t("common.save", "Done")}</span>
+            <span>{t("common.save", "Close")}</span>
           </button>
         </div>
       </div>

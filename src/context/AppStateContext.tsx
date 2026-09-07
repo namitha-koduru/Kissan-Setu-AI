@@ -104,29 +104,54 @@ function buildUserCropRecords(cropNames: string[], location: string): CropRecord
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
 
+  const isDemoFarmer = user?.id === "u-farmer";
+
   const [crops, setCrops] = useState<CropRecord[]>(() => {
     if (user?.preferredCrops && user.preferredCrops.length > 0) {
       return buildUserCropRecords(user.preferredCrops, user.location || user.district || "India");
     }
-    return user?.id === "u-farmer" ? initialCrops : [];
+    return isDemoFarmer ? initialCrops : [];
   });
 
-  const [lots, setLots] = useState<LotRecord[]>(initialLots);
-  const [offers, setOffers] = useState<OfferRecord[]>(initialOffers);
-  const [transaction, setTransaction] = useState<TransactionRecord>(initialTransaction);
+  const [lots, setLots] = useState<LotRecord[]>(() => {
+    return isDemoFarmer ? initialLots : [];
+  });
+
+  const [offers, setOffers] = useState<OfferRecord[]>(() => {
+    return isDemoFarmer ? initialOffers : [];
+  });
+
+  const [transaction, setTransaction] = useState<TransactionRecord>(() => {
+    return isDemoFarmer ? initialTransaction : {
+      id: "TX-2026-0001",
+      lotId: "KS-LOT-001",
+      buyerName: "Regional Agri Procurer",
+      crop: "Produce",
+      quantityKg: 0,
+      pricePerKg: 0,
+      stages: [
+        { label: "Contract Confirmed", done: false, date: "" },
+        { label: "Pickup Scheduled", done: false, date: "" },
+        { label: "In Transit", done: false, date: "" },
+        { label: "Quality Verified", done: false, date: "" },
+        { label: "Payment Settled", done: false, date: "" },
+      ],
+    };
+  });
+
   const [notifications, setNotifications] = useState<NotificationItem[]>(initialNotifications);
-  const [activeCropId, setActiveCropId] = useState<string>(() => crops[0]?.id || "crop-tomato");
+  const [activeCropId, setActiveCropId] = useState<string>(() => crops[0]?.id || "");
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const [onboardData, setOnboardData] = useState<OnboardingData>(() => ({
-    village: user?.village || "Local Village",
-    district: user?.district || "Local District",
-    state: user?.state || "India",
+    village: user?.village || "",
+    district: user?.district || "",
+    state: user?.state || "",
     country: "India",
-    crops: user?.preferredCrops || ["Tomato"],
-    quantity: "500 kg",
-    land: user?.landAcreage || "2.5 acres",
-    markets: ["Local Regional APMC", "Nearby Market Hub"],
+    crops: user?.preferredCrops || [],
+    quantity: "",
+    land: user?.landAcreage || "",
+    markets: [],
   }));
 
   // Sync crops and onboarding data when authenticated user changes
@@ -141,6 +166,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       } else if (user.id === "u-farmer") {
         setCrops(initialCrops);
         setActiveCropId(initialCrops[0]?.id || "crop-tomato");
+        setLots(initialLots);
+        setOffers(initialOffers);
+        setTransaction(initialTransaction);
+      } else {
+        // If regular registered user with no preferred crops set yet
+        setCrops((prev) => prev.length > 0 ? prev : []);
+        setLots((prev) => prev.length > 0 ? prev : []);
+        setOffers((prev) => prev.length > 0 ? prev : []);
       }
 
       setOnboardData((prev) => ({

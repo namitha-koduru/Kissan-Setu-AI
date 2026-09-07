@@ -29,51 +29,69 @@ export function DashboardPage() {
   const [selectedCropIndex, setSelectedCropIndex] = useState(0);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
 
-  const activeCrop = crops[selectedCropIndex] || crops[0] || {
-    name: "Tomato",
-    icon: "🍅",
-    quantityKg: 500,
-    expectedPrice: 29,
+  const hasCrops = crops.length > 0;
+  const activeCrop = hasCrops ? (crops[selectedCropIndex] || crops[0]) : null;
+
+  const userDistrict = user?.district || (user?.location ? user.location.split(",")[0].trim() : "Farm Location");
+  const userLocationStr = user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : userDistrict || "Set Location");
+  
+  // Resolve localized weather
+  const weather = weatherByLocation[userDistrict] || (user?.location && Object.keys(weatherByLocation).find((k) => user.location.toLowerCase().includes(k.toLowerCase())) ? weatherByLocation[Object.keys(weatherByLocation).find((k) => user.location.toLowerCase().includes(k.toLowerCase()))!] : null) || {
+    location: userLocationStr,
+    currentTempC: 31,
+    condition: "Clear Skies",
+    rainProbability: 20,
+    humidity: 60,
+    forecast: [],
+    risk: "Low" as const,
+    riskNote: `Seasonal conditions across ${userDistrict} are favorable for harvesting and mandi logistics.`,
+    demo: false,
   };
 
-  const userDistrict = user?.district || (user?.location ? user.location.split(",")[0].trim() : "Guntur");
-  const userLocationStr = user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : "Vadlamudi, Guntur, AP");
-  const weather = weatherByLocation[userDistrict] || weatherByLocation.Guntur || weatherByLocation.Nashik;
+  // Nearby opportunities calculated for active crop if present
+  const basePrice = activeCrop ? (activeCrop.expectedPrice || 28) * 100 : 2800; // ₹/Qtl
+  const cropName = activeCrop ? activeCrop.name : "Produce";
 
-  // Nearby opportunities calculated for active crop
-  const basePrice = (activeCrop.expectedPrice || 28) * 100; // ₹/Qtl
-  const nearbyOpportunities = [
+  const nearbyOpportunities = activeCrop ? [
     {
-      name: `${userDistrict} APMC Mandi`,
+      name: `Regional Institutional FPC (${userDistrict} Hub)`,
+      type: "Institutional Buyer",
+      priceQtl: basePrice + 150,
+      distanceKm: 18,
+      freightQtl: 60,
+      netRealizationQtl: basePrice + 150 - 60,
+      arrivalVolume: "Direct Escrow Settlement",
+      quality: "Grade A",
+      paymentSpeed: "Payment in 2 days",
+      isBest: true,
+    },
+    {
+      name: `${userDistrict} APMC Central Mandi`,
       type: "Mandi Benchmark",
       priceQtl: basePrice,
       distanceKm: 14,
       freightQtl: 110,
       netRealizationQtl: basePrice - 110 - 25,
-      arrivalVolume: "1,400 Qtl",
+      arrivalVolume: "Daily Open Auction",
+      quality: "All Grades",
+      paymentSpeed: "APMC Commission Agent Slip",
       isBest: false,
     },
     {
-      name: "Sahyadri / Regional FPC Direct",
-      type: "Institutional Buyer",
-      priceQtl: basePrice + 160,
-      distanceKm: 18,
-      freightQtl: 60,
-      netRealizationQtl: basePrice + 160 - 60,
-      arrivalVolume: "Direct Escrow",
-      isBest: true,
-    },
-    {
-      name: "FreshFarm Retail Procurement",
+      name: "FreshFarm Retail Chain",
       type: "Direct Retailer",
       priceQtl: basePrice + 80,
       distanceKm: 24,
       freightQtl: 90,
       netRealizationQtl: basePrice + 80 - 90,
-      arrivalVolume: "Prompt Payment",
+      arrivalVolume: "Scheduled Supply",
+      quality: "Grade A",
+      paymentSpeed: "24h Bank Transfer",
       isBest: false,
     },
-  ];
+  ] : [];
+
+  const hasActiveDeal = transaction && transaction.quantityKg > 0;
 
   return (
     <div className="wrap" style={{ maxWidth: 960, paddingBottom: 60 }}>
@@ -152,15 +170,15 @@ export function DashboardPage() {
           </Link>
         </div>
 
-        {crops.length === 0 ? (
+        {!hasCrops ? (
           <div
             className="card card-pad text-center"
-            style={{ padding: "24px 16px", background: "var(--bg-warm)", border: "1.5px dashed var(--line-strong)" }}
+            style={{ padding: "28px 16px", background: "var(--bg-warm)", border: "1.5px dashed var(--line-strong)", borderRadius: 14 }}
           >
-            <div style={{ fontSize: 24, marginBottom: 6 }}>🌱</div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "var(--navy)" }}>No crops added to your farm profile yet</div>
-            <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: "4px 0 14px" }}>
-              Add your crop to see real-time price discovery and direct buyer bids near {userDistrict}.
+            <div style={{ fontSize: 28, marginBottom: 6 }}>🌱</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "var(--navy)" }}>No crops added yet</div>
+            <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: "4px 0 16px", maxWidth: 440, marginLeft: "auto", marginRight: "auto" }}>
+              Add your crop to enable localized price discovery, harvest predictions, and direct buyer bids near {userDistrict}.
             </p>
             <Link to="/crops/add" className="btn btn-primary btn-sm">
               <Plus size={15} /> {t("crops.addCrop", "Add Your First Crop")}
@@ -233,7 +251,7 @@ export function DashboardPage() {
               {t("market.title", "Best Places to Sell Near You")}
             </div>
             <div style={{ fontSize: 12, color: "var(--ink-soft)" }}>
-              Ranked by net in-hand realization after freight & deductions
+              {hasCrops ? `Showing highest in-hand net realization for ${cropName} near ${userDistrict}` : `Add a crop to view buyers near ${userDistrict}`}
             </div>
           </div>
           <Link to="/market" className="flex flex-center gap-xs text-sm fw-700" style={{ color: "var(--green-deep)" }}>
@@ -242,92 +260,100 @@ export function DashboardPage() {
           </Link>
         </div>
 
-        <div className="flex-col gap-sm">
-          {nearbyOpportunities.map((op, i) => (
-            <div
-              key={op.name}
-              style={{
-                background: "#FFFFFF",
-                border: op.isBest ? "1.5px solid var(--green-deep)" : "1px solid var(--line)",
-                borderRadius: 14,
-                padding: "14px 18px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: 12,
-                boxShadow: op.isBest ? "0 2px 8px rgba(23,107,69,0.08)" : "none",
-                position: "relative",
-              }}
-            >
-              {op.isBest && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: -10,
-                    right: 18,
-                    background: "var(--green-deep)",
-                    color: "#fff",
-                    fontSize: 10,
-                    fontWeight: 800,
-                    padding: "2px 8px",
-                    borderRadius: 6,
-                    letterSpacing: "0.04em",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  ★ Highest In-Hand Net
-                </div>
-              )}
-
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <div
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 10,
-                    background: op.isBest ? "rgba(23,107,69,0.1)" : "var(--bg-soft)",
-                    color: op.isBest ? "var(--green-deep)" : "var(--navy)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 18,
-                    fontWeight: 800,
-                  }}
-                >
-                  {i + 1}
-                </div>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: "var(--navy)" }}>{op.name}</div>
-                  <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 2 }}>
-                    📍 {op.distanceKm} km away · Est. Freight -₹{op.freightQtl}/Qtl · {op.arrivalVolume}
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: op.isBest ? "var(--green-deep)" : "var(--navy)" }}>
-                    ₹{op.netRealizationQtl.toLocaleString("en-IN")}
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "var(--ink-soft)" }}> / Qtl Net</span>
-                  </div>
-                  <div style={{ fontSize: 11, color: "var(--ink-muted)" }}>
-                    Gross ₹{op.priceQtl.toLocaleString("en-IN")} / Qtl
-                  </div>
-                </div>
-
-                <Link
-                  to="/lots/create"
-                  className={`btn ${op.isBest ? "btn-primary" : "btn-outline"} btn-sm`}
-                  style={{ borderRadius: 8, padding: "7px 14px" }}
-                >
-                  <span>{t("lots.create", "Sell Lot")}</span>
-                  <ArrowRight size={13} />
-                </Link>
-              </div>
+        {!hasCrops ? (
+          <div className="card card-pad text-center" style={{ padding: "24px 16px", background: "#FFFFFF", border: "1px solid var(--line)" }}>
+            <div style={{ fontSize: 14, color: "var(--ink-soft)" }}>
+              Please add a crop above to see nearby buyer opportunities and net realization comparisons.
             </div>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div className="flex-col gap-sm">
+            {nearbyOpportunities.map((op, i) => (
+              <div
+                key={op.name}
+                style={{
+                  background: "#FFFFFF",
+                  border: op.isBest ? "1.5px solid var(--green-deep)" : "1px solid var(--line)",
+                  borderRadius: 14,
+                  padding: "14px 18px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 12,
+                  boxShadow: op.isBest ? "0 2px 8px rgba(23,107,69,0.08)" : "none",
+                  position: "relative",
+                }}
+              >
+                {op.isBest && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: -10,
+                      right: 18,
+                      background: "var(--green-deep)",
+                      color: "#fff",
+                      fontSize: 10,
+                      fontWeight: 800,
+                      padding: "2px 8px",
+                      borderRadius: 6,
+                      letterSpacing: "0.04em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    ★ Best In-Hand Realization
+                  </div>
+                )}
+
+                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 10,
+                      background: op.isBest ? "rgba(23,107,69,0.1)" : "var(--bg-soft)",
+                      color: op.isBest ? "var(--green-deep)" : "var(--navy)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 18,
+                      fontWeight: 800,
+                    }}
+                  >
+                    {i + 1}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "var(--navy)" }}>{op.name}</div>
+                    <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 2 }}>
+                      📍 {op.distanceKm} km away · Freight -₹{op.freightQtl}/Qtl · {op.paymentSpeed}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: op.isBest ? "var(--green-deep)" : "var(--navy)" }}>
+                      ₹{op.netRealizationQtl.toLocaleString("en-IN")}
+                      <span style={{ fontSize: 11, fontWeight: 600, color: "var(--ink-soft)" }}> / Qtl Net</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--ink-muted)" }}>
+                      Gross ₹{op.priceQtl.toLocaleString("en-IN")} / Qtl
+                    </div>
+                  </div>
+
+                  <Link
+                    to={`/lots/create?crop=${encodeURIComponent(cropName)}`}
+                    className={`btn ${op.isBest ? "btn-primary" : "btn-outline"} btn-sm`}
+                    style={{ borderRadius: 8, padding: "7px 14px" }}
+                  >
+                    <span>{t("lots.create", "Sell Lot")}</span>
+                    <ArrowRight size={13} />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 4. ACTIVE LOTS & DEALS SUMMARY */}
@@ -349,12 +375,12 @@ export function DashboardPage() {
           <div style={{ fontSize: 13, color: "var(--ink-soft)", marginBottom: 12 }}>
             {lots.length > 0
               ? `${lots[0].crop} (${lots[0].quantityKg} kg) is open for institutional buyer bidding.`
-              : "No harvest lot created yet. Create a lot to receive verified buyer offers."}
+              : "No harvest lots active. Create a lot to receive verified buyer tenders."}
           </div>
 
           <div className="flex gap-sm">
             <Link to="/offers" className="btn btn-outline btn-sm flex-1">
-              <span>{t("offers.title", "View Offers (3)")}</span>
+              <span>{t("offers.title", "View Offers")}</span>
             </Link>
             <Link to="/lots/create" className="btn btn-primary btn-sm flex-1">
               <Plus size={14} />
@@ -372,24 +398,79 @@ export function DashboardPage() {
                 {t("transactions.title", "Active Deal Tracker")}
               </span>
             </div>
-            <span className="badge-pill badge-medium" style={{ fontSize: 11 }}>
-              In Progress
+            <span className={`badge-pill ${hasActiveDeal ? "badge-medium" : "badge-low"}`} style={{ fontSize: 11 }}>
+              {hasActiveDeal ? "In Progress" : "No Active Deals"}
             </span>
           </div>
 
-          <div style={{ fontSize: 13, color: "var(--ink)", fontWeight: 700 }}>
-            {transaction.buyerName} · {transaction.crop} ({transaction.quantityKg} kg)
-          </div>
-          <div style={{ fontSize: 12, color: "var(--ink-soft)", margin: "2px 0 12px" }}>
-            Pickup scheduled · Escrow locked: ₹{(transaction.pricePerKg * transaction.quantityKg).toLocaleString("en-IN")}
-          </div>
-
-          <Link to="/transactions" className="btn btn-secondary btn-sm btn-block">
-            <span>{t("transactions.timeline", "Track Deal & Receipt")}</span>
-            <ArrowRight size={14} />
-          </Link>
+          {hasActiveDeal ? (
+            <>
+              <div style={{ fontSize: 13, color: "var(--ink)", fontWeight: 700 }}>
+                {transaction.buyerName} · {transaction.crop} ({transaction.quantityKg} kg)
+              </div>
+              <div style={{ fontSize: 12, color: "var(--ink-soft)", margin: "2px 0 12px" }}>
+                Pickup scheduled · Escrow locked: ₹{(transaction.pricePerKg * transaction.quantityKg).toLocaleString("en-IN")}
+              </div>
+              <Link to="/transactions" className="btn btn-secondary btn-sm btn-block">
+                <span>{t("transactions.timeline", "Track Deal & Receipt")}</span>
+                <ArrowRight size={14} />
+              </Link>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 13, color: "var(--ink-soft)", marginBottom: 12 }}>
+                When you accept a buyer offer, real-time logistics tracking and escrow settlement appear here.
+              </div>
+              <Link to="/market" className="btn btn-outline btn-sm btn-block">
+                <span>Explore Marketplace</span>
+                <ArrowRight size={14} />
+              </Link>
+            </>
+          )}
         </div>
       </div>
+
+      {/* 5. Concised Farm Weather Advisory */}
+      <div
+        style={{
+          background: "linear-gradient(90deg, #FFFDF8 0%, #F5FAF6 100%)",
+          border: "1px solid #E2EADF",
+          borderRadius: 14,
+          padding: "14px 18px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 12,
+        }}
+      >
+        <div className="flex flex-center gap-md">
+          <div style={{ padding: 10, borderRadius: 10, background: "rgba(46,139,87,0.12)", color: "var(--green-deep)" }}>
+            <CloudSun size={24} />
+          </div>
+          <div>
+            <div style={{ fontSize: 13.5, fontWeight: 800, color: "var(--navy)" }}>
+              {t("weather.advisory", "Farm Weather Advisory")} · {userDistrict}
+            </div>
+            <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 2 }}>
+              {weather.riskNote}
+            </div>
+          </div>
+        </div>
+
+        <Link to="/weather" className="btn btn-outline btn-sm" style={{ padding: "6px 12px", fontSize: 12 }}>
+          <span>{t("weather.forecast5d", "7-Day Forecast")}</span>
+          <ArrowRight size={12} />
+        </Link>
+      </div>
+
+      <LocationSelectorModal
+        isOpen={locationModalOpen}
+        onClose={() => setLocationModalOpen(false)}
+      />
+    </div>
+  );
+}
 
       {/* 5. Concised Farm Weather Advisory */}
       <div

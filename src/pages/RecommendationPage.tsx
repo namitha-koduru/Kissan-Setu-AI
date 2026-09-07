@@ -611,7 +611,7 @@ export function RecommendationPage() {
                 <DecisionBadge decision="SELL" size="sm" />
               </div>
               <div className="alt-note">
-                Sell to {activeCrop?.bestMarket || "Nashik Market"} now at ₹{activeCrop?.netRealization || 29}/kg expected net realization before Day 3 rain risk.
+                Sell to {activeCrop?.bestMarket || "Local APMC Mandi"} now at ₹{activeCrop?.netRealization || 29}/kg expected net realization before Day 3 rain risk.
               </div>
             </div>
 

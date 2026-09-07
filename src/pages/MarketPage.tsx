@@ -42,8 +42,8 @@ export function MarketPage() {
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [overview, setOverview] = useState<MarketIntelligenceOverview | null>(null);
 
-  const userDistrict = user?.district || (user?.location ? user.location.split(",")[0].trim() : "Guntur");
-  const userLocationStr = user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : "Vadlamudi, Guntur, AP");
+  const userDistrict = user?.district || (user?.location ? user.location.split(",")[0].trim() : "Farm Location");
+  const userLocationStr = user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : userDistrict || "Set Location");
 
   const loadMarketData = async (crop: string, qty: number) => {
     try {

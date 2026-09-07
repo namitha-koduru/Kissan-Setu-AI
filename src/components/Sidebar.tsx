@@ -101,8 +101,8 @@ export function MobileNav() {
     { to: "/dashboard", label: t("nav.home", "Home"), icon: LayoutDashboard },
     { to: "/market", label: t("nav.market", "Market"), icon: Store },
     { to: "/lots", label: t("nav.lots", "Lots"), icon: Package },
+    { to: "/offers", label: t("nav.offers", "Offers"), icon: Handshake },
     { to: "/transactions", label: t("nav.transactions", "Orders"), icon: Truck },
-    { to: "/chat", label: t("nav.askAi", "AI"), icon: Sparkles },
   ];
 
   return (

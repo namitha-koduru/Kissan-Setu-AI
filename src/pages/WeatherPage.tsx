@@ -10,23 +10,25 @@ export function WeatherPage() {
   const { t } = useLanguage();
 
   const initialLoc = useMemo(() => {
-    if (user?.district && locationOptions.includes(user.district as any)) return user.district;
-    if (user?.location) {
-      const p = user.location.split(",")[0].trim();
-      if (locationOptions.includes(p as any)) return p;
-    }
-    return user?.district || user?.location?.split(",")[0]?.trim() || "Guntur";
+    return user?.district || (user?.location ? user.location.split(",")[0].trim() : "") || "Farm Location";
   }, [user]);
 
   const [selectedLocation, setSelectedLocation] = useState<string>(initialLoc);
 
+  useEffect(() => {
+    if (user?.district || user?.location) {
+      const loc = user.district || user.location.split(",")[0].trim();
+      setSelectedLocation(loc);
+    }
+  }, [user]);
+
   const availableOptions = useMemo(() => {
     const list = [...locationOptions];
-    if (user?.district && !list.includes(user.district as any)) {
-      list.unshift(user.district as any);
+    if (selectedLocation && !list.includes(selectedLocation as any)) {
+      list.unshift(selectedLocation as any);
     }
     return list;
-  }, [user]);
+  }, [selectedLocation]);
 
   const weather: WeatherSnapshot = useMemo(() => {
     if (weatherByLocation[selectedLocation]) {

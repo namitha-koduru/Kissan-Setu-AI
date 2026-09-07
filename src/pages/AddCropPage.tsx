@@ -1,19 +1,24 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Camera, Check, Sparkles } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
 import { cropOptions, locationOptions } from "../data/demo";
 import type { CropRecord, CropStage } from "../types";
 
 export function AddCropPage() {
+  const { user } = useAuth();
   const { t } = useLanguage();
   const { addCrop } = useAppState();
   const navigate = useNavigate();
 
+  const userDistrict = user?.district || (user?.location ? user.location.split(",")[0].trim() : "Farm Location");
+  const userLocationStr = user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : userDistrict || "Local Farm");
+
   const [cropName, setCropName] = useState("Tomato");
   const [variety, setVariety] = useState("Hybrid F1");
-  const [location, setLocation] = useState("Nashik, Maharashtra");
+  const [location, setLocation] = useState(userLocationStr);
   const [quantityKg, setQuantityKg] = useState(500);
   const [sowingDate, setSowingDate] = useState("2026-06-15");
   const [stage, setStage] = useState<CropStage>("Near maturity");
@@ -48,12 +53,12 @@ export function AddCropPage() {
             unit: "kg",
             sowingDate,
             stage,
-            location,
+            location: location || userLocationStr,
             expectedPrice: cropName === "Tomato" ? 30 : cropName === "Onion" ? 20 : cropName === "Potato" ? 17 : 62,
             harvestEst: "08–12 Sep 2026",
             harvestWindow: stage === "Near maturity" || stage === "Ready to harvest" ? "2–4 days" : "12–18 days",
             recommendation: stage === "Near maturity" || stage === "Ready to harvest" ? "SELL" : "WAIT",
-            bestMarket: "Nashik Market",
+            bestMarket: `${userDistrict} APMC Mandi`,
             netRealization: cropName === "Tomato" ? 29 : cropName === "Onion" ? 18.2 : cropName === "Potato" ? 15.2 : 60.5,
             confidence: 91,
           };

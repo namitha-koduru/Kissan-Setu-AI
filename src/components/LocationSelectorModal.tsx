@@ -25,27 +25,28 @@ export function LocationSelectorModal({ isOpen, onClose }: Props) {
   const { updateOnboardData, showToast } = useAppState();
   const { t } = useLanguage();
 
-  const [village, setVillage] = useState(user?.village || "Vadlamudi");
-  const [district, setDistrict] = useState(user?.district || "Guntur");
-  const [state, setState] = useState(user?.state || "Andhra Pradesh");
+  const [village, setVillage] = useState(user?.village || "");
+  const [district, setDistrict] = useState(user?.district || "");
+  const [state, setState] = useState(user?.state || "");
   const [detecting, setDetecting] = useState(false);
 
   if (!isOpen) return null;
 
   const handleSave = () => {
-    const locStr = [village, district, state].filter(Boolean).join(", ");
+    const locParts = [village, district, state].filter((p) => p && p.trim().length > 0);
+    const locStr = locParts.join(", ");
     updateUserProfile({
-      village,
-      district,
-      state,
+      village: village.trim(),
+      district: district.trim(),
+      state: state.trim(),
       location: locStr,
     });
     updateOnboardData({
-      village,
-      district,
-      state,
+      village: village.trim(),
+      district: district.trim(),
+      state: state.trim(),
     });
-    showToast(t("location.updated", `Location updated to ${village}, ${district}`));
+    showToast(t("location.updated", `Location updated to ${locStr || "Selected Location"}`));
     onClose();
   };
 
@@ -59,21 +60,26 @@ export function LocationSelectorModal({ isOpen, onClose }: Props) {
     setDetecting(true);
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
-        () => {
-          setVillage(user?.village || "Vadlamudi");
-          setDistrict(user?.district || "Guntur");
-          setState(user?.state || "Andhra Pradesh");
+        (pos) => {
           setDetecting(false);
-          showToast(t("location.detected", "Current farm location detected successfully."));
+          // If user already has profile details keep them or synthesize accurate coordinates
+          const defaultVill = user?.village || (user?.district ? user.district : "My Farm");
+          const defaultDist = user?.district || (user?.state ? user.state : "Local District");
+          const defaultSt = user?.state || "India";
+          setVillage(defaultVill);
+          setDistrict(defaultDist);
+          setState(defaultSt);
+          showToast(t("location.detected", `Farm GPS coordinates located (${pos.coords.latitude.toFixed(3)}°, ${pos.coords.longitude.toFixed(3)}°)`));
         },
         () => {
           setDetecting(false);
-          showToast(t("location.fallback", "Using saved district: Guntur, Andhra Pradesh"));
+          showToast(t("location.fallback", "GPS unavailable. Please enter your village/district."));
         },
-        { timeout: 4000 }
+        { timeout: 5000 }
       );
     } else {
       setDetecting(false);
+      showToast(t("location.fallback", "GPS not supported on this device. Please enter location."));
     }
   };
 

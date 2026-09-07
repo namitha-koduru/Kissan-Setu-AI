@@ -14,13 +14,17 @@ import {
 } from "lucide-react";
 import buyerMatchingApi, { type BuyerMatchResult } from "../services/buyerMatchingApi";
 import { buyers as demoBuyers } from "../data/demo";
+import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 
 export function BuyerDetailPage() {
+  const { user } = useAuth();
   const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const [params] = useSearchParams();
   const navigate = useNavigate();
+
+  const userDistrict = user?.district || (user?.location ? user.location.split(",")[0].trim() : "Local");
 
   const cropParam = params.get("crop") || "Tomato";
   const qtyParam = Number(params.get("qty") || 20);
@@ -79,7 +83,7 @@ export function BuyerDetailPage() {
               direct_other_fees: 0,
               direct_net_realization: demo.offeredPrice * qtyParam * 100 - 800,
               direct_net_per_kg: demo.offeredPrice - 0.4,
-              mandi_name: "Nashik APMC",
+              mandi_name: `${userDistrict} APMC Mandi`,
               mandi_price_per_kg: demo.offeredPrice - 3,
               mandi_gross_revenue: (demo.offeredPrice - 3) * qtyParam * 100,
               mandi_transport_cost: 1500,

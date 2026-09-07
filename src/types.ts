@@ -149,9 +149,22 @@ export interface TransactionRecord {
   id: string;
   lotId: string;
   buyerName: string;
+  farmerName?: string;
+  farmerLocation?: string;
+  buyerLocation?: string;
   crop: string;
   quantityKg: number;
   pricePerKg: number;
+  grossAmount?: number;
+  transportCharges?: number;
+  otherCharges?: number;
+  netRealization?: number;
+  pickupDate?: string;
+  deliveryDate?: string;
+  paymentStatus?: string;
+  paymentDate?: string;
+  paymentReference?: string;
+  timestamp?: string;
   stages: TransactionStage[];
 }
 

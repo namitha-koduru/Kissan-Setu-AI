@@ -27,15 +27,15 @@ export function CreateLotPage() {
     return list;
   }, [crops]);
 
-  const userDistrict = user?.district || (user?.location ? user.location.split(",")[0].trim() : "Guntur");
-  const userLocStr = user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : "Vadlamudi, Guntur, Andhra Pradesh");
+  const userDistrict = user?.district || (user?.location ? user.location.split(",")[0].trim() : "Farm Location");
+  const userLocStr = user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : userDistrict);
 
-  const [crop, setCrop] = useState(paramCrop || crops[0]?.name || "Tomato");
-  const [quantityKg, setQuantityKg] = useState<number | string>(paramQty ? Number(paramQty) : 500);
+  const [crop, setCrop] = useState(paramCrop || crops[0]?.name || availableCrops[0] || "Tomato");
+  const [quantityKg, setQuantityKg] = useState<number | string>(paramQty ? Number(paramQty) : (crops[0]?.quantityKg || 500));
   const [quality, setQuality] = useState("Grade A");
   const [harvestDate, setHarvestDate] = useState("2026-09-10");
   const [readyDate, setReadyDate] = useState("2026-09-12");
-  const [expectedPrice, setExpectedPrice] = useState<number | string>(paramPrice ? Number(paramPrice) : 30);
+  const [expectedPrice, setExpectedPrice] = useState<number | string>(paramPrice ? Number(paramPrice) : (crops[0]?.expectedPrice || 30));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCreated, setIsCreated] = useState(false);
   const [createdLotId, setCreatedLotId] = useState("");

@@ -126,7 +126,7 @@ export function CropDetailsPage() {
 
             <div style={{ marginTop: 16 }} className="reco-stat">
               <div className="label">Recommended Destination Mandi</div>
-              <div className="val" style={{ fontWeight: 800 }}>{crop.bestMarket || "Nashik Market"}</div>
+              <div className="val" style={{ fontWeight: 800 }}>{crop.bestMarket || `${crop.location ? crop.location.split(",")[0] : "Local"} APMC Mandi`}</div>
             </div>
 
             <div style={{ marginTop: 12 }} className="reco-stat">
