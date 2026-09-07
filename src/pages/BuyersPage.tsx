@@ -3,7 +3,7 @@ import { CheckCircle2, RefreshCw } from "lucide-react";
 import { SmartBuyerCard } from "../components/SmartBuyerCard";
 import buyerMatchingApi from "../services/buyerMatchingApi";
 import type { BuyerMatchResult } from "../services/buyerMatchingApi";
-import { cropOptions } from "../data/demo";
+import { MASTER_CROP_CATALOG } from "../data/cropCatalog";
 import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -14,13 +14,10 @@ export function BuyersPage() {
   const { t } = useLanguage();
 
   const availableCrops = useMemo(() => {
-    const list = [...cropOptions];
-    crops.forEach((c) => {
-      if (!list.includes(c.name as any)) {
-        list.push(c.name as any);
-      }
-    });
-    return list;
+    const catalogList = MASTER_CROP_CATALOG.map((c) => c.name);
+    const userCropNames = crops.map((c) => c.name);
+    const set = new Set([...userCropNames, ...catalogList]);
+    return Array.from(set);
   }, [crops]);
 
   const [searchTerm, setSearchTerm] = useState("");
