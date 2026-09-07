@@ -150,7 +150,7 @@ class BuyerMatchingApi {
     cropName: string = "Tomato",
     quantityQtl: number = 20.0,
     qualityGrade: string = "Grade A",
-    location: string = "Nashik, Maharashtra",
+    location: string = "Farm Location",
     verifiedOnly: boolean = false
   ): Promise<BuyerMatchingResponse> {
     try {
@@ -171,7 +171,7 @@ class BuyerMatchingApi {
         buyer_id: 101,
         buyer_name: "Sahyadri Farmers Producer Co.",
         organization: "FPO Agri-Consortium",
-        location: location.includes("Andhra") || location.includes("Guntur") ? "Guntur Agri Hub, Andhra Pradesh" : "Mohadi, Nashik, Maharashtra",
+        location: location || "Regional Agri Hub",
         verified: true,
         verification_status: "VERIFIED",
         rating: 4.9,
@@ -197,7 +197,7 @@ class BuyerMatchingApi {
         buyer_id: 102,
         buyer_name: "FreshFarm Foods Retail",
         organization: "Retail Hypermarket Chain",
-        location: location.includes("Andhra") || location.includes("Guntur") ? "Vijayawada Hub, Andhra Pradesh" : "Ambad MIDC, Nashik, Maharashtra",
+        location: location || "Regional Procurement Hub",
         verified: true,
         verification_status: "VERIFIED",
         rating: 4.7,
@@ -207,7 +207,7 @@ class BuyerMatchingApi {
         match_level: "Strong Match",
         reasons: [
           `Continuous weekly demand for ${cropName} lots.`,
-          `Fast digital Escrow release within 2 hours of delivery inspection.`
+          `Fast direct bank settlement within 2 hours of delivery inspection.`
         ],
         warnings: [],
         factors: [

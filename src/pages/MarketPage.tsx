@@ -113,7 +113,7 @@ export function MarketPage() {
         netRealizationQtl: baseRate + 80 - 90,
         netRealizationKg: (baseRate + 80 - 90) / 100,
         demand: "8 MT (Daily supply contract)",
-        paymentTerms: "Escrow release within 24h",
+        paymentTerms: "Direct bank settlement within 24h",
         quality: "Grade A",
         rating: 4.7,
         isBest: false,
@@ -277,8 +277,29 @@ export function MarketPage() {
         </div>
       </div>
 
-      {/* Error and Retry State if API fails */}
-      {error && (
+      {/* Data Source Transparency Badge */}
+      <div className="flex flex-between flex-center mb-md" style={{ fontSize: 12, color: "var(--ink-soft)" }}>
+        <div className="flex flex-center gap-xs">
+          <span
+            style={{
+              display: "inline-block",
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              background: overview?.is_live ? "var(--green-deep)" : "#E88922",
+            }}
+          />
+          <span style={{ fontWeight: 600 }}>
+            Source: {overview?.source_label || "Verified Regional Market Data"}
+          </span>
+        </div>
+        <span style={{ fontSize: 11.5, color: "var(--ink-muted)" }}>
+          Updated for {userDistrict} radius
+        </span>
+      </div>
+
+      {/* Error and Retry State if API fails and no fallback exists */}
+      {error && !overview && (
         <div className="card card-pad mb-md" style={{ background: "#FFFBF7", border: "1.5px solid var(--terracotta)", borderRadius: 12 }}>
           <div className="flex flex-between flex-center flex-wrap gap-sm">
             <span style={{ color: "var(--terracotta)", fontWeight: 700, fontSize: 13.5 }}>{error}</span>

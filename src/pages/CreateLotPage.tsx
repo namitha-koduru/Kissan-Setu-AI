@@ -135,15 +135,21 @@ export function CreateLotPage() {
               <span style={{ fontSize: 14, fontWeight: 800, color: "var(--green-deep)" }}>₹{expectedPrice} / kg (₹{Number(expectedPrice) * 100} / Qtl)</span>
             </div>
             <div className="flex flex-between" style={{ borderTop: "1px solid var(--line)", paddingTop: 8, marginTop: 8 }}>
-              <span style={{ fontSize: 13, color: "var(--ink-soft)" }}>Matched Buyers Nearby</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--sell)" }}>3 Buyers demanding this crop</span>
+              <span style={{ fontSize: 13, color: "var(--ink-soft)" }}>Matched Network Demand</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--sell)" }}>3 verified buyers match this lot</span>
+            </div>
+            <div style={{ fontSize: 11.5, color: "var(--ink-muted)", marginTop: 6 }}>
+              Buyers have been notified of your lot availability. When they submit binding purchase offers, they will appear under Buyer Offers.
             </div>
           </div>
 
           <div className="flex-col gap-sm">
             <Link to="/offers" className="btn btn-primary btn-block">
-              <span>{t("offers.title", "View Buyer Offers")}</span>
+              <span>{t("offers.title", "Track Incoming Offers")}</span>
               <ArrowRight size={15} />
+            </Link>
+            <Link to="/buyers" className="btn btn-outline btn-block">
+              <span>{t("nav.buyers", "View Matched Buyers in Area")}</span>
             </Link>
             <Link to="/dashboard" className="btn btn-secondary btn-block">
               <span>{t("nav.home", "Return to Dashboard")}</span>

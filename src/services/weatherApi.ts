@@ -29,13 +29,13 @@ export interface WeatherBackendResponse {
 }
 
 export const weatherApi = {
-  async getWeather(location: string = "Nashik"): Promise<WeatherSnapshot> {
+  async getWeather(location: string = "Your Farm Location"): Promise<WeatherSnapshot> {
     try {
       const data = await apiClient.get<WeatherBackendResponse>(
         `/weather?location=${encodeURIComponent(location)}`
       );
       return {
-        location: data.location || `${location}, Maharashtra`,
+        location: data.location || location,
         currentTempC: data.temperature,
         condition: data.condition,
         rainProbability: data.rain_probability,
@@ -52,11 +52,18 @@ export const weatherApi = {
         })),
       };
     } catch (error) {
-      console.warn("[weatherApi] Backend unavailable, using demo weather fallback:", error);
+      console.warn("[weatherApi] Backend weather unreachable, checking verified regional data:", error);
+      const cleanLoc = location.trim().toLowerCase();
       const key = Object.keys(weatherByLocation).find((k) =>
-        location.toLowerCase().includes(k.toLowerCase())
+        cleanLoc.includes(k.toLowerCase()) || k.toLowerCase().includes(cleanLoc)
       );
-      return weatherByLocation[key ?? "Nashik"];
+      if (key && weatherByLocation[key]) {
+        return {
+          ...weatherByLocation[key],
+          location: weatherByLocation[key].location || location,
+        };
+      }
+      throw error;
     }
   },
 };

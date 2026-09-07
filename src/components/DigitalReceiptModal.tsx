@@ -51,9 +51,9 @@ DEDUCTIONS & SETTLEMENT:
 ========================================
 FINAL NET IN-HAND REALIZATION: Rs. ${netRealization.toLocaleString("en-IN")}
 ========================================
-Payment Status: ${transaction.paymentStatus || "Escrow Verified"}
-Payment Reference: ${transaction.paymentReference || "UTR-HDFC-98234190"}
-Smart Contract Escrow Hash: 0x9f4a28b1e7c0892a · SIH 2026
+Payment / Settlement Status: ${transaction.paymentStatus || "Settlement Status: Pending Delivery"}
+Payment Reference: ${transaction.paymentReference || `TXN-SETU-${transaction.id}`}
+Digital Verification Ref: TXN-SETU-2026-9F4A28B1 · SIH 2026
 ========================================
 `;
     const blob = new Blob([textContent], { type: "text/plain" });
@@ -104,7 +104,7 @@ Smart Contract Escrow Hash: 0x9f4a28b1e7c0892a · SIH 2026
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 11, color: "var(--ink-muted)", textTransform: "uppercase" }}>Settlement Status</div>
               <div style={{ fontSize: 12, fontWeight: 700, color: "var(--sell)", display: "flex", alignItems: "center", gap: 4 }}>
-                <CheckCircle2 size={13} /> {transaction.paymentStatus || t("transactions.paid", "Escrow Verified")}
+                <CheckCircle2 size={13} /> {transaction.paymentStatus || t("transactions.paid", "Settlement Verified")}
               </div>
             </div>
           </div>

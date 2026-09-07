@@ -36,7 +36,7 @@ export const buyerApi = {
           distanceKm: 18 + idx * 12,
           deadlineDays: 3 + idx,
           location: b.location,
-          paymentRating: `${b.rating}/5.0 (Instant Escrow)`,
+          paymentRating: `${b.rating}/5.0 (Prompt Settlement)`,
           deadlineDate: "2026-09-09",
         }));
       }

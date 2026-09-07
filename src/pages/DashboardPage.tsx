@@ -55,7 +55,7 @@ export function DashboardPage() {
       distanceKm: 18,
       freightQtl: 60,
       netRealizationQtl: basePrice + 150 - 60,
-      arrivalVolume: "Direct Escrow Settlement",
+      arrivalVolume: "Direct Bank Settlement",
       quality: "Grade A",
       paymentSpeed: "Payment in 2 days",
       isBest: true,
@@ -404,7 +404,7 @@ export function DashboardPage() {
                 {transaction.buyerName} · {transaction.crop} ({transaction.quantityKg} kg)
               </div>
               <div style={{ fontSize: 12, color: "var(--ink-soft)", margin: "2px 0 12px" }}>
-                Pickup scheduled · Escrow locked: ₹{(transaction.pricePerKg * transaction.quantityKg).toLocaleString("en-IN")}
+                Pickup scheduled · Agreed Value: ₹{(transaction.pricePerKg * transaction.quantityKg).toLocaleString("en-IN")}
               </div>
               <Link to="/transactions" className="btn btn-secondary btn-sm btn-block">
                 <span>{t("transactions.timeline", "Track Deal & Receipt")}</span>
@@ -414,7 +414,7 @@ export function DashboardPage() {
           ) : (
             <>
               <div style={{ fontSize: 13, color: "var(--ink-soft)", marginBottom: 12 }}>
-                When you accept a buyer offer, real-time logistics tracking and escrow settlement appear here.
+                When you accept a buyer offer, real-time logistics tracking and direct payment settlement appear here.
               </div>
               <Link to="/market" className="btn btn-outline btn-sm btn-block">
                 <span>Explore Marketplace</span>

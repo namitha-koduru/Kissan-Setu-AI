@@ -129,8 +129,13 @@ export function OffersPage() {
       <div>
         {displayedOffers.length === 0 ? (
           <EmptyState
-            title={t("offers.noOffers", "No offers matching criteria")}
-            text={t("offers.subtitle", "When institutional buyers inspect your published lots, their price bids and procurement terms will show up here.")}
+            title={statusFilter === "ALL" ? t("offers.waitingOffers", "Waiting for Buyer Offers") : t("offers.noOffers", "No offers matching criteria")}
+            text={t("offers.subtitle", "Your published lots are visible to verified buyers in your district. Direct price bids and procurement terms will appear here once submitted.")}
+            action={
+              <Link className="btn btn-outline" to="/buyers">
+                {t("nav.buyers", "View Verified Buyers in Area")}
+              </Link>
+            }
           />
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>

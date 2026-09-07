@@ -124,11 +124,11 @@ class FarmIntelligenceApi {
     return apiClient.get<FarmActionPlan>(`/farm-intelligence/action-plan?farmer_id=${farmerId}`);
   }
 
-  async getRisks(farmerId: number = 1, location: string = "Nashik"): Promise<FarmRiskSummary> {
+  async getRisks(farmerId: number = 1, location: string = ""): Promise<FarmRiskSummary> {
     return apiClient.get<FarmRiskSummary>(`/farm-intelligence/risks?farmer_id=${farmerId}&location=${encodeURIComponent(location)}`);
   }
 
-  async getCropSuitability(farmerId: number = 1, location: string = "Nashik, Maharashtra"): Promise<CropSuitabilityItem[]> {
+  async getCropSuitability(farmerId: number = 1, location: string = ""): Promise<CropSuitabilityItem[]> {
     return apiClient.get<CropSuitabilityItem[]>(`/farm-intelligence/crop-suitability?farmer_id=${farmerId}&location=${encodeURIComponent(location)}`);
   }
 }
