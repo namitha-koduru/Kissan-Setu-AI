@@ -22,7 +22,7 @@ export function WeatherPage() {
             id="weather-district"
             value={selectedLocation}
             onChange={(e) => setSelectedLocation(e.target.value)}
-            style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid var(--line-strong)", fontWeight: 700 }}
+            className="form-control"
           >
             {locationOptions.map((loc) => (
               <option key={loc} value={loc}>
@@ -34,7 +34,7 @@ export function WeatherPage() {
       </div>
 
       {/* Current Weather Card */}
-      <div className="card card-pad" style={{ marginTop: 6, marginBottom: 20 }}>
+      <div className="card card-pad mb-lg">
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
             <div style={{ padding: 12, borderRadius: "14px", background: "rgba(46,139,87,0.1)", color: "var(--green-deep)" }}>
@@ -60,7 +60,7 @@ export function WeatherPage() {
       </div>
 
       {/* 7-Day Forecast Grid */}
-      <div style={{ marginBottom: 24 }}>
+      <div className="mb-xl">
         <h3 style={{ fontSize: "17px", fontWeight: 800, marginBottom: 12 }}>7-Day Localized Agricultural Forecast</h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 10, overflowX: "auto" }}>
           {weather.forecast.map((w, i) => (
@@ -94,17 +94,7 @@ export function WeatherPage() {
           <AlertTriangle size={20} color="#A85D35" />
           <span>{weather.riskNote}</span>
         </div>
-        <div
-          style={{
-            marginTop: 14,
-            padding: "14px 16px",
-            background: "var(--bg-soft)",
-            borderRadius: "10px",
-            fontSize: "13.5px",
-            color: "var(--ink)",
-            borderLeft: "4px solid var(--green-leaf)",
-          }}
-        >
+        <div className="highlight-box">
           <strong>Crop Action Strategy:</strong> Consider harvesting near-maturity tomato lots before the Day 3 high-risk precipitation window begins to avoid skin cracking and mandi price downgrades.
         </div>
       </div>

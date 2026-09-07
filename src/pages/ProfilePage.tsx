@@ -38,7 +38,7 @@ export function ProfilePage() {
       </div>
 
       {/* Account Info Card */}
-      <div className="card card-pad" style={{ marginBottom: 20 }}>
+      <div className="card card-pad mb-lg">
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
           <div
             className="avatar"
@@ -73,7 +73,7 @@ export function ProfilePage() {
       </div>
 
       {/* Crops & Preferred Markets */}
-      <div className="card card-pad" style={{ marginBottom: 20 }}>
+      <div className="card card-pad mb-lg">
         <h3 style={{ fontSize: "16px", fontWeight: 800, marginBottom: 14 }}>
           Crops & Preferred Mandis
         </h3>
@@ -88,7 +88,7 @@ export function ProfilePage() {
       </div>
 
       {/* Language Selection Grid */}
-      <div className="card card-pad" style={{ marginBottom: 20 }}>
+      <div className="card card-pad mb-lg">
         <h3 style={{ fontSize: "16px", fontWeight: 800, marginBottom: 14 }}>
           Application Language Preference
         </h3>
@@ -112,7 +112,7 @@ export function ProfilePage() {
       </div>
 
       {/* Notification Preferences */}
-      <div className="card card-pad" style={{ marginBottom: 24 }}>
+      <div className="card card-pad mb-xl">
         <h3 style={{ fontSize: "16px", fontWeight: 800, marginBottom: 14 }}>
           Notification & Alert Preferences
         </h3>

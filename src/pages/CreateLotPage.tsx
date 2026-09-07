@@ -120,19 +120,7 @@ export function CreateLotPage() {
     return (
       <div className="wrap" style={{ maxWidth: 520, paddingTop: 30, textAlign: "center" }}>
         <div className="card card-pad" style={{ padding: "36px 24px" }}>
-          <div
-            style={{
-              width: 64,
-              height: 64,
-              borderRadius: "50%",
-              background: "rgba(23,107,69,0.12)",
-              color: "var(--green-deep)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              margin: "0 auto 16px",
-            }}
-          >
+          <div className="success-icon-wrapper">
             <CheckCircle2 size={36} color="#176B45" />
           </div>
 
@@ -164,7 +152,7 @@ export function CreateLotPage() {
             </span>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 24 }}>
+          <div className="action-links" style={{ marginTop: 24 }}>
             <button
               className="btn btn-primary btn-block"
               type="button"
@@ -188,10 +176,10 @@ export function CreateLotPage() {
   return (
     <div className="wrap" style={{ maxWidth: 700 }}>
       {/* Back link */}
-      <div style={{ marginBottom: 12, paddingTop: 10 }}>
+      <div className="mb-md" style={{ paddingTop: 10 }}>
         <Link
           to={buyerId ? `/buyers/${buyerId}` : "/buyers"}
-          style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--ink-soft)", fontWeight: 600 }}
+          className="back-link"
         >
           <ArrowLeft size={14} /> Back to {buyerId ? "Buyer Profile" : "Marketplace"}
         </Link>
@@ -201,21 +189,7 @@ export function CreateLotPage() {
       <div className="page-header" style={{ padding: "10px 0 16px" }}>
         <h1 style={{ fontSize: "24px", fontWeight: 800 }}>Create & Publish Selling Lot</h1>
         {targetBuyer ? (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              background: "#E6F4EA",
-              border: "1px solid #CEEAD6",
-              padding: "8px 12px",
-              borderRadius: 8,
-              marginTop: 8,
-              fontSize: "13.5px",
-              color: "#137333",
-              fontWeight: 700,
-            }}
-          >
+          <div className="target-buyer-highlight">
             <Building2 size={16} /> Targeted Buyer: {targetBuyer.name} (Offered: ₹{expectedPrice}/kg)
           </div>
         ) : (
@@ -307,7 +281,7 @@ export function CreateLotPage() {
             </div>
           </div>
 
-          <div className="field" style={{ marginTop: 12 }}>
+          <div className="field mb-md">
             <label htmlFor="lot-loc">Farm Pickup & Dispatch Location</label>
             <input
               id="lot-loc"
@@ -318,7 +292,7 @@ export function CreateLotPage() {
             />
           </div>
 
-          <div className="field" style={{ marginTop: 12 }}>
+          <div className="field mb-md">
             <label htmlFor="lot-desc">Produce Quality Details & Packaging Notes</label>
             <textarea
               id="lot-desc"
@@ -326,82 +300,40 @@ export function CreateLotPage() {
               value={qualityDesc}
               onChange={(e) => setQualityDesc(e.target.value)}
               placeholder="Describe color, sizing, sorting, crate packaging, or moisture level..."
-              style={{
-                width: "100%",
-                padding: "8px 12px",
-                borderRadius: 8,
-                border: "1px solid var(--line-strong)",
-                fontFamily: "inherit",
-                fontSize: "13.5px",
-              }}
+              className="form-control"
             />
           </div>
 
           {/* Photo Upload Attachment */}
-          <div className="field" style={{ marginTop: 12 }}>
+          <div className="field mb-md">
             <label>Produce Photographs (Recommended for Fast Verification)</label>
 
             {selectedPhoto ? (
-              <div
-                style={{
-                  position: "relative",
-                  border: "1.5px solid var(--green-deep)",
-                  borderRadius: 10,
-                  padding: 12,
-                  background: "#F4FAF5",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 14,
-                }}
-              >
+              <div className="photo-preview">
                 <img
                   src={selectedPhoto}
                   alt="Produce Preview"
-                  style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 8 }}
                 />
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 800, fontSize: "14px", color: "var(--ink)" }}>{photoName || "Produce Photo Attached"}</div>
-                  <div style={{ fontSize: "12px", color: "var(--ink-soft)" }}>Ready for digital verification inspection by buyers</div>
+                  <div className="photo-preview-name">{photoName || "Produce Photo Attached"}</div>
+                  <div className="photo-preview-desc">Ready for digital verification inspection by buyers</div>
                 </div>
                 <button
                   type="button"
                   onClick={removePhoto}
-                  style={{
-                    background: "rgba(0,0,0,0.06)",
-                    border: "none",
-                    borderRadius: "50%",
-                    width: 30,
-                    height: 30,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                  }}
+                  className="photo-remove-btn"
                   title="Remove image"
                 >
                   <X size={16} />
                 </button>
               </div>
             ) : (
-              <label
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "2px dashed var(--line-strong)",
-                  borderRadius: 10,
-                  padding: "24px 16px",
-                  cursor: "pointer",
-                  background: "#FAFAFA",
-                  textAlign: "center",
-                }}
-              >
+              <label className="photo-drop-zone">
                 <UploadCloud size={28} color="#176B45" style={{ marginBottom: 6 }} />
-                <div style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--ink)" }}>
+                <div className="photo-drop-zone-title">
                   Click or drag photo of produce lot
                 </div>
-                <div style={{ fontSize: "12px", color: "var(--ink-soft)", marginTop: 2 }}>
+                <div className="photo-drop-zone-desc">
                   Show crate sorting, color maturity, and batch size
                 </div>
                 <input
@@ -418,7 +350,7 @@ export function CreateLotPage() {
             className="btn btn-primary btn-block"
             type="submit"
             disabled={isSubmitting}
-            style={{ marginTop: 20, padding: "12px 20px", fontSize: "14.5px" }}
+            style={{ marginTop: 20 }}
           >
             <Package size={16} /> {isSubmitting ? "Publishing Lot..." : "Publish Lot to Verified Buyers"}
           </button>

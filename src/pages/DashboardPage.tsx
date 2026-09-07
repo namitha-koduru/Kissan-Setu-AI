@@ -49,7 +49,7 @@ export function DashboardPage() {
           </div>
         </div>
 
-        <div className="page-actions">
+        <div className="action-bar">
           <Link to="/chat?mode=voice" className="btn btn-outline">
             <span>🎙</span>
             <span>Speak to AI</span>
@@ -60,24 +60,14 @@ export function DashboardPage() {
             <span>Ask KissanSetu AI</span>
           </Link>
 
-
           <Link
             to="/weather"
-            className="card"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              padding: "8px 16px",
-              borderRadius: "12px",
-              background: "#fff",
-              border: "1px solid var(--line)",
-            }}
+            className="weather-mini"
           >
             <CloudSun size={28} color="#2E8B57" />
             <div>
-              <div style={{ fontSize: "18px", fontWeight: 800 }}>{weather.currentTempC}°C</div>
-              <div style={{ fontSize: "12px", color: "var(--ink-soft)" }}>
+              <div className="weather-mini-temp">{weather.currentTempC}°C</div>
+              <div className="weather-mini-detail">
                 {weather.condition} · {weather.rainProbability}% rain risk
               </div>
             </div>
@@ -85,25 +75,29 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {/* Phase 4: Farm Intelligence Engine - Your Farm Today */}
-      <FarmTodayCard farmerId={user?.id ? Number(user.id) : 1} />
+      {/* Farm Intelligence Engine - Your Farm Today */}
+      <div className="content-section">
+        <FarmTodayCard farmerId={user?.id ? Number(user.id) : 1} />
+      </div>
 
-      {/* Phase 5: Market Intelligence & Price Discovery Summary */}
-      <MarketIntelligenceSummaryCard cropName={focusCrop?.name || "Tomato"} quantityQuintals={30} />
+      {/* Market Intelligence & Price Discovery Summary */}
+      <div className="content-section">
+        <MarketIntelligenceSummaryCard cropName={focusCrop?.name || "Tomato"} quantityQuintals={30} />
+      </div>
 
       {/* Main Grid: Decision + Crops on Left, Weather + Quick Actions on Right */}
-      <div className="grid-2" style={{ gridTemplateColumns: "1.25fr 0.75fr", marginTop: 12 }}>
+      <div className="grid-2" style={{ gridTemplateColumns: "1.25fr 0.75fr" }}>
 
         <div>
           {/* Main Decision Highlight Card */}
           {focusCrop && (
-            <div className="reco-card" style={{ marginBottom: 20 }}>
+            <div className="reco-card">
               <div className="reco-head">
                 <div>
-                  <div style={{ fontSize: "11.5px", fontWeight: 700, color: "var(--ink-soft)", marginBottom: 4 }}>
+                  <div className="reco-eyebrow">
                     YOUR NEXT HIGH-VALUE DECISION
                   </div>
-                  <h3 style={{ fontSize: "19px", fontWeight: 800 }}>
+                  <h3 className="reco-title">
                     {focusCrop.name} · {focusCrop.quantityKg} {focusCrop.unit || "kg"}
                   </h3>
                 </div>
@@ -111,17 +105,17 @@ export function DashboardPage() {
               </div>
 
               <div className="reco-body">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+                <div className="reco-header-row">
                   <div>
-                    <div style={{ fontSize: "11.5px", fontWeight: 700, color: "var(--ink-soft)", marginBottom: 6 }}>
+                    <div className="reco-label">
                       AI RECOMMENDATION
                     </div>
                     <DecisionBadge decision={focusCrop.recommendation || "SELL"} size="md" />
                   </div>
-                  <div style={{ textAlign: "right" }}>
+                  <div className="reco-confidence">
                     <div className="reco-stat">
                       <div className="label">Confidence Score</div>
-                      <div className="val" style={{ color: "var(--green-deep)" }}>
+                      <div className="val text-green">
                         {focusCrop.confidence || 86}% (High)
                       </div>
                     </div>
@@ -131,19 +125,19 @@ export function DashboardPage() {
                 <div className="reco-grid">
                   <div className="reco-stat">
                     <div className="label">Best Market Option</div>
-                    <div className="val" style={{ fontWeight: 800 }}>
+                    <div className="val fw-800">
                       {focusCrop.bestMarket || "Nashik Market"}
                     </div>
                   </div>
                   <div className="reco-stat">
                     <div className="label">Expected Net Realization</div>
-                    <div className="val" style={{ color: "var(--green-deep)", fontSize: "20px", fontWeight: 800 }}>
+                    <div className="val text-green fw-800 reco-price">
                       ₹{focusCrop.netRealization || 29}/kg
                     </div>
                   </div>
                 </div>
 
-                <div className="reco-reason" style={{ marginBottom: 16 }}>
+                <div className="reco-reason">
                   ✓ <strong>Reasoning:</strong> High wholesale buyer demand in Nashik yielding ₹29/kg net realization. Freight to Pune is ₹2,800 resulting in lower net (₹24/kg) despite higher raw price. Rain probability rises after 2 days.
                 </div>
 
@@ -162,9 +156,9 @@ export function DashboardPage() {
           )}
 
           {/* Crops List */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "24px 0 12px" }}>
-            <h3 style={{ fontSize: "17px", fontWeight: 800 }}>Active Crops Under Management</h3>
-            <Link to="/crops" style={{ fontSize: "13px", fontWeight: 700, color: "var(--green-deep)" }}>
+          <div className="section-header">
+            <h3>Active Crops Under Management</h3>
+            <Link to="/crops" className="section-link">
               See all crops →
             </Link>
           </div>
@@ -182,14 +176,14 @@ export function DashboardPage() {
           </div>
 
           {/* Mandi Price Snapshot */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "26px 0 12px" }}>
-            <h3 style={{ fontSize: "17px", fontWeight: 800 }}>Mandi Price Snapshot — Tomato</h3>
-            <Link to="/market" style={{ fontSize: "13px", fontWeight: 700, color: "var(--green-deep)" }}>
+          <div className="section-header">
+            <h3>Mandi Price Snapshot — Tomato</h3>
+            <Link to="/market" className="section-link">
               Full market intel →
             </Link>
           </div>
 
-          <div className="card card-pad table-scroll">
+          <div className="table-scroll">
             <table className="data-table">
               <thead>
                 <tr>
@@ -206,7 +200,7 @@ export function DashboardPage() {
                     <td data-label="Market">
                       <strong>{m.name}</strong>
                       {m.id === "nashik" && (
-                        <span style={{ marginLeft: 6, fontSize: "10.5px", color: "var(--green-deep)", fontWeight: 700 }}>
+                        <span className="best-net-badge">
                           ★ Best Net
                         </span>
                       )}
@@ -218,10 +212,7 @@ export function DashboardPage() {
                     <td data-label="Distance">{m.distanceKm} km</td>
                     <td
                       data-label="Expected Net"
-                      style={{
-                        fontWeight: 800,
-                        color: m.id === "nashik" ? "var(--green-deep)" : "inherit",
-                      }}
+                      className={m.id === "nashik" ? "text-green fw-800" : "fw-800"}
                     >
                       ₹{m.netPerKg}/kg
                     </td>
@@ -232,15 +223,15 @@ export function DashboardPage() {
           </div>
         </div>
 
-        {/* Right Column: Weather Card + Quick Actions */}
+        {/* Right Column: Weather Risk + Quick Actions */}
         <div>
-          <div className="card card-pad">
-            <div style={{ fontWeight: 800, fontSize: "15px", marginBottom: 12 }}>
+          <div className="weather-section">
+            <h4 className="weather-section-title">
               Weather Risk — Next 3 Days
-            </div>
+            </h4>
             <div className="wx-strip">
               {weather.forecast.slice(0, 3).map((w, i) => (
-                <div key={w.day} className="wx-day" style={{ borderTop: i === 0 ? "2px solid var(--green-deep)" : undefined }}>
+                <div key={w.day} className="wx-day" data-first={i === 0 ? "true" : undefined}>
                   <div className="d">{w.day}</div>
                   <div className="t">{w.tempC}°</div>
                   <div className="r">{w.rainProbability}% rain</div>
@@ -255,53 +246,38 @@ export function DashboardPage() {
             </div>
           </div>
 
-          <div className="card card-pad" style={{ marginTop: 16 }}>
-            <div style={{ fontWeight: 800, fontSize: "15px", marginBottom: 14 }}>
+          <div className="quick-actions-section">
+            <h4 className="quick-actions-title">
               Quick Farm-to-Market Actions
-            </div>
+            </h4>
 
             {/* Smart Buyer Match Highlight */}
-            <div
-              style={{
-                background: "#E6F4EA",
-                border: "1px solid #CEEAD6",
-                borderRadius: 8,
-                padding: "10px 12px",
-                marginBottom: 12,
-                fontSize: "12.5px",
-              }}
-            >
-              <div style={{ fontWeight: 800, color: "#137333", display: "flex", alignItems: "center", gap: 6 }}>
+            <div className="buyer-match-highlight">
+              <div className="buyer-match-header">
                 <Users size={14} /> 3 Verified Buyers Active
               </div>
-              <div style={{ color: "var(--ink)", marginTop: 2 }}>
+              <div className="buyer-match-detail">
                 Sahyadri FPO & Reliance Fresh demanding Tomato at <strong>₹32.00/kg</strong> (+₹3.50/kg vs mandi).
               </div>
               <Link
                 to="/buyers?crop=Tomato"
-                style={{
-                  display: "inline-block",
-                  color: "var(--green-deep)",
-                  fontWeight: 800,
-                  fontSize: "12px",
-                  marginTop: 6,
-                }}
+                className="buyer-match-link"
               >
                 View Matched Buyers →
               </Link>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <Link className="btn btn-outline btn-block" to="/crops/add" style={{ justifyContent: "flex-start", gap: 10 }}>
+            <div className="action-links">
+              <Link className="btn btn-outline btn-block action-link" to="/crops/add">
                 <Sprout size={18} color="#176B45" /> Register New Crop
               </Link>
-              <Link className="btn btn-outline btn-block" to="/buyers" style={{ justifyContent: "flex-start", gap: 10 }}>
+              <Link className="btn btn-outline btn-block action-link" to="/buyers">
                 <Users size={18} color="#176B45" /> Find Verified Buyers
               </Link>
-              <Link className="btn btn-outline btn-block" to="/lots/create" style={{ justifyContent: "flex-start", gap: 10 }}>
+              <Link className="btn btn-outline btn-block action-link" to="/lots/create">
                 <Package size={18} color="#176B45" /> Create Selling Lot
               </Link>
-              <Link className="btn btn-secondary btn-block" to="/recommendation" style={{ justifyContent: "flex-start", gap: 10 }}>
+              <Link className="btn btn-secondary btn-block action-link" to="/recommendation">
                 <TrendingUp size={18} color="#E88922" /> AI Net Realization Matrix
               </Link>
             </div>

@@ -9,17 +9,7 @@ export function CropsPage() {
 
   return (
     <div className="wrap">
-      <div
-        className="page-header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 12,
-          padding: "20px 0 16px",
-        }}
-      >
+      <div className="page-header">
         <div>
           <h1 style={{ fontSize: "24px", fontWeight: 800 }}>My Crops</h1>
           <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 2 }}>
@@ -31,7 +21,7 @@ export function CropsPage() {
         </Link>
       </div>
 
-      <div style={{ marginTop: 14 }}>
+      <div className="mt-md">
         {crops.length === 0 ? (
           <EmptyState
             title="No crops registered yet"
@@ -43,7 +33,7 @@ export function CropsPage() {
             }
           />
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div className="flex-col gap-md">
             {crops.map((c) => (
               <CropCard
                 key={c.id}

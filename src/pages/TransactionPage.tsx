@@ -151,10 +151,10 @@ export function TransactionPage() {
   return (
     <div className="wrap" style={{ maxWidth: 780 }}>
       {/* Back link */}
-      <div style={{ marginBottom: 12, paddingTop: 10 }}>
+      <div className="mb-md" style={{ paddingTop: 10 }}>
         <Link
           to="/offers"
-          style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--ink-soft)", fontWeight: 600 }}
+          className="back-link"
         >
           <ArrowLeft size={14} /> Back to Offers
         </Link>
@@ -162,20 +162,10 @@ export function TransactionPage() {
 
       {/* Page Header */}
       <div className="page-header" style={{ paddingBottom: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+        <div className="flex-between flex-start flex-wrap gap-md">
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span
-                style={{
-                  fontSize: "11px",
-                  fontWeight: 800,
-                  background: "var(--green-soft)",
-                  color: "var(--green-deep)",
-                  padding: "2px 8px",
-                  borderRadius: "6px",
-                  textTransform: "uppercase",
-                }}
-              >
+            <div className="flex flex-center gap-md">
+              <span className="page-tag">
                 Contract #TX-2026-00{txDetail?.id || 1}
               </span>
               <h1 style={{ fontSize: "24px", fontWeight: 800, margin: 0 }}>Digital Transaction & Settlement</h1>
@@ -185,7 +175,7 @@ export function TransactionPage() {
             </p>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div className="flex flex-center gap-md">
             <button
               className="btn btn-outline"
               style={{ fontSize: "12.5px", color: "var(--danger)", border: "1px solid #F8D7DA" }}
@@ -204,7 +194,7 @@ export function TransactionPage() {
       </div>
 
       {/* Contract & Payout Summary Card */}
-      <div className="card card-pad" style={{ marginBottom: 18 }}>
+      <div className="card card-pad mb-lg">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <h3 style={{ fontSize: "16px", fontWeight: 800, margin: 0 }}>Trade Agreement Summary</h3>
           <span style={{ fontSize: "12px", color: "var(--ink-soft)" }}>
@@ -244,7 +234,7 @@ export function TransactionPage() {
         </div>
 
         {/* Action buttons for logistics and payment record */}
-        <div style={{ display: "flex", gap: 10, marginTop: 16, borderTop: "1px solid #EDF2EB", paddingTop: 14 }}>
+        <div className="action-bar" style={{ marginTop: 16, borderTop: "1px solid #EDF2EB", paddingTop: 14 }}>
           <button
             className="btn btn-outline"
             style={{ flex: 1, justifyContent: "center", fontSize: "13px" }}
@@ -263,7 +253,7 @@ export function TransactionPage() {
       </div>
 
       {/* Stepped Fulfillment Timeline */}
-      <div className="card card-pad" style={{ marginBottom: 18 }}>
+      <div className="card card-pad mb-lg">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
           <div>
             <h3 style={{ fontSize: "16px", fontWeight: 800, margin: 0 }}>Digital Fulfillment Lifecycle</h3>

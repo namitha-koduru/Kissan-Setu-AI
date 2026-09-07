@@ -57,10 +57,10 @@ export function OffersPage() {
     <div className="wrap" style={{ maxWidth: 780 }}>
       {/* Breadcrumb if filtered by lot */}
       {lotFilter && (
-        <div style={{ marginBottom: 10, paddingTop: 10 }}>
+        <div className="mb-md" style={{ paddingTop: 10 }}>
           <Link
             to="/lots"
-            style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--ink-soft)", fontWeight: 600 }}
+            className="back-link"
           >
             <ArrowLeft size={14} /> Back to My Lots
           </Link>
@@ -68,30 +68,10 @@ export function OffersPage() {
       )}
 
       {/* Page Header */}
-      <div
-        className="page-header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          flexWrap: "wrap",
-          gap: 12,
-          padding: "16px 0 14px",
-        }}
-      >
+      <div className="page-header">
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span
-              style={{
-                fontSize: "11px",
-                fontWeight: 800,
-                background: "var(--green-soft)",
-                color: "var(--green-deep)",
-                padding: "2px 8px",
-                borderRadius: "6px",
-                textTransform: "uppercase",
-              }}
-            >
+          <div className="flex flex-center gap-md">
+            <span className="page-tag">
               Phase 6 Offer Intelligence
             </span>
             <h1 style={{ fontSize: "24px", fontWeight: 800, margin: 0 }}>Buyer Offers & Negotiations</h1>
@@ -110,7 +90,6 @@ export function OffersPage() {
         <button
           className="btn btn-outline"
           onClick={loadOffers}
-          style={{ padding: "8px 12px" }}
           title="Refresh offers"
         >
           <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
@@ -118,7 +97,7 @@ export function OffersPage() {
       </div>
 
       {/* Filter Chips */}
-      <div className="filter-row" style={{ marginBottom: 16 }}>
+      <div className="filter-row mb-lg">
         <div
           className={`filter-chip ${statusFilter === "ALL" ? "active" : ""}`}
           onClick={() => setStatusFilter("ALL")}

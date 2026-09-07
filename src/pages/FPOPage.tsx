@@ -9,17 +9,7 @@ export function FPOPage() {
 
   return (
     <div className="wrap">
-      <div
-        className="page-header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 12,
-          padding: "20px 0 14px",
-        }}
-      >
+      <div className="page-header">
         <div>
           <h1 style={{ fontSize: "24px", fontWeight: 800 }}>Godavari Farmers Producer Company</h1>
           <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 2 }}>
@@ -33,7 +23,7 @@ export function FPOPage() {
       </div>
 
       {/* Aggregate Metrics Grid */}
-      <div className="metric-grid" style={{ marginTop: 6, marginBottom: 20 }}>
+      <div className="metric-grid mb-lg">
         <MetricCard label="Contributing Smallholders" value={`${fpoFarmers.length} Farmers`} hint="Tomato Pool" />
         <MetricCard label="Pooled Produce Volume" value={`${totalVolume.toLocaleString("en-IN")} kg`} hint="Bulk Grade A" />
         <MetricCard label="Collective Freight Savings" value="₹3,200" hint="Shared Trucking" />
@@ -42,9 +32,9 @@ export function FPOPage() {
       </div>
 
       {/* Contributing Farmers Table */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <h3 style={{ fontSize: "17px", fontWeight: 800 }}>Contributing Farmers — Tomato Pool</h3>
+      <div className="mb-xl">
+        <div className="section-header" style={{ margin: "0 0 12px" }}>
+          <h3 style={{ fontSize: "17px", fontWeight: 800, margin: 0 }}>Contributing Farmers — Tomato Pool</h3>
           <span className="demo-tag">LIVE POOL DATA</span>
         </div>
 

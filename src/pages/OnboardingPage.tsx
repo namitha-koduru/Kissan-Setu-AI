@@ -384,51 +384,29 @@ export function OnboardingPage() {
 
   return (
     <div className="onboard-shell">
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 600,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-        }}
-      >
+      <div className="onboard-header">
         <Logo to="/" />
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span
-            className="badge-pill"
-            style={{
-              background: "var(--green-light)",
-              color: "var(--green-deep)",
-              fontWeight: 700,
-              fontSize: 11.5,
-              textTransform: "uppercase",
-            }}
-          >
+        <div className="flex flex-center gap-md">
+          <span className="badge-pill onboard-role-badge">
             {role === "farmer" ? "🌾 Farmer" : role === "fpo" ? "🏢 FPO" : "🛒 Buyer"} Setup
           </span>
-          <Link
-            to="/login"
-            style={{ fontSize: 13, color: "var(--ink-soft)", fontWeight: 600 }}
-          >
+          <Link to="/login" className="onboard-switch-link">
             Switch Account
           </Link>
         </div>
       </div>
 
       {/* Progress Indicator */}
-      <div className="progress-row" style={{ maxWidth: 600, width: "100%" }}>
+      <div className="progress-row" style={{ maxWidth: 600 }}>
         {Array.from({ length: totalSteps }, (_, i) => i + 1).map((n) => (
           <div
             key={n}
             className={`progress-step ${n <= step ? "done" : ""}`}
-            style={{ height: 6, borderRadius: 3 }}
           />
         ))}
       </div>
 
-      <div className="onboard-card card card-pad" style={{ maxWidth: 600, width: "100%" }}>
+      <div className="onboard-card card card-pad">
         {/* =================================================================== */}
         {/* FARMER ONBOARDING FLOW (5 STEPS) */}
         {/* =================================================================== */}
@@ -436,10 +414,10 @@ export function OnboardingPage() {
           <>
             {/* STEP 1: PAN-INDIA LOCATION */}
             {step === 1 && (
-              <div>
+              <div className="onboard-step">
                 <div className="onboard-num">STEP 01 OF 05 · PAN-INDIA LOCATION</div>
-                <h2 style={{ fontSize: "22px", marginBottom: "6px" }}>Farm Location & Region</h2>
-                <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginBottom: "20px" }}>
+                <h2>Farm Location & Region</h2>
+                <p>
                   Select your state and district to connect with local weather stations and nearby mandis across India.
                 </p>
 
@@ -505,15 +483,15 @@ export function OnboardingPage() {
 
             {/* STEP 2: FARM PROFILE & CROPS */}
             {step === 2 && (
-              <div>
+              <div className="onboard-step">
                 <div className="onboard-num">STEP 02 OF 05 · FARM PROFILE</div>
-                <h2 style={{ fontSize: "22px", marginBottom: "6px" }}>Land Area & Cultivated Crops</h2>
-                <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginBottom: "16px" }}>
+                <h2>Land Area & Cultivated Crops</h2>
+                <p>
                   Select all crops you cultivate to receive specialized stage advisories and price trend alerts.
                 </p>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 140px", gap: 12, marginBottom: 16 }}>
-                  <div className="field" style={{ marginBottom: 0 }}>
+                <div className="land-input-grid">
+                  <div className="field">
                     <label htmlFor="land-val">Total Cultivated Land Area</label>
                     <input
                       id="land-val"
@@ -526,7 +504,7 @@ export function OnboardingPage() {
                       required
                     />
                   </div>
-                  <div className="field" style={{ marginBottom: 0 }}>
+                  <div className="field">
                     <label htmlFor="land-unit">Unit</label>
                     <select
                       id="land-unit"
@@ -541,10 +519,10 @@ export function OnboardingPage() {
                   </div>
                 </div>
 
-                <label style={{ fontSize: 13.5, fontWeight: 700, display: "block", marginBottom: 8 }}>
+                <label className="crop-select-label">
                   Select Crops (Multiple Allowed):
                 </label>
-                <div className="chip-grid" style={{ marginBottom: 16 }}>
+                <div className="chip-grid mb-lg">
                   {ALL_SUPPORTED_CROPS.map((c) => {
                     const isSelected = selectedCrops.includes(c.name);
                     return (
@@ -573,7 +551,7 @@ export function OnboardingPage() {
                     + Add Other Crop
                   </button>
                 ) : (
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <div className="other-crop-row">
                     <input
                       value={otherCropInput}
                       onChange={(e) => setOtherCropInput(e.target.value)}

@@ -54,30 +54,10 @@ export function BuyersPage() {
   return (
     <div className="wrap">
       {/* Header */}
-      <div
-        className="page-header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 12,
-          padding: "20px 0 14px",
-        }}
-      >
+      <div className="market-header">
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span
-              style={{
-                fontSize: "11px",
-                fontWeight: 800,
-                background: "var(--green-soft)",
-                color: "var(--green-deep)",
-                padding: "2px 8px",
-                borderRadius: "6px",
-                textTransform: "uppercase",
-              }}
-            >
+          <div className="flex flex-center gap-md">
+            <span className="page-tag">
               Phase 6 Smart Matching
             </span>
             <h1 style={{ fontSize: "24px", fontWeight: 800, margin: 0 }}>Verified Buyer Marketplace</h1>
@@ -87,11 +67,10 @@ export function BuyersPage() {
           </p>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div className="action-bar">
           <button
             className="btn btn-outline"
             onClick={fetchBuyers}
-            style={{ padding: "8px 12px" }}
             title="Refresh matching list"
           >
             <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
@@ -100,7 +79,7 @@ export function BuyersPage() {
       </div>
 
       {/* Search and Filters Bar */}
-      <div className="search-bar" style={{ marginBottom: 12 }}>
+      <div className="search-bar mb-md">
         <div style={{ position: "relative", flex: 1.5 }}>
           <input
             type="text"
@@ -110,11 +89,11 @@ export function BuyersPage() {
           />
         </div>
 
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div className="market-controls">
           <select
             value={selectedCrop}
             onChange={(e) => setSelectedCrop(e.target.value)}
-            style={{ padding: "9px 12px", borderRadius: 8, border: "1px solid var(--line-strong)", fontWeight: 700 }}
+            className="form-control"
           >
             {cropOptions.map((c) => (
               <option key={c} value={c}>
@@ -123,33 +102,16 @@ export function BuyersPage() {
             ))}
           </select>
 
-          <div style={{ display: "flex", alignItems: "center" }}>
+          <div className="qty-input-group">
             <input
               type="number"
               min={1}
               max={300}
               value={quantityQtl}
               onChange={(e) => setQuantityQtl(Math.max(1, Number(e.target.value)))}
-              style={{
-                width: 65,
-                padding: "9px 8px",
-                borderRadius: "8px 0 0 8px",
-                border: "1px solid var(--line-strong)",
-                fontWeight: 700,
-              }}
+              style={{ width: 65 }}
             />
-            <span
-              style={{
-                background: "#F1F5F0",
-                border: "1px solid var(--line-strong)",
-                borderLeft: "none",
-                padding: "9px 8px",
-                borderRadius: "0 8px 8px 0",
-                fontSize: "12px",
-                fontWeight: 700,
-                color: "var(--ink-soft)",
-              }}
-            >
+            <span className="qty-suffix">
               Qtl
             </span>
           </div>
@@ -157,7 +119,7 @@ export function BuyersPage() {
       </div>
 
       {/* Filter Row */}
-      <div className="filter-row" style={{ marginBottom: 18 }}>
+      <div className="filter-row mb-lg">
         <div
           className={`filter-chip ${verifiedOnly ? "active" : ""}`}
           onClick={() => setVerifiedOnly(!verifiedOnly)}
@@ -166,12 +128,13 @@ export function BuyersPage() {
           Verified Enterprise Buyers Only
         </div>
 
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--ink-soft)" }}>Sort:</span>
+        <div className="ml-auto flex flex-center gap-md">
+          <span className="text-xs fw-700 text-muted">Sort:</span>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as "match" | "price" | "rating")}
-            style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid var(--line)", fontSize: "12.5px", fontWeight: 700 }}
+            className="form-control"
+            style={{ padding: "6px 10px", fontSize: "12.5px" }}
           >
             <option value="match">Highest Match Score</option>
             <option value="price">Highest Indicative Rate (₹/kg)</option>
@@ -183,7 +146,7 @@ export function BuyersPage() {
       {/* Buyer Cards List */}
       <div>
         {loading && buyers.length === 0 ? (
-          <div className="card card-pad" style={{ textAlign: "center", padding: "40px 20px" }}>
+          <div className="card card-pad market-loading">
             <RefreshCw size={28} className="animate-spin" color="var(--green-deep)" style={{ margin: "0 auto 10px" }} />
             <h3 style={{ fontSize: "16px", fontWeight: 700 }}>Calculating Smart Buyer Match Scores...</h3>
             <p style={{ color: "var(--ink-soft)", fontSize: "13px" }}>
@@ -191,7 +154,7 @@ export function BuyersPage() {
             </p>
           </div>
         ) : filteredBuyers.length === 0 ? (
-          <div className="card card-pad" style={{ textAlign: "center", padding: "40px 20px" }}>
+          <div className="card card-pad market-loading">
             <h3 style={{ fontSize: "16px" }}>No buyers found matching your criteria</h3>
             <p style={{ color: "var(--ink-soft)", marginTop: 4, fontSize: "13px" }}>
               Try adjusting your volume or toggling the verified enterprise filter.

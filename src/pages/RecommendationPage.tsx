@@ -58,37 +58,14 @@ export function RecommendationPage() {
   return (
     <div className="wrap">
       {/* Page Header with Tab Switcher */}
-      <div
-        className="page-header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 14,
-          padding: "20px 0 14px",
-        }}
-      >
+      <div className="page-header">
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 5,
-                padding: "3px 8px",
-                borderRadius: "6px",
-                background: "rgba(23, 107, 69, 0.12)",
-                fontSize: "11px",
-                fontWeight: 800,
-                color: "#176B45",
-                textTransform: "uppercase",
-              }}
-            >
+          <div className="flex flex-center gap-md mb-sm">
+            <div className="intelligence-tag">
               <Sparkles size={13} />
               <span>Phase 4 Agronomic Engine</span>
             </div>
-            <span style={{ fontSize: "12px", color: "var(--ink-soft)" }}>
+            <span className="text-xs text-muted">
               {intelligence?.farm?.location || user?.location || "Your Farm"}
             </span>
           </div>
@@ -99,32 +76,11 @@ export function RecommendationPage() {
         </div>
 
         {/* Tab Switcher */}
-        <div
-          style={{
-            display: "flex",
-            background: "#ebebe8",
-            padding: "4px",
-            borderRadius: "10px",
-            gap: 4,
-          }}
-        >
+        <div className="tab-switcher">
           <button
             type="button"
             onClick={() => setActiveTab("intelligence")}
-            style={{
-              padding: "8px 16px",
-              borderRadius: "8px",
-              border: "none",
-              fontSize: "13px",
-              fontWeight: 700,
-              cursor: "pointer",
-              background: activeTab === "intelligence" ? "#fff" : "transparent",
-              color: activeTab === "intelligence" ? "#176B45" : "var(--ink-soft)",
-              boxShadow: activeTab === "intelligence" ? "0 2px 6px rgba(0,0,0,0.08)" : "none",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
+            className={`tab-switcher-btn ${activeTab === "intelligence" ? "active" : ""}`}
           >
             <Sprout size={16} />
             <span>Farm Intelligence</span>
@@ -132,20 +88,7 @@ export function RecommendationPage() {
           <button
             type="button"
             onClick={() => setActiveTab("market")}
-            style={{
-              padding: "8px 16px",
-              borderRadius: "8px",
-              border: "none",
-              fontSize: "13px",
-              fontWeight: 700,
-              cursor: "pointer",
-              background: activeTab === "market" ? "#fff" : "transparent",
-              color: activeTab === "market" ? "#176B45" : "var(--ink-soft)",
-              boxShadow: activeTab === "market" ? "0 2px 6px rgba(0,0,0,0.08)" : "none",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
+            className={`tab-switcher-btn ${activeTab === "market" ? "active" : ""}`}
           >
             <Store size={16} />
             <span>Market Decision (SELL / WAIT)</span>

@@ -73,7 +73,7 @@ export function AddCropPage() {
     return (
       <div className="wrap" style={{ maxWidth: 560, paddingTop: 40 }}>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <div style={{ display: "inline-flex", padding: 12, borderRadius: "50%", background: "rgba(23,107,69,0.1)", color: "var(--green-deep)", marginBottom: 12 }}>
+          <div className="success-icon-wrapper" style={{ marginBottom: 12 }}>
             <Sparkles size={28} />
           </div>
           <h2 style={{ fontSize: "22px", fontWeight: 800 }}>AI Analyzing Your Crop</h2>

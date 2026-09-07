@@ -118,30 +118,10 @@ export function MarketPage() {
   return (
     <div className="wrap">
       {/* Page Header */}
-      <div
-        className="page-header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 16,
-          padding: "20px 0 14px",
-        }}
-      >
+      <div className="market-header">
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span
-              style={{
-                fontSize: "11px",
-                fontWeight: 800,
-                background: "var(--green-soft)",
-                color: "var(--green-deep)",
-                padding: "3px 8px",
-                borderRadius: "6px",
-                textTransform: "uppercase",
-              }}
-            >
+          <div className="flex flex-center gap-md">
+            <span className="page-tag">
               Phase 5 Engine
             </span>
             <h1 style={{ fontSize: "24px", fontWeight: 900, margin: 0 }}>
@@ -154,19 +134,13 @@ export function MarketPage() {
         </div>
 
         {/* Controls */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div className="market-controls">
+          <div className="flex flex-center gap-md">
             <label style={{ fontSize: "13px", fontWeight: 700, color: "var(--ink-soft)" }}>Crop:</label>
             <select
               value={selectedCrop}
               onChange={(e) => setSelectedCrop(e.target.value)}
-              style={{
-                padding: "8px 12px",
-                borderRadius: 8,
-                border: "1px solid var(--line-strong)",
-                fontWeight: 700,
-                backgroundColor: "#fff",
-              }}
+              className="form-control"
             >
               {cropOptions.map((c) => (
                 <option key={c} value={c}>
@@ -176,35 +150,17 @@ export function MarketPage() {
             </select>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div className="flex flex-center gap-md">
             <label style={{ fontSize: "13px", fontWeight: 700, color: "var(--ink-soft)" }}>Quantity:</label>
-            <div style={{ display: "flex", alignItems: "center" }}>
+            <div className="qty-input-group">
               <input
                 type="number"
                 value={quantityQuintals}
                 min={1}
                 max={500}
                 onChange={(e) => setQuantityQuintals(Math.max(1, Number(e.target.value)))}
-                style={{
-                  width: "70px",
-                  padding: "8px 10px",
-                  borderRadius: "8px 0 0 8px",
-                  border: "1px solid var(--line-strong)",
-                  fontWeight: 700,
-                }}
               />
-              <span
-                style={{
-                  background: "#F1F5F0",
-                  border: "1px solid var(--line-strong)",
-                  borderLeft: "none",
-                  padding: "8px 10px",
-                  borderRadius: "0 8px 8px 0",
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  color: "var(--ink-soft)",
-                }}
-              >
+              <span className="qty-suffix">
                 Qtl ({quantityQuintals * 100} kg)
               </span>
             </div>
@@ -213,7 +169,6 @@ export function MarketPage() {
           <button
             className="btn btn-outline"
             onClick={() => loadMarketData(selectedCrop, quantityQuintals)}
-            style={{ padding: "8px 12px" }}
             title="Refresh Market Data"
           >
             <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
@@ -222,7 +177,7 @@ export function MarketPage() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="tabs-row" style={{ marginBottom: 20 }}>
+      <div className="tabs-row mb-lg">
         <button
           className={`tab-btn ${activeTab === "overview" ? "active" : ""}`}
           onClick={() => setActiveTab("overview")}
@@ -256,7 +211,7 @@ export function MarketPage() {
       </div>
 
       {loading && !overview && (
-        <div className="card card-pad" style={{ textAlign: "center", padding: "40px" }}>
+        <div className="card card-pad market-loading">
           <RefreshCw size={32} className="animate-spin" color="var(--green-deep)" style={{ margin: "0 auto 12px" }} />
           <h3 style={{ fontSize: "16px", fontWeight: 700 }}>Calculating Net Realization & Multi-Mandi Analytics...</h3>
           <p style={{ color: "var(--ink-soft)", fontSize: "13px" }}>Analyzing distance freight, handling fees, and price trajectories.</p>
@@ -264,12 +219,10 @@ export function MarketPage() {
       )}
 
       {error && (
-        <div className="card card-pad" style={{ background: "#FDF2F2", border: "1px solid #F8D7DA", marginBottom: 20 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#721C24" }}>
-            <AlertTriangle size={20} />
-            <div>
-              <strong>Error Loading Data:</strong> {error}
-            </div>
+        <div className="market-error">
+          <AlertTriangle size={20} />
+          <div>
+            <strong>Error Loading Data:</strong> {error}
           </div>
         </div>
       )}
@@ -281,34 +234,15 @@ export function MarketPage() {
             <div>
               {/* Decision Hero Banner */}
               <div
-                className="card card-pad"
-                style={{
-                  background:
-                    overview.decision.recommendation === "SELL"
-                      ? "linear-gradient(135deg, #176B45 0%, #0F492E 100%)"
-                      : overview.decision.recommendation === "WAIT"
-                      ? "linear-gradient(135deg, #9C5100 0%, #613200 100%)"
-                      : "linear-gradient(135deg, #155724 0%, #1A4D2E 100%)",
-                  color: "#FFFFFF",
-                  borderRadius: "16px",
-                  padding: "24px 28px",
-                  marginBottom: 20,
-                  boxShadow: "0 6px 20px rgba(0, 0, 0, 0.12)",
-                }}
+                className={`decision-hero ${
+                  overview.decision.recommendation === "SELL" ? "" :
+                  overview.decision.recommendation === "WAIT" ? "wait" : "switch"
+                }`}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 14 }}>
+                <div className="decision-hero-header">
                   <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                      <span
-                        style={{
-                          background: "rgba(255, 255, 255, 0.2)",
-                          padding: "4px 12px",
-                          borderRadius: "20px",
-                          fontSize: "12px",
-                          fontWeight: 800,
-                          letterSpacing: "0.5px",
-                        }}
-                      >
+                    <div className="decision-meta">
+                      <span className="decision-tag">
                         AI RECOMMENDATION
                       </span>
                       <span style={{ fontSize: "13px", opacity: 0.9 }}>
@@ -316,57 +250,39 @@ export function MarketPage() {
                       </span>
                     </div>
 
-                    <h2 style={{ fontSize: "32px", fontWeight: 900, margin: "4px 0 10px" }}>
+                    <h2>
                       {overview.decision.recommendation} NOW — {overview.decision.recommended_mandi}
                     </h2>
 
-                    <p style={{ fontSize: "15px", opacity: 0.95, maxWidth: "700px", lineHeight: 1.5 }}>
+                    <p>
                       {overview.decision.action_summary}
                     </p>
                   </div>
 
-                  <div
-                    style={{
-                      background: "rgba(255, 255, 255, 0.12)",
-                      padding: "16px 20px",
-                      borderRadius: "12px",
-                      border: "1px solid rgba(255, 255, 255, 0.25)",
-                      textAlign: "right",
-                      minWidth: "220px",
-                    }}
-                  >
-                    <div style={{ fontSize: "12px", opacity: 0.85, marginBottom: 4 }}>Expected Net In-Hand</div>
-                    <div style={{ fontSize: "32px", fontWeight: 900 }}>
+                  <div className="decision-net-box">
+                    <div className="decision-net-label">Expected Net In-Hand</div>
+                    <div className="decision-net-value">
                       ₹{overview.decision.expected_net_per_kg.toFixed(2)}<span style={{ fontSize: "18px" }}>/kg</span>
                     </div>
-                    <div style={{ fontSize: "12.5px", opacity: 0.9, marginTop: 4 }}>
+                    <div className="decision-net-total">
                       Total: ₹{((overview.decision.expected_net_per_kg * quantityQuintals * 100)).toLocaleString("en-IN")}
                     </div>
                   </div>
                 </div>
 
                 {/* Key Decision Pillars */}
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                    gap: 12,
-                    marginTop: 20,
-                    borderTop: "1px solid rgba(255, 255, 255, 0.2)",
-                    paddingTop: 16,
-                  }}
-                >
-                  <div style={{ background: "rgba(0, 0, 0, 0.15)", padding: "10px 14px", borderRadius: 8 }}>
-                    <div style={{ fontSize: "11px", opacity: 0.8, textTransform: "uppercase" }}>Price Trend Factor</div>
-                    <div style={{ fontSize: "13px", fontWeight: 700, marginTop: 2 }}>{overview.decision.price_trend_factor}</div>
+                <div className="decision-pillars">
+                  <div className="decision-pillar">
+                    <div className="decision-pillar-label">Price Trend Factor</div>
+                    <div className="decision-pillar-value">{overview.decision.price_trend_factor}</div>
                   </div>
-                  <div style={{ background: "rgba(0, 0, 0, 0.15)", padding: "10px 14px", borderRadius: 8 }}>
-                    <div style={{ fontSize: "11px", opacity: 0.8, textTransform: "uppercase" }}>Weather Risk Impact</div>
-                    <div style={{ fontSize: "13px", fontWeight: 700, marginTop: 2 }}>{overview.decision.weather_factor}</div>
+                  <div className="decision-pillar">
+                    <div className="decision-pillar-label">Weather Risk Impact</div>
+                    <div className="decision-pillar-value">{overview.decision.weather_factor}</div>
                   </div>
-                  <div style={{ background: "rgba(0, 0, 0, 0.15)", padding: "10px 14px", borderRadius: 8 }}>
-                    <div style={{ fontSize: "11px", opacity: 0.8, textTransform: "uppercase" }}>Storage Viability</div>
-                    <div style={{ fontSize: "13px", fontWeight: 700, marginTop: 2 }}>{overview.decision.storage_viability}</div>
+                  <div className="decision-pillar">
+                    <div className="decision-pillar-label">Storage Viability</div>
+                    <div className="decision-pillar-value">{overview.decision.storage_viability}</div>
                   </div>
                 </div>
               </div>
@@ -390,61 +306,33 @@ export function MarketPage() {
                     {overview.comparison.markets.slice(0, 3).map((m) => (
                       <div
                         key={m.mandi_id}
-                        style={{
-                          padding: "12px 16px",
-                          borderRadius: "10px",
-                          border: m.is_best_net ? "2px solid var(--green-deep)" : "1px solid var(--line)",
-                          background: m.is_best_net ? "#F4FAF5" : "#FFFFFF",
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          flexWrap: "wrap",
-                          gap: 8,
-                        }}
+                        className={`mandi-compare-item ${m.is_best_net ? "best" : ""}`}
                       >
                         <div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <div className="mandi-name-row">
                             <strong>{m.mandi_name}</strong>
-                            <span style={{ fontSize: "12px", color: "var(--ink-soft)" }}>({m.distance_km} km)</span>
+                            <span className="mandi-distance">({m.distance_km} km)</span>
                             {m.is_best_net && (
-                              <span
-                                style={{
-                                  fontSize: "11px",
-                                  fontWeight: 800,
-                                  background: "var(--green-deep)",
-                                  color: "#fff",
-                                  padding: "2px 6px",
-                                  borderRadius: 4,
-                                }}
-                              >
+                              <span className="mandi-badge mandi-badge-best">
                                 Best Net Return
                               </span>
                             )}
                             {m.is_highest_gross && !m.is_best_net && (
-                              <span
-                                style={{
-                                  fontSize: "11px",
-                                  fontWeight: 700,
-                                  background: "#FFE082",
-                                  color: "#5D4037",
-                                  padding: "2px 6px",
-                                  borderRadius: 4,
-                                }}
-                              >
+                              <span className="mandi-badge mandi-badge-gross">
                                 Highest Gross Rate
                               </span>
                             )}
                           </div>
-                          <div style={{ fontSize: "12px", color: "var(--ink-soft)", marginTop: 4 }}>
+                          <div className="mandi-details">
                             Gross: ₹{m.gross_price_per_kg.toFixed(2)}/kg · Transport: -₹{m.transport_cost_per_kg.toFixed(2)}/kg · Fees: -₹{m.handling_and_fees_per_kg.toFixed(2)}/kg
                           </div>
                         </div>
 
                         <div style={{ textAlign: "right" }}>
-                          <div style={{ fontSize: "18px", fontWeight: 900, color: m.is_best_net ? "var(--green-deep)" : "var(--ink)" }}>
+                          <div className={`mandi-net-value ${m.is_best_net ? "best" : ""}`}>
                             ₹{m.net_realization_per_kg.toFixed(2)}/kg
                           </div>
-                          <div style={{ fontSize: "11.5px", color: "var(--ink-soft)" }}>
+                          <div className="mandi-net-total">
                             Total Net: ₹{m.net_realization_total.toLocaleString("en-IN")}
                           </div>
                         </div>
@@ -452,19 +340,8 @@ export function MarketPage() {
                     ))}
                   </div>
 
-                  <div
-                    style={{
-                      background: "#F8FAF7",
-                      padding: "10px 14px",
-                      borderRadius: 8,
-                      border: "1px solid #E2E8DF",
-                      fontSize: "12.5px",
-                      marginTop: 12,
-                      display: "flex",
-                      gap: 8,
-                    }}
-                  >
-                    <Info size={16} color="var(--green-deep)" style={{ flexShrink: 0, marginTop: 2 }} />
+                  <div className="info-highlight">
+                    <Info size={16} color="var(--green-deep)" />
                     <span>{overview.comparison.net_vs_gross_insight}</span>
                   </div>
                 </div>
@@ -491,35 +368,30 @@ export function MarketPage() {
                       {overview.buyer_opportunities.opportunities.slice(0, 2).map((b) => (
                         <div
                           key={b.buyer_id}
-                          style={{
-                            padding: "12px",
-                            borderRadius: "8px",
-                            border: "1px solid var(--line)",
-                            background: "#FAFAFA",
-                          }}
+                          className="buyer-opp-item"
                         >
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                          <div className="buyer-opp-header">
                             <div>
-                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <div className="buyer-opp-name">
                                 <strong>{b.buyer_name}</strong>
                                 {b.is_verified && <CheckCircle2 size={14} color="#176B45" />}
                               </div>
-                              <div style={{ fontSize: "12px", color: "var(--ink-soft)" }}>
+                              <div className="buyer-opp-meta">
                                 {b.company_name || b.location} · Needs {b.quantity_required_quintals} Qtl
                               </div>
                             </div>
                             <div style={{ textAlign: "right" }}>
-                              <div style={{ fontSize: "16px", fontWeight: 800, color: "var(--green-deep)" }}>
+                              <div className="buyer-opp-price">
                                 ₹{b.offered_price_per_kg.toFixed(2)}/kg
                               </div>
-                              <div style={{ fontSize: "11px", color: "#B06000", fontWeight: 700 }}>
+                              <div className="buyer-opp-advantage">
                                 +₹{b.net_advantage_per_kg.toFixed(2)}/kg vs mandi
                               </div>
                             </div>
                           </div>
 
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-                            <span style={{ fontSize: "11px", color: "var(--ink-soft)" }}>Terms: {b.payment_terms}</span>
+                          <div className="buyer-opp-footer">
+                            <span className="buyer-opp-terms">Terms: {b.payment_terms}</span>
                             <button
                               className="btn btn-primary"
                               style={{ fontSize: "11px", padding: "4px 8px" }}

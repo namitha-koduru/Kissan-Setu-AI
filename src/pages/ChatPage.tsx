@@ -243,33 +243,14 @@ export const ChatPage: React.FC = () => {
   return (
     <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "16px" }}>
       {/* Top Header */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: "16px",
-          flexWrap: "wrap",
-          gap: "12px",
-        }}
-      >
+      <div className="chat-header">
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div className="flex flex-center gap-md">
             <span style={{ fontSize: "24px" }}>🌾</span>
             <h1 style={{ fontSize: "24px", fontWeight: 800, color: "var(--ink)", margin: 0 }}>
               Ask KissanSetu
             </h1>
-            <span
-              style={{
-                fontSize: "11px",
-                fontWeight: 700,
-                background: "var(--green-light)",
-                color: "var(--green-deep)",
-                padding: "2px 8px",
-                borderRadius: "12px",
-                border: "1px solid rgba(23, 107, 69, 0.2)",
-              }}
-            >
+            <span className="page-tag">
               Phase 7 Voice AI
             </span>
           </div>
@@ -280,23 +261,11 @@ export const ChatPage: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <div className="flex flex-center gap-md">
           <button
             type="button"
             onClick={() => setVoiceModeActive(!voiceModeActive)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "7px 12px",
-              borderRadius: "10px",
-              background: voiceModeActive ? "var(--green-deep)" : "#FFFFFF",
-              color: voiceModeActive ? "#FFFFFF" : "var(--green-deep)",
-              border: "1.5px solid var(--green-deep)",
-              fontSize: "12.5px",
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
+            className={`voice-mode-btn ${voiceModeActive ? "active" : ""}`}
           >
             <Mic size={14} />
             <span>{voiceModeActive ? "Voice Mode Active" : "Enable Voice Mode"}</span>
@@ -311,49 +280,13 @@ export const ChatPage: React.FC = () => {
       </div>
 
       {/* Main Layout Card */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "260px 1fr",
-          gap: "16px",
-          minHeight: "640px",
-          background: "var(--white)",
-          borderRadius: "18px",
-          border: "1px solid var(--line)",
-          boxShadow: "var(--shadow-2)",
-          overflow: "hidden",
-        }}
-      >
+      <div className="chat-layout">
         {/* Left Sidebar: Conversations History */}
-        <div
-          style={{
-            borderRight: "1px solid var(--line)",
-            background: "var(--cream)",
-            padding: "16px 12px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
-          }}
-        >
+        <div className="chat-sidebar">
           <button
             type="button"
             onClick={handleNewConversation}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
-              padding: "10px 14px",
-              background: "var(--green-deep)",
-              color: "var(--white)",
-              border: "none",
-              borderRadius: "12px",
-              fontSize: "13px",
-              fontWeight: 600,
-              cursor: "pointer",
-              boxShadow: "0 2px 6px rgba(23, 107, 69, 0.25)",
-              transition: "all 0.15s ease",
-            }}
+            className="new-advisory-btn"
           >
             <span>+</span>
             <span>New Advisory</span>
@@ -363,7 +296,7 @@ export const ChatPage: React.FC = () => {
             Recent Discussions
           </div>
 
-          <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "4px" }}>
+          <div className="conversation-list">
             {conversations.length === 0 ? (
               <p style={{ fontSize: "12px", color: "var(--ink-soft)", padding: "10px", fontStyle: "italic" }}>
                 No past discussions yet. Tap the mic to speak your question!
@@ -378,25 +311,12 @@ export const ChatPage: React.FC = () => {
                     key={conv.id}
                     type="button"
                     onClick={() => handleSelectConversation(conv)}
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "flex-start",
-                      padding: "8px 10px",
-                      borderRadius: "10px",
-                      border: isActive ? "1.5px solid var(--green-deep)" : "1px solid transparent",
-                      background: isActive ? "var(--green-light)" : "transparent",
-                      color: "var(--ink)",
-                      cursor: "pointer",
-                      textAlign: "left",
-                      width: "100%",
-                      transition: "all 0.15s ease",
-                    }}
+                    className={`conversation-item ${isActive ? "active" : ""}`}
                   >
-                    <span style={{ fontSize: "13px", fontWeight: isActive ? 600 : 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%" }}>
+                    <span className="conversation-title">
                       {isVoice ? "🎙 " : isVision ? "📷 " : "💬 "}{conv.title || "Farming Advisory"}
                     </span>
-                    <span style={{ fontSize: "10px", color: "var(--ink-soft)", marginTop: "2px" }}>
+                    <span className="conversation-meta">
                       {conv.created_at ? conv.created_at.slice(0, 10) : "Today"} • {conv.language?.toUpperCase() || "EN"}
                     </span>
                   </button>
@@ -411,18 +331,9 @@ export const ChatPage: React.FC = () => {
         </div>
 
         {/* Right Main Chat Area */}
-        <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "var(--bg-soft)" }}>
+        <div className="chat-main">
           {/* Top Chat Bar */}
-          <div
-            style={{
-              padding: "12px 20px",
-              background: "var(--white)",
-              borderBottom: "1px solid var(--line)",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
+          <div className="chat-top-bar">
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>
                 {conversationId ? "Active Discussion" : "New Discussion"}
