@@ -15,17 +15,13 @@ import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
 import { apiClient } from "../services/api";
 import { ALL_INDIAN_STATES, getDistrictsForState } from "../data/indiaLocations";
+import { MASTER_CROP_CATALOG, CROP_CATEGORIES } from "../data/cropCatalog";
 
-const ALL_SUPPORTED_CROPS = [
-  { name: "Tomato", emoji: "🍅" },
-  { name: "Onion", emoji: "🧅" },
-  { name: "Grapes", emoji: "🍇" },
-  { name: "Chilli", emoji: "🌶️" },
-  { name: "Potato", emoji: "🥔" },
-  { name: "Pomegranate", emoji: "🍈" },
-  { name: "Wheat", emoji: "🌾" },
-  { name: "Cotton", emoji: "☁️" },
-];
+const ALL_SUPPORTED_CROPS = MASTER_CROP_CATALOG.map((c) => ({
+  name: c.name,
+  emoji: c.icon,
+  category: c.category,
+}));
 
 const SELLING_CHANNELS = [
   "APMC Mandi",
@@ -75,13 +71,18 @@ export function OnboardingPage() {
   const [village, setVillage] = useState(user.village || "");
   const [districtList, setDistrictList] = useState<string[]>([]);
 
-  const [landValue, setLandValue] = useState("2.5");
+  const [landValue, setLandValue] = useState(user.landAcreage ? String(user.landAcreage).split(" ")[0] : "");
   const [landUnit, setLandUnit] = useState("Acres");
-  const [selectedCrops, setSelectedCrops] = useState<string[]>(["Tomato", "Onion"]);
+  const initialCrops = Array.isArray(user.preferredCrops) && user.preferredCrops.length > 0 
+    ? user.preferredCrops 
+    : [];
+  const [selectedCrops, setSelectedCrops] = useState<string[]>(initialCrops);
+  const [cropCategoryFilter, setCropCategoryFilter] = useState("All");
+  const [cropSearchTerm, setCropSearchTerm] = useState("");
   const [otherCropInput, setOtherCropInput] = useState("");
   const [showOtherCrop, setShowOtherCrop] = useState(false);
 
-  const [harvestQty, setHarvestQty] = useState("500");
+  const [harvestQty, setHarvestQty] = useState("");
   const [harvestUnit, setHarvestUnit] = useState("kg");
   const [sowingSeason, setSowingSeason] = useState("Kharif Season");
 
@@ -531,26 +532,69 @@ export function OnboardingPage() {
                   </div>
                 </div>
 
-                <label className="crop-select-label">
-                  Select Crops (Multiple Allowed):
-                </label>
-                <div className="chip-grid mb-lg">
-                  {ALL_SUPPORTED_CROPS.map((c) => {
-                    const isSelected = selectedCrops.includes(c.name);
-                    return (
-                      <div
-                        key={c.name}
-                        className={`chip ${isSelected ? "selected" : ""}`}
-                        onClick={() => toggleCrop(c.name)}
-                        role="button"
-                        tabIndex={0}
-                      >
-                        <span style={{ marginRight: 4 }}>{c.emoji}</span>
-                        {c.name}
-                        {isSelected && <Check size={14} style={{ display: "inline", marginLeft: 4 }} />}
-                      </div>
-                    );
-                  })}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
+                  <label className="crop-select-label" style={{ marginBottom: 0 }}>
+                    Select Crops ({selectedCrops.length} selected):
+                  </label>
+                  <div style={{ position: "relative", minWidth: 200, flex: "1 1 200px" }}>
+                    <Search size={14} color="var(--ink-soft)" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+                    <input
+                      type="text"
+                      placeholder="Search crop (e.g. Cotton, Tomato)..."
+                      value={cropSearchTerm}
+                      onChange={(e) => setCropSearchTerm(e.target.value)}
+                      style={{ padding: "6px 10px 6px 30px", fontSize: "12.5px", borderRadius: 8, width: "100%" }}
+                    />
+                  </div>
+                </div>
+
+                {/* Category Filter Pills */}
+                <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 6, marginBottom: 10 }}>
+                  {CROP_CATEGORIES.map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setCropCategoryFilter(cat)}
+                      style={{
+                        padding: "4px 10px",
+                        borderRadius: 14,
+                        fontSize: "11.5px",
+                        fontWeight: 700,
+                        border: cropCategoryFilter === cat ? "1.5px solid var(--green-deep)" : "1px solid var(--line)",
+                        background: cropCategoryFilter === cat ? "rgba(23,107,69,0.08)" : "#FFFFFF",
+                        color: cropCategoryFilter === cat ? "var(--green-deep)" : "var(--ink-soft)",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="chip-grid mb-lg" style={{ maxHeight: 220, overflowY: "auto", padding: 2 }}>
+                  {ALL_SUPPORTED_CROPS
+                    .filter((c) => {
+                      const matchesCat = cropCategoryFilter === "All" || c.category === cropCategoryFilter;
+                      const matchesSearch = !cropSearchTerm || c.name.toLowerCase().includes(cropSearchTerm.toLowerCase());
+                      return matchesCat && matchesSearch;
+                    })
+                    .map((c) => {
+                      const isSelected = selectedCrops.includes(c.name);
+                      return (
+                        <div
+                          key={c.name}
+                          className={`chip ${isSelected ? "selected" : ""}`}
+                          onClick={() => toggleCrop(c.name)}
+                          role="button"
+                          tabIndex={0}
+                        >
+                          <span style={{ marginRight: 4 }}>{c.emoji}</span>
+                          {c.name}
+                          {isSelected && <Check size={14} style={{ display: "inline", marginLeft: 4 }} />}
+                        </div>
+                      );
+                    })}
 
                   {/* Render Custom Added Crops */}
                   {selectedCrops

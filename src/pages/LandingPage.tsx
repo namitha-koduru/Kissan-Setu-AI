@@ -75,7 +75,7 @@ export function LandingPage() {
             <div className="flow-arrow">↓</div>
             <div className="flow-row">
               <span className="flow-chip flow-final" style={{ width: "100%", textAlign: "center" }}>
-                ✓ {t("recommendations.decision", "RECOMMENDED")}: NASHIK MARKET · ₹29/kg NET
+                ✓ {t("recommendations.decision", "RECOMMENDED")}: DIRECT BUYER HUB · ₹30.50/kg NET
               </span>
             </div>
           </div>
@@ -171,7 +171,7 @@ export function LandingPage() {
               <div>
                 <h3 style={{ fontSize: "20px" }}>🍅 Tomato · 500 kg (Hybrid F1)</h3>
                 <p style={{ color: "var(--ink-soft)", fontSize: "13.5px", marginTop: 2 }}>
-                  Stage: Near maturity · Location: Nashik
+                  Stage: Near maturity · Local Hub Delivery
                 </p>
               </div>
               <span className="badge-pill badge-high">94% Confidence</span>
@@ -180,15 +180,15 @@ export function LandingPage() {
             <div className="reco-grid">
               <div className="reco-stat">
                 <div className="label">{t("market.bestMarket", "Recommended Market")}</div>
-                <div className="val" style={{ color: "var(--green-deep)" }}>Nashik Market Yard</div>
+                <div className="val" style={{ color: "var(--green-deep)" }}>Direct Institutional Buyer Hub</div>
               </div>
               <div className="reco-stat">
                 <div className="label">{t("market.netInHand", "Expected Net Realization")}</div>
-                <div className="val" style={{ color: "var(--green-deep)", fontSize: "20px" }}>₹29.00 / kg</div>
+                <div className="val" style={{ color: "var(--green-deep)", fontSize: "20px" }}>₹30.50 / kg</div>
               </div>
               <div className="reco-stat">
                 <div className="label">{t("buyers.demand", "Buyer Wholesale Demand")}</div>
-                <div className="val">HIGH (3 Active Buyers)</div>
+                <div className="val">HIGH (4 Active Buyers)</div>
               </div>
               <div className="reco-stat">
                 <div className="label">{t("dashboard.farmRisks", "Upcoming Weather Risk")}</div>
@@ -197,7 +197,7 @@ export function LandingPage() {
             </div>
 
             <div className="reco-reason">
-              ✓ <strong>Why SELL NOW?</strong> Buyer demand is high in Nashik giving ₹29/kg net realization. Transport to Pune is ₹2,800 dropping Pune's net realization to ₹24/kg despite a higher raw price of ₹32/kg. Rain risk jumps to 70% after Day 2.
+              ✓ <strong>Why SELL NOW?</strong> Direct buyer demand delivers ₹30.50/kg net realization with zero mandi cess and farmgate pickup. Approaching precipitation in 48 hours raises skin cracking risk for mature tomatoes.
             </div>
 
             <div style={{ marginTop: 20, display: "flex", gap: 12 }}>

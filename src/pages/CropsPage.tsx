@@ -2,29 +2,40 @@ import { Link } from "react-router-dom";
 import { Plus, Sprout } from "lucide-react";
 import { CropCard } from "../components/CropCard";
 import { EmptyState } from "../components/States";
+import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
 
 export function CropsPage() {
+  const { user } = useAuth();
   const { crops, setActiveCropId } = useAppState();
   const { t } = useLanguage();
 
+  const preferredCropsList: string[] = Array.isArray(user?.preferredCrops)
+    ? (user.preferredCrops as string[])
+    : typeof user?.preferredCrops === "string"
+    ? [(user.preferredCrops as string)]
+    : [];
+  const profileCrops: string[] = preferredCropsList.filter(
+    (pc: string) => !crops.some((c) => c.name.toLowerCase() === pc.toLowerCase())
+  );
+
   return (
-    <div className="wrap">
+    <div className="wrap" style={{ paddingBottom: 60 }}>
       <div className="page-header">
         <div>
-          <h1 style={{ fontSize: "24px", fontWeight: 800 }}>{t("crops.title", "My Crops")}</h1>
-          <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 2 }}>
+          <h1 style={{ fontSize: "22px", fontWeight: 800, color: "var(--navy)" }}>{t("crops.title", "My Crops")}</h1>
+          <p style={{ color: "var(--ink-soft)", fontSize: "13.5px", marginTop: 2 }}>
             {t("crops.subtitle", "Manage crop stages, harvest timing, and individual sell/wait/switch recommendations.")}
           </p>
         </div>
-        <Link className="btn btn-primary" to="/crops/add">
-          <Plus size={16} /> {t("crops.addCrop", "Register New Crop")}
+        <Link className="btn btn-primary btn-sm" to="/crops/add" style={{ borderRadius: 8 }}>
+          <Plus size={15} /> {t("crops.addCrop", "Register New Crop")}
         </Link>
       </div>
 
       <div className="mt-md">
-        {crops.length === 0 ? (
+        {crops.length === 0 && profileCrops.length === 0 ? (
           <EmptyState
             title={t("crops.noCrops", "No crops registered yet")}
             text={t("crops.subtitle", "Add your first crop to enable AI harvest window predictions and mandi price discovery.")}
@@ -44,6 +55,31 @@ export function CropsPage() {
                 recommendation={c.recommendation}
                 onSelect={() => setActiveCropId(c.id)}
               />
+            ))}
+
+            {profileCrops.map((pc) => (
+              <div
+                key={pc}
+                className="card card-pad flex flex-between flex-center flex-wrap gap-sm"
+                style={{ background: "#FAFCF9", border: "1.5px dashed var(--green-leaf)", borderRadius: 12 }}
+              >
+                <div className="flex flex-center gap-md">
+                  <div style={{ fontSize: 26 }}>🌱</div>
+                  <div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: "var(--navy)" }}>{pc}</div>
+                    <div style={{ fontSize: 12, color: "var(--ink-soft)" }}>
+                      Cultivated crop from profile · Sowing & stage details needed for AI pricing
+                    </div>
+                  </div>
+                </div>
+                <Link
+                  to={`/crops/add?crop=${encodeURIComponent(pc)}`}
+                  className="btn btn-outline btn-sm"
+                  style={{ borderRadius: 8 }}
+                >
+                  <Plus size={14} /> Add Tracking Details
+                </Link>
+              </div>
             ))}
           </div>
         )}

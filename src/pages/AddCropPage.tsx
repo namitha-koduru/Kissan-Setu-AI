@@ -1,10 +1,10 @@
-import { useState, useEffect, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
-import { Camera, Check, Sparkles } from "lucide-react";
+import { useState, useEffect, useMemo, type FormEvent } from "react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { Camera, Check, Sparkles, ArrowLeft, Search } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
-import { cropOptions, locationOptions } from "../data/demo";
+import { MASTER_CROP_CATALOG, CROP_CATEGORIES, getCropCatalogItem, searchCrops } from "../data/cropCatalog";
 import type { CropRecord, CropStage } from "../types";
 
 export function AddCropPage() {
@@ -12,26 +12,61 @@ export function AddCropPage() {
   const { t } = useLanguage();
   const { addCrop } = useAppState();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const userDistrict = user?.district || (user?.location ? user.location.split(",")[0].trim() : "Farm Location");
   const userLocationStr = user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : userDistrict || "Local Farm");
 
-  const [cropName, setCropName] = useState("Tomato");
-  const [variety, setVariety] = useState("Hybrid F1");
+  // Query parameter pre-selection
+  const initialCropParam = searchParams.get("crop") || "";
+  const initialCatalogItem = getCropCatalogItem(initialCropParam) || MASTER_CROP_CATALOG[0];
+
+  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [cropSearchTerm, setCropSearchTerm] = useState("");
+  const [selectedCropItem, setSelectedCropItem] = useState(initialCatalogItem);
+  const [cropName, setCropName] = useState(initialCatalogItem.name);
+  const [variety, setVariety] = useState(initialCatalogItem.popularVarieties[0] || "Standard Hybrid");
   const [location, setLocation] = useState(userLocationStr);
-  const [quantityKg, setQuantityKg] = useState(500);
+  const [quantityKg, setQuantityKg] = useState(initialCatalogItem.typicalYieldKgPerAcre ? Math.round(initialCatalogItem.typicalYieldKgPerAcre / 2) : 500);
   const [sowingDate, setSowingDate] = useState("2026-06-15");
   const [stage, setStage] = useState<CropStage>("Near maturity");
   const [harvestDate, setHarvestDate] = useState("2026-09-08");
+
+  // Filtered crop list from catalog
+  const filteredCrops = useMemo(() => {
+    return searchCrops(cropSearchTerm, selectedCategory);
+  }, [cropSearchTerm, selectedCategory]);
+
+  // Handle URL param changes
+  useEffect(() => {
+    if (initialCropParam) {
+      const match = getCropCatalogItem(initialCropParam);
+      if (match) {
+        setSelectedCropItem(match);
+        setCropName(match.name);
+        setVariety(match.popularVarieties[0] || "Standard Variety");
+        setQuantityKg(match.typicalYieldKgPerAcre ? Math.round(match.typicalYieldKgPerAcre / 2) : 500);
+      } else {
+        setCropName(initialCropParam);
+      }
+    }
+  }, [initialCropParam]);
+
+  const selectCatalogCrop = (item: typeof MASTER_CROP_CATALOG[0]) => {
+    setSelectedCropItem(item);
+    setCropName(item.name);
+    setVariety(item.popularVarieties[0] || "Standard Variety");
+    setQuantityKg(item.typicalYieldKgPerAcre ? Math.round(item.typicalYieldKgPerAcre / 2) : 500);
+  };
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState(0);
 
   const analysisSteps = [
     "Analyzing localized weather & precipitation risk",
-    "Fetching mandi wholesale prices & transport costs",
-    "Estimating AI harvest window & spoilage risk",
-    "Matching nearby verified buyer tenders & demand",
+    "Fetching regional mandi benchmark prices & transport logistics",
+    "Estimating AI harvest window & shelf-life risk profile",
+    "Matching verified nearby buyer tenders & direct contract bids",
   ];
 
   useEffect(() => {
@@ -43,29 +78,35 @@ export function AddCropPage() {
         }, 750);
       } else {
         timer = setTimeout(() => {
-          const newCropId = `crop-${cropName.toLowerCase()}-${Date.now().toString(36).slice(-4)}`;
+          const newCropId = `crop-${cropName.toLowerCase().replace(/\s+/g, "-")}-${Date.now().toString(36).slice(-4)}`;
+          const icon = selectedCropItem?.icon || (cropName.toLowerCase().includes("cotton") ? "☁️" : cropName.toLowerCase().includes("tomato") ? "🍅" : "🌱");
+          const benchmarkRate = selectedCropItem?.expectedPricePerKg || 30;
+          const netRate = Math.max(1, benchmarkRate - 2.5);
+
           const newCrop: CropRecord = {
             id: newCropId,
             name: cropName,
-            icon: cropName === "Tomato" ? "🍅" : cropName === "Onion" ? "🧅" : cropName === "Potato" ? "🥔" : "🌶️",
-            variety: variety || "Local High Yield",
+            icon,
+            variety: variety || "Standard High-Yield",
             quantityKg: Number(quantityKg) || 500,
             unit: "kg",
             sowingDate,
             stage,
             location: location || userLocationStr,
-            expectedPrice: cropName === "Tomato" ? 30 : cropName === "Onion" ? 20 : cropName === "Potato" ? 17 : 62,
-            harvestEst: "08–12 Sep 2026",
+            expectedPrice: benchmarkRate,
+            harvestEst: "08–14 Sep 2026",
             harvestWindow: stage === "Near maturity" || stage === "Ready to harvest" ? "2–4 days" : "12–18 days",
             recommendation: stage === "Near maturity" || stage === "Ready to harvest" ? "SELL" : "WAIT",
-            bestMarket: `${userDistrict} APMC Mandi`,
-            netRealization: cropName === "Tomato" ? 29 : cropName === "Onion" ? 18.2 : cropName === "Potato" ? 15.2 : 60.5,
-            confidence: 91,
+            bestMarket: `${userDistrict} APMC Central Yard`,
+            netRealization: netRate,
+            confidence: 92,
           };
+
           addCrop(newCrop);
+
           if (user) {
             const currentCrops = user.preferredCrops || [];
-            if (!currentCrops.includes(cropName)) {
+            if (!currentCrops.some((c) => c.toLowerCase() === cropName.toLowerCase())) {
               updateUserProfile({ preferredCrops: [...currentCrops, cropName] });
             }
           }
@@ -74,7 +115,23 @@ export function AddCropPage() {
       }
     }
     return () => clearTimeout(timer);
-  }, [isProcessing, processingStep, cropName, variety, quantityKg, sowingDate, stage, location, addCrop, navigate, user, updateUserProfile, userDistrict, userLocationStr]);
+  }, [
+    isProcessing,
+    processingStep,
+    cropName,
+    variety,
+    quantityKg,
+    sowingDate,
+    stage,
+    location,
+    selectedCropItem,
+    addCrop,
+    navigate,
+    user,
+    updateUserProfile,
+    userDistrict,
+    userLocationStr,
+  ]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -84,18 +141,18 @@ export function AddCropPage() {
 
   if (isProcessing) {
     return (
-      <div className="wrap" style={{ maxWidth: 560, paddingTop: 40 }}>
+      <div className="wrap" style={{ maxWidth: 540, paddingTop: 40, paddingBottom: 60 }}>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <div className="success-icon-wrapper" style={{ marginBottom: 12 }}>
             <Sparkles size={28} />
           </div>
-          <h2 style={{ fontSize: "22px", fontWeight: 800 }}>AI Analyzing Your Crop</h2>
-          <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 4 }}>
-            Combining real-time meteorological models with regional mandi price discovery...
+          <h2 style={{ fontSize: "20px", fontWeight: 800 }}>AI Evaluating {cropName} Profile</h2>
+          <p style={{ color: "var(--ink-soft)", fontSize: "13.5px", marginTop: 4 }}>
+            Evaluating agronomic models, localized weather, and regional buyer demand near {userDistrict}...
           </p>
         </div>
 
-        <div className="card card-pad">
+        <div className="card card-pad" style={{ borderRadius: 14 }}>
           <div className="processing-list">
             {analysisSteps.map((stepText, idx) => {
               const isDone = processingStep > idx;
@@ -110,7 +167,7 @@ export function AddCropPage() {
                       <div className="spinner" />
                     ) : null}
                   </div>
-                  <span style={{ fontWeight: isCurrent ? 700 : isDone ? 600 : 400, color: isCurrent ? "var(--ink)" : undefined }}>
+                  <span style={{ fontWeight: isCurrent ? 700 : isDone ? 600 : 400, color: isCurrent ? "var(--ink)" : undefined, fontSize: "13px" }}>
                     {stepText}
                   </span>
                 </div>
@@ -123,72 +180,171 @@ export function AddCropPage() {
   }
 
   return (
-    <div className="wrap" style={{ maxWidth: 720 }}>
-      <div className="page-header" style={{ padding: "20px 0 16px" }}>
-        <h1 style={{ fontSize: "24px", fontWeight: 800 }}>{t("crops.addCrop")}</h1>
-        <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 2 }}>
-          {t("crops.subtitle")}
+    <div className="wrap" style={{ maxWidth: 760, paddingBottom: 60 }}>
+      <div style={{ marginBottom: 16 }}>
+        <Link to="/crops" className="btn btn-ghost btn-sm" style={{ paddingLeft: 0, marginBottom: 8, display: "inline-flex", alignItems: "center", gap: 4 }}>
+          <ArrowLeft size={16} /> Back to Crops
+        </Link>
+        <h1 style={{ fontSize: "22px", fontWeight: 800, color: "var(--navy)" }}>{t("crops.addCrop", "Add Crop for AI Tracking")}</h1>
+        <p style={{ color: "var(--ink-soft)", fontSize: "13.5px", marginTop: 2 }}>
+          {t("crops.subtitle", "Register your harvest to unlock AI market timing, localized weather alerts, and direct buyer match.")}
         </p>
       </div>
 
-      <div className="card card-pad">
+      <div className="card card-pad" style={{ borderRadius: 14, border: "1px solid var(--line)" }}>
+        {/* Crop Selection Section */}
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: "block", fontSize: "13px", fontWeight: 700, color: "var(--ink-soft)", marginBottom: 8 }}>
+            1. Select or Search Cultivated Crop
+          </label>
+
+          {/* Search bar */}
+          <div style={{ position: "relative", marginBottom: 10 }}>
+            <Search size={16} color="var(--ink-soft)" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search Indian crops (e.g. Cotton, Tomato, Rice, Chilli, Groundnut...)"
+              value={cropSearchTerm}
+              onChange={(e) => setCropSearchTerm(e.target.value)}
+              style={{ paddingLeft: 36, fontSize: "13.5px", borderRadius: 10 }}
+            />
+          </div>
+
+          {/* Category Chips */}
+          <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 6, marginBottom: 10 }}>
+            {CROP_CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setSelectedCategory(cat)}
+                style={{
+                  padding: "5px 12px",
+                  borderRadius: 18,
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  border: selectedCategory === cat ? "1.5px solid var(--green-deep)" : "1px solid var(--line)",
+                  background: selectedCategory === cat ? "rgba(23,107,69,0.08)" : "#FFFFFF",
+                  color: selectedCategory === cat ? "var(--green-deep)" : "var(--ink-soft)",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          {/* Grid of Crops */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 8, maxHeight: 180, overflowY: "auto", padding: 4 }}>
+            {filteredCrops.map((c) => {
+              const isSelected = cropName.toLowerCase() === c.name.toLowerCase();
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => selectCatalogCrop(c)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "8px 10px",
+                    borderRadius: 10,
+                    border: isSelected ? "2px solid var(--green-deep)" : "1px solid var(--line)",
+                    background: isSelected ? "rgba(23,107,69,0.06)" : "#FFFFFF",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    transition: "all 0.1s ease",
+                  }}
+                >
+                  <span style={{ fontSize: "18px" }}>{c.icon}</span>
+                  <div style={{ overflow: "hidden" }}>
+                    <div style={{ fontSize: "12.5px", fontWeight: isSelected ? 800 : 600, color: "var(--navy)", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>
+                      {c.name}
+                    </div>
+                    <div style={{ fontSize: "10.5px", color: "var(--ink-soft)" }}>₹{c.expectedPricePerKg}/kg</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit}>
           <div className="form-grid">
             <div className="field">
-              <label htmlFor="crop-select">{t("crops.cropName")}</label>
-              <select
-                id="crop-select"
+              <label htmlFor="crop-name-input">Selected Crop Name</label>
+              <input
+                id="crop-name-input"
+                type="text"
                 value={cropName}
                 onChange={(e) => setCropName(e.target.value)}
-              >
-                {cropOptions.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="field">
-              <label htmlFor="crop-variety">{t("crops.variety")}</label>
-              <input
-                id="crop-variety"
-                value={variety}
-                onChange={(e) => setVariety(e.target.value)}
-                placeholder="e.g. Hybrid F1, Local Red"
+                placeholder="e.g. Cotton, Tomato"
                 required
               />
             </div>
 
             <div className="field">
-              <label htmlFor="crop-qty">{t("crops.quantity")}</label>
+              <label htmlFor="crop-variety">{t("crops.variety", "Variety / Hybrid")}</label>
+              {selectedCropItem && selectedCropItem.popularVarieties.length > 0 ? (
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
+                  {selectedCropItem.popularVarieties.map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setVariety(v)}
+                      style={{
+                        padding: "3px 8px",
+                        fontSize: "11px",
+                        borderRadius: 6,
+                        border: variety === v ? "1.5px solid var(--green-deep)" : "1px solid var(--line)",
+                        background: variety === v ? "rgba(23,107,69,0.1)" : "var(--bg-warm)",
+                        fontWeight: 700,
+                        color: variety === v ? "var(--green-deep)" : "var(--ink-soft)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {v}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              <input
+                id="crop-variety"
+                value={variety}
+                onChange={(e) => setVariety(e.target.value)}
+                placeholder="e.g. Bt Cotton RCH-2, Hybrid F1, Local"
+                required
+              />
+            </div>
+
+            <div className="field">
+              <label htmlFor="crop-qty">{t("crops.quantity", "Estimated Quantity (kg)")}</label>
               <input
                 id="crop-qty"
                 type="number"
                 value={quantityKg}
                 onChange={(e) => setQuantityKg(Math.max(1, Number(e.target.value)))}
                 placeholder="e.g. 500"
+                min="1"
                 required
               />
             </div>
 
             <div className="field">
-              <label htmlFor="crop-loc">{t("auth.location")}</label>
-              <select
+              <label htmlFor="crop-loc">{t("auth.location", "Farm Location")}</label>
+              <input
                 id="crop-loc"
+                type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-              >
-                {locationOptions.map((loc) => (
-                  <option key={loc} value={loc}>
-                    {loc}
-                  </option>
-                ))}
-              </select>
+                placeholder="e.g. Vadlamudi, Guntur, Andhra Pradesh"
+                required
+              />
             </div>
 
             <div className="field">
-              <label htmlFor="crop-sow">{t("crops.sowingDate")}</label>
+              <label htmlFor="crop-sow">{t("crops.sowingDate", "Sowing Date")}</label>
               <input
                 id="crop-sow"
                 type="date"
@@ -199,7 +355,7 @@ export function AddCropPage() {
             </div>
 
             <div className="field">
-              <label htmlFor="crop-stage">{t("crops.growthStage")}</label>
+              <label htmlFor="crop-stage">{t("crops.growthStage", "Current Growth Stage")}</label>
               <select
                 id="crop-stage"
                 value={stage}
@@ -225,19 +381,22 @@ export function AddCropPage() {
             </div>
           </div>
 
-          <div className="field" style={{ marginTop: 6 }}>
+          <div className="field" style={{ marginTop: 12 }}>
             <label>Field Photo (Optional - for AI quality grading preview)</label>
-            <div className="upload-box">
-              <Camera size={24} color="#176B45" style={{ margin: "0 auto 6px" }} />
-              <div>Click to upload crop image or snap a photo from your phone</div>
+            <div className="upload-box" style={{ padding: "16px 12px", border: "1.5px dashed var(--line-strong)", borderRadius: 10, textAlign: "center", cursor: "pointer" }}>
+              <Camera size={22} color="var(--green-deep)" style={{ margin: "0 auto 6px" }} />
+              <div style={{ fontSize: "12.5px", color: "var(--ink-soft)" }}>Click to upload crop image or snap photo from phone camera</div>
             </div>
           </div>
 
-          <button className="btn btn-primary btn-block" type="submit" style={{ marginTop: 12, padding: "12px 20px" }}>
-            <Sparkles size={16} /> {t("common.submit")}
+          <button className="btn btn-primary btn-block" type="submit" style={{ marginTop: 16, padding: "12px 20px", borderRadius: 10 }}>
+            <Sparkles size={16} /> Save Crop & Run AI Evaluation
           </button>
         </form>
       </div>
     </div>
   );
 }
+
+export default AddCropPage;
+

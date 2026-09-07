@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import marketIntelligenceApi from "../services/marketIntelligenceApi";
 import type { MarketIntelligenceOverview } from "../services/marketIntelligenceApi";
-import { cropOptions } from "../data/demo";
+import { MASTER_CROP_CATALOG } from "../data/cropCatalog";
 import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -21,11 +21,10 @@ export function MarketPage() {
   const { t } = useLanguage();
 
   const availableCrops = useMemo(() => {
-    const list = [...cropOptions];
-    crops.forEach((c) => {
-      if (!list.includes(c.name as any)) list.push(c.name as any);
-    });
-    return list;
+    const catalogList = MASTER_CROP_CATALOG.map((c) => c.name);
+    const userCropNames = crops.map((c) => c.name);
+    const set = new Set([...userCropNames, ...catalogList]);
+    return Array.from(set);
   }, [crops]);
 
   const [selectedCrop, setSelectedCrop] = useState<string>(() => crops[0]?.name || "Tomato");
