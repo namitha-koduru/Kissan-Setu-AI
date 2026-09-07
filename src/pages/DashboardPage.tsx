@@ -1,17 +1,13 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   MapPin,
   Plus,
   ArrowRight,
-  Store,
   Package,
   Truck,
-  CheckCircle2,
-  Clock,
   Sparkles,
   CloudSun,
-  ShieldCheck,
   ChevronRight,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -24,7 +20,6 @@ export function DashboardPage() {
   const { user } = useAuth();
   const { crops, lots, transaction } = useAppState();
   const { t } = useLanguage();
-  const navigate = useNavigate();
 
   const [selectedCropIndex, setSelectedCropIndex] = useState(0);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
@@ -429,48 +424,6 @@ export function DashboardPage() {
           )}
         </div>
       </div>
-
-      {/* 5. Concised Farm Weather Advisory */}
-      <div
-        style={{
-          background: "linear-gradient(90deg, #FFFDF8 0%, #F5FAF6 100%)",
-          border: "1px solid #E2EADF",
-          borderRadius: 14,
-          padding: "14px 18px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: 12,
-        }}
-      >
-        <div className="flex flex-center gap-md">
-          <div style={{ padding: 10, borderRadius: 10, background: "rgba(46,139,87,0.12)", color: "var(--green-deep)" }}>
-            <CloudSun size={24} />
-          </div>
-          <div>
-            <div style={{ fontSize: 13.5, fontWeight: 800, color: "var(--navy)" }}>
-              {t("weather.advisory", "Farm Weather Advisory")} · {userDistrict}
-            </div>
-            <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 2 }}>
-              {weather.riskNote}
-            </div>
-          </div>
-        </div>
-
-        <Link to="/weather" className="btn btn-outline btn-sm" style={{ padding: "6px 12px", fontSize: 12 }}>
-          <span>{t("weather.forecast5d", "7-Day Forecast")}</span>
-          <ArrowRight size={12} />
-        </Link>
-      </div>
-
-      <LocationSelectorModal
-        isOpen={locationModalOpen}
-        onClose={() => setLocationModalOpen(false)}
-      />
-    </div>
-  );
-}
 
       {/* 5. Concised Farm Weather Advisory */}
       <div

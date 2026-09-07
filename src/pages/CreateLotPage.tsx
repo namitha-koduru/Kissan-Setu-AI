@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo, type FormEvent } from "react";
-import { useSearchParams, useNavigate, Link } from "react-router-dom";
-import { CheckCircle2, Package, ArrowLeft, ArrowRight, MapPin, Sparkles } from "lucide-react";
+import { useState, useMemo, type FormEvent } from "react";
+import { useSearchParams, Link } from "react-router-dom";
+import { CheckCircle2, Package, ArrowLeft, ArrowRight, MapPin } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -13,7 +13,6 @@ export function CreateLotPage() {
   const { crops, addLot, lots } = useAppState();
   const { t } = useLanguage();
   const [params] = useSearchParams();
-  const navigate = useNavigate();
 
   const paramCrop = params.get("crop");
   const paramQty = params.get("qty");

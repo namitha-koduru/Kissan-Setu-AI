@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Bell, CloudSun, Menu, MapPin, Check, ChevronDown } from "lucide-react";
+import { Bell, CloudSun, Menu, MapPin, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import { LanguageSelector } from "./LanguageSelector";
 import { LocationSelectorModal } from "./LocationSelectorModal";
@@ -127,6 +127,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
 
           <Link className="profile-chip" to="/profile" aria-label="Profile">
             <span className="avatar">{user?.initials || user?.name?.slice(0, 2).toUpperCase() || "KS"}</span>
+          </Link>
         </div>
       </div>
     </header>

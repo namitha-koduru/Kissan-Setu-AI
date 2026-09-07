@@ -5,13 +5,7 @@ import {
   ArrowRight,
   RefreshCw,
   Search,
-  CheckCircle2,
-  SlidersHorizontal,
-  ChevronRight,
-  TrendingUp,
   ShieldCheck,
-  Building2,
-  Store,
 } from "lucide-react";
 import marketIntelligenceApi from "../services/marketIntelligenceApi";
 import type { MarketIntelligenceOverview } from "../services/marketIntelligenceApi";
@@ -37,14 +31,13 @@ export function MarketPage() {
   const [selectedCrop, setSelectedCrop] = useState<string>(() => crops[0]?.name || "Tomato");
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState<"ALL" | "MANDI" | "BUYER" | "FPC">("ALL");
-  const [quantityQuintals, setQuantityQuintals] = useState<number>(20);
+  const [quantityQuintals] = useState<number>(20);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [overview, setOverview] = useState<MarketIntelligenceOverview | null>(null);
 
   const userDistrict = user?.district || (user?.location ? user.location.split(",")[0].trim() : "Farm Location");
-  const userLocationStr = user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : userDistrict || "Set Location");
 
   const loadMarketData = async (crop: string, qty: number) => {
     try {

@@ -1,4 +1,4 @@
-import { CheckCircle2, Download, Printer, Share2, X, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Download, Printer, X, ShieldCheck } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 import type { TransactionRecord } from "../types";
 

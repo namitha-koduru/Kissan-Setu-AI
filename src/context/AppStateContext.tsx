@@ -106,7 +106,7 @@ function getStorageKey(userId: string | undefined, prefix: string) {
 }
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  const { user, updateUserProfile } = useAuth();
+  const { user } = useAuth();
 
   const isDemoFarmer = user?.id === "u-farmer";
 

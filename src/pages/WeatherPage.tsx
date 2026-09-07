@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CloudSun, AlertTriangle, MapPin } from "lucide-react";
 import { weatherByLocation, locationOptions } from "../data/demo";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import weatherApi from "../services/weatherApi";
 import type { WeatherSnapshot } from "../types";
 
 export function WeatherPage() {
@@ -30,7 +31,7 @@ export function WeatherPage() {
     return list;
   }, [selectedLocation]);
 
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [weatherData, setWeatherData] = useState<WeatherSnapshot | null>(null);
 

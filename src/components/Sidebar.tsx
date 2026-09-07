@@ -8,7 +8,6 @@ import {
   Handshake,
   Truck,
   CloudSun,
-  LineChart,
   Building2,
   UserCheck,
   LogOut,
