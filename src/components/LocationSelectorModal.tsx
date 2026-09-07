@@ -28,6 +28,8 @@ export function LocationSelectorModal({ isOpen, onClose }: Props) {
   const [village, setVillage] = useState(user?.village || "");
   const [district, setDistrict] = useState(user?.district || "");
   const [state, setState] = useState(user?.state || "");
+  const [lat, setLat] = useState<number | undefined>(user?.latitude);
+  const [lng, setLng] = useState<number | undefined>(user?.longitude);
   const [detecting, setDetecting] = useState(false);
 
   if (!isOpen) return null;
@@ -40,6 +42,8 @@ export function LocationSelectorModal({ isOpen, onClose }: Props) {
       district: district.trim(),
       state: state.trim(),
       location: locStr,
+      latitude: lat,
+      longitude: lng,
     });
     updateOnboardData({
       village: village.trim(),
@@ -62,13 +66,14 @@ export function LocationSelectorModal({ isOpen, onClose }: Props) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           setDetecting(false);
-          // If user already has profile details keep them or synthesize accurate coordinates
           const defaultVill = user?.village || (user?.district ? user.district : "My Farm");
           const defaultDist = user?.district || (user?.state ? user.state : "Local District");
           const defaultSt = user?.state || "India";
           setVillage(defaultVill);
           setDistrict(defaultDist);
           setState(defaultSt);
+          setLat(pos.coords.latitude);
+          setLng(pos.coords.longitude);
           showToast(t("location.detected", `Farm GPS coordinates located (${pos.coords.latitude.toFixed(3)}°, ${pos.coords.longitude.toFixed(3)}°)`));
         },
         () => {

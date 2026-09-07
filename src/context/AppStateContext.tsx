@@ -101,40 +101,68 @@ function buildUserCropRecords(cropNames: string[], location: string): CropRecord
   });
 }
 
+function getStorageKey(userId: string | undefined, prefix: string) {
+  return `kisansetu-${prefix}-${userId || "guest"}`;
+}
+
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, updateUserProfile } = useAuth();
 
   const isDemoFarmer = user?.id === "u-farmer";
 
   const [crops, setCrops] = useState<CropRecord[]>(() => {
+    if (user?.id) {
+      try {
+        const stored = localStorage.getItem(getStorageKey(user.id, "crops"));
+        if (stored) return JSON.parse(stored);
+      } catch {}
+    }
     if (user?.preferredCrops && user.preferredCrops.length > 0) {
-      return buildUserCropRecords(user.preferredCrops, user.location || user.district || "India");
+      return buildUserCropRecords(user.preferredCrops, user.location || user.district || "");
     }
     return isDemoFarmer ? initialCrops : [];
   });
 
   const [lots, setLots] = useState<LotRecord[]>(() => {
+    if (user?.id) {
+      try {
+        const stored = localStorage.getItem(getStorageKey(user.id, "lots"));
+        if (stored) return JSON.parse(stored);
+      } catch {}
+    }
     return isDemoFarmer ? initialLots : [];
   });
 
   const [offers, setOffers] = useState<OfferRecord[]>(() => {
+    if (user?.id) {
+      try {
+        const stored = localStorage.getItem(getStorageKey(user.id, "offers"));
+        if (stored) return JSON.parse(stored);
+      } catch {}
+    }
     return isDemoFarmer ? initialOffers : [];
   });
 
   const [transaction, setTransaction] = useState<TransactionRecord>(() => {
+    if (user?.id) {
+      try {
+        const stored = localStorage.getItem(getStorageKey(user.id, "tx"));
+        if (stored) return JSON.parse(stored);
+      } catch {}
+    }
     return isDemoFarmer ? initialTransaction : {
       id: "TX-2026-0001",
-      lotId: "KS-LOT-001",
-      buyerName: "Regional Agri Procurer",
-      crop: "Produce",
+      lotId: "",
+      buyerName: "",
+      crop: "",
       quantityKg: 0,
       pricePerKg: 0,
       stages: [
-        { label: "Contract Confirmed", done: false, date: "" },
+        { label: "Offer Accepted", done: false, date: "" },
         { label: "Pickup Scheduled", done: false, date: "" },
-        { label: "In Transit", done: false, date: "" },
-        { label: "Quality Verified", done: false, date: "" },
-        { label: "Payment Settled", done: false, date: "" },
+        { label: "Produce Picked Up", done: false, date: "" },
+        { label: "Delivered to Hub", done: false, date: "" },
+        { label: "Payment Received", done: false, date: "" },
       ],
     };
   });
@@ -157,23 +185,54 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   // Sync crops and onboarding data when authenticated user changes
   useEffect(() => {
     if (user) {
-      if (user.preferredCrops && user.preferredCrops.length > 0) {
-        const userCrops = buildUserCropRecords(user.preferredCrops, user.location || user.district || "India");
+      const userCropKey = getStorageKey(user.id, "crops");
+      const userLotKey = getStorageKey(user.id, "lots");
+      const userOfferKey = getStorageKey(user.id, "offers");
+      const userTxKey = getStorageKey(user.id, "tx");
+
+      const storedCrops = localStorage.getItem(userCropKey);
+      const storedLots = localStorage.getItem(userLotKey);
+      const storedOffers = localStorage.getItem(userOfferKey);
+      const storedTx = localStorage.getItem(userTxKey);
+
+      if (storedCrops) {
+        try {
+          const parsed = JSON.parse(storedCrops);
+          setCrops(parsed);
+          if (parsed[0]) setActiveCropId(parsed[0].id);
+        } catch {}
+      } else if (user.preferredCrops && user.preferredCrops.length > 0) {
+        const userCrops = buildUserCropRecords(user.preferredCrops, user.location || user.district || "");
         setCrops(userCrops);
-        if (userCrops[0]) {
-          setActiveCropId(userCrops[0].id);
-        }
+        if (userCrops[0]) setActiveCropId(userCrops[0].id);
       } else if (user.id === "u-farmer") {
         setCrops(initialCrops);
         setActiveCropId(initialCrops[0]?.id || "crop-tomato");
-        setLots(initialLots);
-        setOffers(initialOffers);
-        setTransaction(initialTransaction);
       } else {
-        // If regular registered user with no preferred crops set yet
-        setCrops((prev) => prev.length > 0 ? prev : []);
-        setLots((prev) => prev.length > 0 ? prev : []);
-        setOffers((prev) => prev.length > 0 ? prev : []);
+        setCrops([]);
+        setActiveCropId("");
+      }
+
+      if (storedLots) {
+        try { setLots(JSON.parse(storedLots)); } catch {}
+      } else if (user.id === "u-farmer") {
+        setLots(initialLots);
+      } else {
+        setLots([]);
+      }
+
+      if (storedOffers) {
+        try { setOffers(JSON.parse(storedOffers)); } catch {}
+      } else if (user.id === "u-farmer") {
+        setOffers(initialOffers);
+      } else {
+        setOffers([]);
+      }
+
+      if (storedTx) {
+        try { setTransaction(JSON.parse(storedTx)); } catch {}
+      } else if (user.id === "u-farmer") {
+        setTransaction(initialTransaction);
       }
 
       setOnboardData((prev) => ({
@@ -184,8 +243,40 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         crops: user.preferredCrops && user.preferredCrops.length > 0 ? user.preferredCrops : prev.crops,
         land: user.landAcreage || prev.land,
       }));
+    } else {
+      setCrops([]);
+      setLots([]);
+      setOffers([]);
     }
   }, [user]);
+
+  // Persist crops on change
+  useEffect(() => {
+    if (user?.id) {
+      localStorage.setItem(getStorageKey(user.id, "crops"), JSON.stringify(crops));
+    }
+  }, [crops, user?.id]);
+
+  // Persist lots on change
+  useEffect(() => {
+    if (user?.id) {
+      localStorage.setItem(getStorageKey(user.id, "lots"), JSON.stringify(lots));
+    }
+  }, [lots, user?.id]);
+
+  // Persist offers on change
+  useEffect(() => {
+    if (user?.id) {
+      localStorage.setItem(getStorageKey(user.id, "offers"), JSON.stringify(offers));
+    }
+  }, [offers, user?.id]);
+
+  // Persist transaction on change
+  useEffect(() => {
+    if (user?.id && transaction && transaction.quantityKg > 0) {
+      localStorage.setItem(getStorageKey(user.id, "tx"), JSON.stringify(transaction));
+    }
+  }, [transaction, user?.id]);
 
   const showToast = useCallback((message: string) => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`;

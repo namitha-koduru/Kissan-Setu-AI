@@ -8,7 +8,7 @@ import { cropOptions, locationOptions } from "../data/demo";
 import type { CropRecord, CropStage } from "../types";
 
 export function AddCropPage() {
-  const { user } = useAuth();
+  const { user, updateUserProfile } = useAuth();
   const { t } = useLanguage();
   const { addCrop } = useAppState();
   const navigate = useNavigate();
@@ -63,12 +63,18 @@ export function AddCropPage() {
             confidence: 91,
           };
           addCrop(newCrop);
+          if (user) {
+            const currentCrops = user.preferredCrops || [];
+            if (!currentCrops.includes(cropName)) {
+              updateUserProfile({ preferredCrops: [...currentCrops, cropName] });
+            }
+          }
           navigate(`/crops/${newCropId}`);
         }, 600);
       }
     }
     return () => clearTimeout(timer);
-  }, [isProcessing, processingStep, cropName, variety, quantityKg, sowingDate, stage, location, addCrop, navigate]);
+  }, [isProcessing, processingStep, cropName, variety, quantityKg, sowingDate, stage, location, addCrop, navigate, user, updateUserProfile, userDistrict, userLocationStr]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();

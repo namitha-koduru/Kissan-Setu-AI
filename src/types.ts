@@ -25,6 +25,8 @@ export interface User {
   district: string;
   state: string;
   village?: string;
+  latitude?: number;
+  longitude?: number;
   initials?: string;
   landAcreage?: string;
   mobile?: string;

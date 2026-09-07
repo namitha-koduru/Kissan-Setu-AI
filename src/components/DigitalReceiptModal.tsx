@@ -157,7 +157,7 @@ Smart Contract Escrow Hash: 0x9f4a28b1e7c0892a · SIH 2026
 
           <div style={{ fontSize: 10, color: "var(--ink-muted)", borderTop: "1px dashed var(--line)", paddingTop: 8, display: "flex", alignItems: "center", gap: 6 }}>
             <ShieldCheck size={14} color="var(--green-deep)" />
-            <span>Encrypted Smart Contract Escrow ID: 0x9f4a...28b1 · Ref: {transaction.paymentReference || "UTR-HDFC-98234190"}</span>
+            <span>Verified Digital Trade · Bank / Payment Reference: {transaction.paymentReference || transaction.id}</span>
           </div>
         </div>
 

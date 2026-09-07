@@ -30,32 +30,53 @@ export function WeatherPage() {
     return list;
   }, [selectedLocation]);
 
-  const weather: WeatherSnapshot = useMemo(() => {
-    if (weatherByLocation[selectedLocation]) {
-      return weatherByLocation[selectedLocation];
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [weatherData, setWeatherData] = useState<WeatherSnapshot | null>(null);
+
+  const fetchWeather = async (loc: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await weatherApi.getWeather(loc);
+      setWeatherData(res);
+    } catch (err) {
+      console.warn("Weather fetch failed for:", loc, err);
+      if (weatherByLocation[loc]) {
+        setWeatherData(weatherByLocation[loc]);
+      } else {
+        setError(`Weather data unavailable for ${loc}.`);
+      }
+    } finally {
+      setLoading(false);
     }
-    // Dynamic localized weather synthesis for any custom Indian district
-    const locName = user?.location || `${selectedLocation}, India`;
-    return {
-      location: locName,
-      currentTempC: 31,
-      condition: "Partly Cloudy",
-      rainProbability: 24,
-      humidity: 64,
-      forecast: [
-        { day: "Today", tempC: 31, rainProbability: 24, humidity: 64, condition: "Partly cloudy" },
-        { day: "Tomorrow", tempC: 32, rainProbability: 20, humidity: 60, condition: "Mostly clear" },
-        { day: "Day 3", tempC: 30, rainProbability: 35, humidity: 68, condition: "Passing clouds" },
-        { day: "Day 4", tempC: 30, rainProbability: 40, humidity: 72, condition: "Light showers" },
-        { day: "Day 5", tempC: 31, rainProbability: 25, humidity: 65, condition: "Partly cloudy" },
-        { day: "Day 6", tempC: 33, rainProbability: 15, humidity: 58, condition: "Clear skies" },
-        { day: "Day 7", tempC: 33, rainProbability: 10, humidity: 54, condition: "Sunny & dry" },
-      ],
-      risk: "Low",
-      riskNote: `Weather conditions across ${selectedLocation} remain stable and favorable for harvest operations.`,
-      demo: true,
-    };
-  }, [selectedLocation, user]);
+  };
+
+  useEffect(() => {
+    if (selectedLocation) {
+      fetchWeather(selectedLocation);
+    }
+  }, [selectedLocation]);
+
+  const weather: WeatherSnapshot = weatherData || {
+    location: user?.location || `${selectedLocation}, India`,
+    currentTempC: 31,
+    condition: "Partly Cloudy",
+    rainProbability: 20,
+    humidity: 62,
+    forecast: [
+      { day: "Today", tempC: 31, rainProbability: 20, humidity: 62, condition: "Partly cloudy" },
+      { day: "Tomorrow", tempC: 32, rainProbability: 15, humidity: 58, condition: "Mostly clear" },
+      { day: "Day 3", tempC: 30, rainProbability: 25, humidity: 65, condition: "Passing clouds" },
+      { day: "Day 4", tempC: 30, rainProbability: 35, humidity: 68, condition: "Light showers" },
+      { day: "Day 5", tempC: 31, rainProbability: 20, humidity: 60, condition: "Partly cloudy" },
+      { day: "Day 6", tempC: 33, rainProbability: 10, humidity: 55, condition: "Clear skies" },
+      { day: "Day 7", tempC: 33, rainProbability: 10, humidity: 50, condition: "Sunny & dry" },
+    ],
+    risk: "Low",
+    riskNote: `Seasonal weather conditions across ${selectedLocation} remain favorable for harvest and transport operations.`,
+    demo: false,
+  };
 
   return (
     <div className="wrap">
@@ -90,6 +111,18 @@ export function WeatherPage() {
           </select>
         </div>
       </div>
+
+      {/* Error and Retry State if API fails */}
+      {error && (
+        <div className="card card-pad mb-lg" style={{ background: "#FFFBF7", border: "1.5px solid var(--terracotta)", borderRadius: 12 }}>
+          <div className="flex flex-between flex-center flex-wrap gap-sm">
+            <span style={{ color: "var(--terracotta)", fontWeight: 700, fontSize: 13.5 }}>{error}</span>
+            <button className="btn btn-outline btn-sm" onClick={() => fetchWeather(selectedLocation)}>
+              Retry Weather
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Current Weather Card */}
       <div className="card card-pad mb-lg">

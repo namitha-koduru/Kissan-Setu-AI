@@ -39,6 +39,7 @@ export function MarketPage() {
   const [activeFilter, setActiveFilter] = useState<"ALL" | "MANDI" | "BUYER" | "FPC">("ALL");
   const [quantityQuintals, setQuantityQuintals] = useState<number>(20);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [overview, setOverview] = useState<MarketIntelligenceOverview | null>(null);
 
@@ -48,10 +49,15 @@ export function MarketPage() {
   const loadMarketData = async (crop: string, qty: number) => {
     try {
       setLoading(true);
+      setError(null);
       const data = await marketIntelligenceApi.getOverview(crop, qty);
       setOverview(data);
     } catch (err: unknown) {
-      console.warn("Using localized market pricing fallback:", err);
+      console.warn("Market intelligence fetch warning:", err);
+      // If error occurs, keep localized overview or set error
+      if (!overview) {
+        setError("Market data temporarily unavailable from live API.");
+      }
     } finally {
       setLoading(false);
     }
@@ -277,6 +283,18 @@ export function MarketPage() {
           ))}
         </div>
       </div>
+
+      {/* Error and Retry State if API fails */}
+      {error && (
+        <div className="card card-pad mb-md" style={{ background: "#FFFBF7", border: "1.5px solid var(--terracotta)", borderRadius: 12 }}>
+          <div className="flex flex-between flex-center flex-wrap gap-sm">
+            <span style={{ color: "var(--terracotta)", fontWeight: 700, fontSize: 13.5 }}>{error}</span>
+            <button className="btn btn-outline btn-sm" onClick={() => loadMarketData(selectedCrop, quantityQuintals)}>
+              {t("common.retry", "Retry")}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 4. Best Opportunity Highlight Banner */}
       <div
