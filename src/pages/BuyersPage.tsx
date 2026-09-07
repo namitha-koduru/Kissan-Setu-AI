@@ -1,15 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, RefreshCw } from "lucide-react";
 import { SmartBuyerCard } from "../components/SmartBuyerCard";
 import buyerMatchingApi from "../services/buyerMatchingApi";
 import type { BuyerMatchResult } from "../services/buyerMatchingApi";
 import { cropOptions } from "../data/demo";
+import { useAuth } from "../context/AuthContext";
+import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
 
 export function BuyersPage() {
+  const { user } = useAuth();
+  const { crops } = useAppState();
   const { t } = useLanguage();
+
+  const availableCrops = useMemo(() => {
+    const list = [...cropOptions];
+    crops.forEach((c) => {
+      if (!list.includes(c.name as any)) {
+        list.push(c.name as any);
+      }
+    });
+    return list;
+  }, [crops]);
+
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCrop, setSelectedCrop] = useState("Tomato");
+  const [selectedCrop, setSelectedCrop] = useState<string>(() => crops[0]?.name || "Tomato");
   const [quantityQtl, setQuantityQtl] = useState(20);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [sortBy, setSortBy] = useState<"match" | "price" | "rating">("match");
@@ -19,11 +34,12 @@ export function BuyersPage() {
   const fetchBuyers = async () => {
     try {
       setLoading(true);
+      const userLoc = user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : "Guntur, Andhra Pradesh");
       const data = await buyerMatchingApi.getRecommendedBuyers(
-        selectedCrop === "All" ? "Tomato" : selectedCrop,
+        selectedCrop === "All" ? (crops[0]?.name || "Tomato") : selectedCrop,
         quantityQtl,
         "Grade A",
-        "Nashik, Maharashtra",
+        userLoc,
         verifiedOnly
       );
       setBuyers(data.buyers || []);
@@ -97,7 +113,7 @@ export function BuyersPage() {
             onChange={(e) => setSelectedCrop(e.target.value)}
             className="form-control"
           >
-            {cropOptions.map((c) => (
+            {availableCrops.map((c) => (
               <option key={c} value={c}>
                 {t("crops.cropName", "Crop")}: {c}
               </option>

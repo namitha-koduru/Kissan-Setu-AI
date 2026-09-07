@@ -138,6 +138,44 @@ export const initialCrops: CropRecord[] = [
 ];
 
 export const weatherByLocation: Record<string, WeatherSnapshot> = {
+  Guntur: {
+    location: "Guntur, Andhra Pradesh",
+    currentTempC: 32,
+    condition: "Partly Cloudy",
+    rainProbability: 25,
+    humidity: 65,
+    forecast: [
+      { day: "Today", tempC: 32, rainProbability: 25, humidity: 65, condition: "Partly cloudy" },
+      { day: "Tomorrow", tempC: 33, rainProbability: 20, humidity: 62, condition: "Mostly sunny" },
+      { day: "Day 3", tempC: 31, rainProbability: 35, humidity: 68, condition: "Scattered clouds" },
+      { day: "Day 4", tempC: 30, rainProbability: 40, humidity: 72, condition: "Light breeze" },
+      { day: "Day 5", tempC: 32, rainProbability: 25, humidity: 64, condition: "Partly cloudy" },
+      { day: "Day 6", tempC: 33, rainProbability: 15, humidity: 58, condition: "Clear skies" },
+      { day: "Day 7", tempC: 34, rainProbability: 10, humidity: 55, condition: "Sunny" },
+    ],
+    risk: "Low",
+    riskNote: "Stable coastal/delta weather conditions. Ideal for standard harvest planning and field drying.",
+    demo: true,
+  },
+  Vadlamudi: {
+    location: "Vadlamudi, Guntur, Andhra Pradesh",
+    currentTempC: 32,
+    condition: "Mostly Clear",
+    rainProbability: 22,
+    humidity: 66,
+    forecast: [
+      { day: "Today", tempC: 32, rainProbability: 22, humidity: 66, condition: "Mostly clear" },
+      { day: "Tomorrow", tempC: 33, rainProbability: 18, humidity: 62, condition: "Sunny" },
+      { day: "Day 3", tempC: 31, rainProbability: 30, humidity: 69, condition: "Partly cloudy" },
+      { day: "Day 4", tempC: 31, rainProbability: 35, humidity: 70, condition: "Passing clouds" },
+      { day: "Day 5", tempC: 32, rainProbability: 20, humidity: 65, condition: "Mostly clear" },
+      { day: "Day 6", tempC: 34, rainProbability: 15, humidity: 58, condition: "Sunny" },
+      { day: "Day 7", tempC: 34, rainProbability: 10, humidity: 54, condition: "Sunny & dry" },
+    ],
+    risk: "Low",
+    riskNote: "Favorable dry spell expected over the next 4 days. Safe for transport and mandi dispatch.",
+    demo: true,
+  },
   Nashik: {
     location: "Nashik, Maharashtra",
     currentTempC: 28,
@@ -631,6 +669,8 @@ export const initialNotifications: NotificationItem[] = [
 export const cropOptions = ["Tomato", "Onion", "Potato", "Chilli"] as const;
 
 export const locationOptions = [
+  "Guntur",
+  "Vadlamudi",
   "Nashik",
   "Pune",
   "Nagpur",

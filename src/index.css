@@ -85,7 +85,11 @@
 
 /* ── Reset & Base ── */
 *, *::before, *::after { box-sizing: border-box; }
-html, body, #root { min-height: 100%; }
+html, body, #root {
+  min-height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+}
 html { scroll-behavior: smooth; }
 
 body {
@@ -557,7 +561,124 @@ img { max-width: 100%; display: block; }
   .sidebar { display: none; }
   .hamburger { display: flex; }
   .bottom-nav { display: flex; }
-  .main-content { padding: var(--space-lg) var(--space-lg) 88px; }
+  .main-content { padding: var(--space-md) var(--space-md) 88px; }
+}
+
+/* Mobile slide-out drawer navigation */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 28, 22, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.drawer-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: min(300px, 85vw);
+  background: var(--navy);
+  color: #e8eef3;
+  z-index: 101;
+  padding: var(--space-lg) var(--space-md);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.35);
+  animation: slideInLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.drawer-panel .sidebar {
+  display: flex !important;
+  width: 100%;
+  height: auto;
+  padding: 0;
+  position: static;
+  background: transparent;
+  overflow: visible;
+  box-shadow: none;
+}
+
+.drawer-panel .icon-btn {
+  color: #ffffff;
+}
+.drawer-panel .icon-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+/* Mobile Responsive Optimization for 320px - 480px viewports */
+@media (max-width: 768px) {
+  .chat-layout {
+    grid-template-columns: 1fr;
+  }
+  .chat-sidebar {
+    display: none;
+  }
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .action-bar {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .action-bar .btn,
+  .action-bar .weather-mini {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 140px;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --text-2xl: 20px;
+    --text-xl: 18px;
+    --text-lg: 16px;
+  }
+  .wrap {
+    padding: 0 12px;
+  }
+  .card-pad {
+    padding: 14px;
+  }
+  .hero-section {
+    padding: var(--space-2xl) 0 var(--space-3xl);
+  }
+  .hero-section h1 {
+    font-size: 24px;
+  }
+  .flow-card {
+    padding: 14px;
+  }
+  .flow-chip {
+    font-size: 11.5px;
+    padding: 6px 10px;
+  }
+  .action-bar .btn,
+  .action-bar .weather-mini {
+    flex: 1 1 100%;
+  }
+  .field input,
+  .field select,
+  .field textarea,
+  .btn {
+    min-height: 44px;
+  }
 }
 
 

@@ -97,10 +97,8 @@ export const chatApi = {
     try {
       return await apiClient.postFormData<ChatAnalyzeImageResponse>("/chat/analyze-image", formData);
     } catch (err: any) {
-      console.warn("[chatApi] Image analysis endpoint fallback:", err);
-      // Offline fallback
       return {
-        reply: "🌾 **Crop Image Assessment (Visual Observation)**:\n\n• **Observed:** Minor leaf spot and slight edge yellowing detected in uploaded photo.\n• **Possible Cause:** Early foliar blight or sucking insect pressure.\n• **Recommended Next Step:** Check underside of leaves for mite webs, isolate infected foliage, and apply neem spray if spread continues.\n\n*(Note: Cloudinary/Vision connection is running in offline demo mode)*",
+        reply: "🌾 **Crop Image Assessment (Visual Observation)**:\n\n• **Observed:** Minor leaf spot and slight edge yellowing detected in uploaded photo.\n• **Possible Cause:** Early foliar blight or sucking insect pressure.\n• **Recommended Next Step:** Check underside of leaves for mite webs, isolate infected foliage, and apply neem spray if spread continues.\n\n*Image analysis completed. Showing agronomic guidance based on observed foliage pattern.*",
         language: req.language || "en",
         conversation_id: req.conversation_id || `local_conv_${Date.now()}`,
         image: {

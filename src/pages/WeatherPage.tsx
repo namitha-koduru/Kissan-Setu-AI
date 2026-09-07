@@ -1,32 +1,86 @@
-import { useState } from "react";
-import { CloudSun, AlertTriangle } from "lucide-react";
+import { useMemo, useState } from "react";
+import { CloudSun, AlertTriangle, MapPin } from "lucide-react";
 import { weatherByLocation, locationOptions } from "../data/demo";
+import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import type { WeatherSnapshot } from "../types";
 
 export function WeatherPage() {
+  const { user } = useAuth();
   const { t } = useLanguage();
-  const [selectedLocation, setSelectedLocation] = useState<string>("Nashik");
-  const weather = weatherByLocation[selectedLocation] || weatherByLocation.Nashik;
+
+  const initialLoc = useMemo(() => {
+    if (user?.district && locationOptions.includes(user.district as any)) return user.district;
+    if (user?.location) {
+      const p = user.location.split(",")[0].trim();
+      if (locationOptions.includes(p as any)) return p;
+    }
+    return user?.district || user?.location?.split(",")[0]?.trim() || "Guntur";
+  }, [user]);
+
+  const [selectedLocation, setSelectedLocation] = useState<string>(initialLoc);
+
+  const availableOptions = useMemo(() => {
+    const list = [...locationOptions];
+    if (user?.district && !list.includes(user.district as any)) {
+      list.unshift(user.district as any);
+    }
+    return list;
+  }, [user]);
+
+  const weather: WeatherSnapshot = useMemo(() => {
+    if (weatherByLocation[selectedLocation]) {
+      return weatherByLocation[selectedLocation];
+    }
+    // Dynamic localized weather synthesis for any custom Indian district
+    const locName = user?.location || `${selectedLocation}, India`;
+    return {
+      location: locName,
+      currentTempC: 31,
+      condition: "Partly Cloudy",
+      rainProbability: 24,
+      humidity: 64,
+      forecast: [
+        { day: "Today", tempC: 31, rainProbability: 24, humidity: 64, condition: "Partly cloudy" },
+        { day: "Tomorrow", tempC: 32, rainProbability: 20, humidity: 60, condition: "Mostly clear" },
+        { day: "Day 3", tempC: 30, rainProbability: 35, humidity: 68, condition: "Passing clouds" },
+        { day: "Day 4", tempC: 30, rainProbability: 40, humidity: 72, condition: "Light showers" },
+        { day: "Day 5", tempC: 31, rainProbability: 25, humidity: 65, condition: "Partly cloudy" },
+        { day: "Day 6", tempC: 33, rainProbability: 15, humidity: 58, condition: "Clear skies" },
+        { day: "Day 7", tempC: 33, rainProbability: 10, humidity: 54, condition: "Sunny & dry" },
+      ],
+      risk: "Low",
+      riskNote: `Weather conditions across ${selectedLocation} remain stable and favorable for harvest operations.`,
+      demo: true,
+    };
+  }, [selectedLocation, user]);
 
   return (
     <div className="wrap">
       <div className="page-header">
         <div>
+          <div className="flex flex-center gap-xs" style={{ marginBottom: 4 }}>
+            <MapPin size={15} color="var(--green-deep)" />
+            <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--green-deep)" }}>
+              {weather.location || `${selectedLocation}, India`}
+            </span>
+          </div>
           <h1>{t("weather.title", "Weather Risk Intelligence")}</h1>
           <p className="page-subtitle">
             {t("weather.subtitle", "Meteorological models evaluated for crop vulnerability, harvest risk & logistics safety.")}
           </p>
         </div>
 
-        <div className="page-actions">
+        <div className="page-actions flex flex-center gap-sm">
           <label htmlFor="weather-district" className="text-sm fw-700 text-muted">{t("onboarding.district", "District")}:</label>
           <select
             id="weather-district"
             value={selectedLocation}
             onChange={(e) => setSelectedLocation(e.target.value)}
             className="form-control"
+            style={{ minWidth: 160 }}
           >
-            {locationOptions.map((loc) => (
+            {availableOptions.map((loc) => (
               <option key={loc} value={loc}>
                 {loc}
               </option>

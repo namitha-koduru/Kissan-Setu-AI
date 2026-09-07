@@ -130,14 +130,18 @@ class NetRealizationCalculationResponse(BaseModel):
 
 class MarketIntelligenceOverviewResponse(BaseModel):
     crop: Dict[str, Any]
+    crop_name: Optional[str] = None
+    quantity_quintals: Optional[float] = None
     current_price: PriceHistorySummary
+    analytics: Optional[Any] = None
     trend: Dict[str, Any]
     forecast: PriceForecastResponse
     decision: SellDecisionResponse
     best_market: MarketComparisonItem
     best_buyer: Optional[BuyerOpportunityItem] = None
     market_comparisons: List[MarketComparisonItem] = Field(default_factory=list)
-    buyer_opportunities: List[BuyerOpportunityItem] = Field(default_factory=list)
+    comparison: Optional[Any] = None
+    buyer_opportunities: Any = Field(default_factory=list)
     farm_context_summary: Dict[str, Any]
     data_source: str = "Verified Regional APMC Mandi & Institutional Aggregators"
     generated_at: str

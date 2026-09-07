@@ -193,10 +193,20 @@ export function OnboardingPage() {
   };
 
   const handleAddOtherCrop = () => {
-    if (otherCropInput.trim() && !selectedCrops.includes(otherCropInput.trim())) {
-      setSelectedCrops([...selectedCrops, otherCropInput.trim()]);
+    const trimmed = otherCropInput.trim();
+    if (trimmed) {
+      if (!selectedCrops.some((c) => c.toLowerCase() === trimmed.toLowerCase())) {
+        setSelectedCrops([...selectedCrops, trimmed]);
+      }
       setOtherCropInput("");
       setShowOtherCrop(false);
+    }
+  };
+
+  const handleRemoveCustomCrop = (cropName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (selectedCrops.length > 1) {
+      setSelectedCrops(selectedCrops.filter((c) => c !== cropName));
     }
   };
 
@@ -541,6 +551,41 @@ export function OnboardingPage() {
                       </div>
                     );
                   })}
+
+                  {/* Render Custom Added Crops */}
+                  {selectedCrops
+                    .filter((c) => !ALL_SUPPORTED_CROPS.some((pre) => pre.name.toLowerCase() === c.toLowerCase()))
+                    .map((customName) => (
+                      <div
+                        key={customName}
+                        className="chip selected"
+                        onClick={() => toggleCrop(customName)}
+                        role="button"
+                        tabIndex={0}
+                        style={{ border: "1.5px solid var(--green-deep)" }}
+                      >
+                        <span style={{ marginRight: 4 }}>🌱</span>
+                        {customName}
+                        <Check size={14} style={{ display: "inline", marginLeft: 4 }} />
+                        <button
+                          type="button"
+                          onClick={(e) => handleRemoveCustomCrop(customName, e)}
+                          title="Remove custom crop"
+                          style={{
+                            background: "transparent",
+                            border: "none",
+                            padding: "0 0 0 6px",
+                            cursor: "pointer",
+                            color: "var(--danger)",
+                            fontSize: "13px",
+                            fontWeight: 700,
+                            lineHeight: 1,
+                          }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
                 </div>
 
                 {/* Other Crop Button / Input */}
@@ -557,8 +602,15 @@ export function OnboardingPage() {
                     <input
                       value={otherCropInput}
                       onChange={(e) => setOtherCropInput(e.target.value)}
-                      placeholder="Enter crop name (e.g. Soybean, Mustard)"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddOtherCrop();
+                        }
+                      }}
+                      placeholder="Enter crop name (e.g. Panasa, Soybean)"
                       style={{ maxWidth: 260 }}
+                      autoFocus
                     />
                     <button
                       type="button"
@@ -570,7 +622,10 @@ export function OnboardingPage() {
                     <button
                       type="button"
                       className="btn btn-ghost btn-sm"
-                      onClick={() => setShowOtherCrop(false)}
+                      onClick={() => {
+                        setShowOtherCrop(false);
+                        setOtherCropInput("");
+                      }}
                     >
                       Cancel
                     </button>

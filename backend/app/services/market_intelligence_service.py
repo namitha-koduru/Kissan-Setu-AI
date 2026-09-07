@@ -588,15 +588,102 @@ class MarketIntelligenceService:
             mandi_benchmark_qtl=history.current_modal_price
         )
         best_buyer = buyer_opps[0] if buyer_opps else None
+        qty_qtl = round(final_qty / 100.0, 1)
+
+        analytics_dict = {
+            "crop_name": crop_name,
+            "mandi_name": history.market,
+            "current_modal_price": history.current_modal_price,
+            "price_unit": "₹/Quintal",
+            "avg_7d": history.avg_7d or history.current_modal_price,
+            "avg_30d": history.avg_30d or history.current_modal_price,
+            "avg_90d": history.current_modal_price,
+            "trend_direction": (history.trend_direction or "STABLE").upper(),
+            "trend_percentage_7d": history.change_7d_percent or 0.0,
+            "volatility_score": 15.0,
+            "volatility_level": (history.volatility or "LOW").upper(),
+            "history_points": [
+                {
+                    "date": p.date,
+                    "min_price": p.min_price,
+                    "max_price": p.max_price,
+                    "modal_price": p.modal_price or p.price,
+                    "mandi_name": history.market
+                }
+                for p in history.history
+            ]
+        }
+
+        comparison_dict = {
+            "crop_name": crop_name,
+            "quantity_quintals": qty_qtl,
+            "best_mandi_name": best_market.market_name if best_market else "Local APMC",
+            "best_net_per_kg": best_market.net_price_per_kg if best_market else 25.0,
+            "highest_gross_mandi_name": best_market.market_name if best_market else "Local APMC",
+            "highest_gross_price_per_kg": best_market.modal_price_per_kg if best_market else 28.0,
+            "net_vs_gross_insight": f"{best_market.market_name if best_market else 'Local Mandi'} provides highest net realization after transit and mandi charges.",
+            "markets": [
+                {
+                    "mandi_id": m.market_id,
+                    "mandi_name": m.market_name,
+                    "location": f"{m.district}, {m.state}",
+                    "distance_km": m.distance_km,
+                    "gross_price_per_quintal": m.modal_price_qtl,
+                    "gross_price_per_kg": m.modal_price_per_kg,
+                    "transport_cost_per_kg": round(m.estimated_transport_cost / (final_qty or 2000.0), 2),
+                    "handling_and_fees_per_kg": round((m.estimated_handling_cost + m.estimated_market_charges) / (final_qty or 2000.0), 2),
+                    "net_realization_per_kg": m.net_price_per_kg,
+                    "net_realization_total": m.estimated_net_realization,
+                    "is_best_net": m.is_best_market,
+                    "is_highest_gross": idx == 0,
+                    "advantage_vs_local_total": max(0.0, m.price_diff_vs_local_qtl * (final_qty / 100.0)),
+                    "arrival_volume": "1,200 Qtl",
+                    "demand_level": m.buyer_demand
+                }
+                for idx, m in enumerate(comparisons)
+            ]
+        }
+
+        buyer_opps_dict = {
+            "crop_name": crop_name,
+            "opportunities_count": len(buyer_opps),
+            "best_direct_buyer_name": best_buyer.name if best_buyer else "Direct Buyer",
+            "best_offered_net_per_kg": best_buyer.indicative_offer_kg if best_buyer else 29.0,
+            "direct_vs_mandi_premium_per_kg": 2.5,
+            "opportunities": [
+                {
+                    "buyer_id": b.buyer_id,
+                    "buyer_name": b.name,
+                    "company_name": b.organization,
+                    "is_verified": True,
+                    "rating": b.rating,
+                    "crop_name": b.crop,
+                    "quality_grade": "Grade A",
+                    "quantity_required_quintals": b.required_quantity_mt * 10.0,
+                    "offered_price_per_quintal": b.indicative_offer_qtl,
+                    "offered_price_per_kg": b.indicative_offer_kg,
+                    "location": b.location,
+                    "distance_km": b.distance_km,
+                    "net_advantage_per_kg": round(b.indicative_offer_kg - (best_market.net_price_per_kg if best_market else 25.0), 2),
+                    "estimated_net_realization_total": round(b.indicative_offer_kg * final_qty, 2),
+                    "payment_terms": b.payment_terms,
+                    "deadline_days": 4
+                }
+                for b in buyer_opps
+            ]
+        }
 
         return MarketIntelligenceOverviewResponse(
             crop={
                 "name": crop_name,
                 "quantity_kg": final_qty,
-                "quantity_qtl": round(final_qty / 100.0, 1),
+                "quantity_qtl": qty_qtl,
                 "growth_stage": crop_stage
             },
+            crop_name=crop_name,
+            quantity_quintals=qty_qtl,
             current_price=history,
+            analytics=analytics_dict,
             trend={
                 "direction": history.trend_direction,
                 "change_7d_percent": history.change_7d_percent,
@@ -608,7 +695,8 @@ class MarketIntelligenceService:
             best_market=best_market,
             best_buyer=best_buyer,
             market_comparisons=comparisons,
-            buyer_opportunities=buyer_opps,
+            comparison=comparison_dict,
+            buyer_opportunities=buyer_opps_dict,
             farm_context_summary={
                 "farmer_name": farmer.name if farmer else "Ramesh Kumar",
                 "location": f"{farmer_loc}, Maharashtra",

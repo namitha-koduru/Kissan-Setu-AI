@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -13,6 +14,7 @@ import {
   initialOffers,
   initialTransaction,
 } from "../data/demo";
+import { useAuth } from "./AuthContext";
 import type {
   CropRecord,
   LotRecord,
@@ -50,23 +52,107 @@ interface AppStateValue {
 
 const AppStateContext = createContext<AppStateValue | null>(null);
 
+function cropIconFor(name: string): string {
+  const n = name.toLowerCase();
+  if (n.includes("tomato")) return "🍅";
+  if (n.includes("onion")) return "🧅";
+  if (n.includes("potato")) return "🥔";
+  if (n.includes("chilli") || n.includes("chili")) return "🌶️";
+  if (n.includes("grape")) return "🍇";
+  if (n.includes("pomegranate")) return "🍎";
+  if (n.includes("wheat")) return "🌾";
+  if (n.includes("cotton")) return "☁️";
+  if (n.includes("rice") || n.includes("paddy")) return "🌾";
+  if (n.includes("banana")) return "🍌";
+  if (n.includes("mango")) return "🥭";
+  if (n.includes("jackfruit") || n.includes("panasa")) return "🍈";
+  return "🌱";
+}
+
+function buildUserCropRecords(cropNames: string[], location: string): CropRecord[] {
+  return cropNames.map((name, idx) => {
+    const slug = name.toLowerCase().replace(/[^a-z0-9]/g, "-");
+    const existing = initialCrops.find((c) => c.name.toLowerCase() === name.toLowerCase());
+    if (existing) {
+      return {
+        ...existing,
+        id: `user-crop-${slug}-${idx}`,
+        location: location || existing.location,
+      };
+    }
+    return {
+      id: `user-crop-${slug}-${idx}`,
+      name,
+      icon: cropIconFor(name),
+      variety: "Local / Farm Selection",
+      quantityKg: 500,
+      unit: "kg",
+      sowingDate: "2026-06-15",
+      stage: "Near maturity",
+      location: location || "Your Farm Location",
+      expectedPrice: 32,
+      harvestEst: "10–15 Sep 2026",
+      harvestWindow: "3–5 days",
+      recommendation: "SELL",
+      bestMarket: "Local Regional Mandi",
+      netRealization: 31,
+      confidence: 84,
+    };
+  });
+}
+
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  const [crops, setCrops] = useState<CropRecord[]>(initialCrops);
+  const { user } = useAuth();
+
+  const [crops, setCrops] = useState<CropRecord[]>(() => {
+    if (user?.preferredCrops && user.preferredCrops.length > 0) {
+      return buildUserCropRecords(user.preferredCrops, user.location || user.district || "India");
+    }
+    return user?.id === "u-farmer" ? initialCrops : [];
+  });
+
   const [lots, setLots] = useState<LotRecord[]>(initialLots);
   const [offers, setOffers] = useState<OfferRecord[]>(initialOffers);
   const [transaction, setTransaction] = useState<TransactionRecord>(initialTransaction);
   const [notifications, setNotifications] = useState<NotificationItem[]>(initialNotifications);
-  const [activeCropId, setActiveCropId] = useState<string>(initialCrops[0]?.id || "crop-tomato");
+  const [activeCropId, setActiveCropId] = useState<string>(() => crops[0]?.id || "crop-tomato");
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  const [onboardData, setOnboardData] = useState<OnboardingData>({
-    village: "Niphad",
-    district: "Nashik",
-    state: "Maharashtra",
-    crops: ["Tomato", "Onion"],
+
+  const [onboardData, setOnboardData] = useState<OnboardingData>(() => ({
+    village: user?.village || "Local Village",
+    district: user?.district || "Local District",
+    state: user?.state || "India",
+    country: "India",
+    crops: user?.preferredCrops || ["Tomato"],
     quantity: "500 kg",
-    land: "2.5 acres",
-    markets: ["Nashik", "Ahmednagar", "Pune"],
-  });
+    land: user?.landAcreage || "2.5 acres",
+    markets: ["Local Regional APMC", "Nearby Market Hub"],
+  }));
+
+  // Sync crops and onboarding data when authenticated user changes
+  useEffect(() => {
+    if (user) {
+      if (user.preferredCrops && user.preferredCrops.length > 0) {
+        const userCrops = buildUserCropRecords(user.preferredCrops, user.location || user.district || "India");
+        setCrops(userCrops);
+        if (userCrops[0]) {
+          setActiveCropId(userCrops[0].id);
+        }
+      } else if (user.id === "u-farmer") {
+        setCrops(initialCrops);
+        setActiveCropId(initialCrops[0]?.id || "crop-tomato");
+      }
+
+      setOnboardData((prev) => ({
+        ...prev,
+        village: user.village || prev.village,
+        district: user.district || prev.district,
+        state: user.state || prev.state,
+        crops: user.preferredCrops && user.preferredCrops.length > 0 ? user.preferredCrops : prev.crops,
+        land: user.landAcreage || prev.land,
+      }));
+    }
+  }, [user]);
 
   const showToast = useCallback((message: string) => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`;

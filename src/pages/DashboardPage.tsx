@@ -25,9 +25,10 @@ export function DashboardPage() {
   const { t } = useLanguage();
   const navigate = useNavigate();
 
-  const weather = weatherByLocation.Nashik;
+  const userLocKey = user?.district || (user?.location ? user.location.split(",")[0].trim() : "Guntur");
+  const weather = weatherByLocation[userLocKey] || weatherByLocation.Guntur || weatherByLocation.Nashik;
   const tomatoMarkets = marketsByCrop.Tomato;
-  const focusCrop = crops.find((c) => c.id === "crop-tomato") || crops[0];
+  const focusCrop = crops[0] || { name: "Tomato", id: "crop-tomato" };
 
   return (
     <div className="wrap">
