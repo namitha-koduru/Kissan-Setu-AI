@@ -1,11 +1,13 @@
 import { Link } from "react-router-dom";
 import type { RecommendationResult } from "../types";
 import { DecisionBadge } from "./DecisionBadge";
+import { useLanguage } from "../context/LanguageContext";
 
 export function RecommendationCard({ rec }: { rec: RecommendationResult }) {
+  const { t } = useLanguage();
   return (
     <article className="card rec-preview">
-      <div className="section-label">Recommendation</div>
+      <div className="section-label">{t("recommendations.decision")}</div>
       <DecisionBadge decision={rec.decision} />
       <p style={{ marginTop: 16 }}>
         {rec.crop} · {rec.quantityKg} kg · {rec.stage}
@@ -20,16 +22,16 @@ export function RecommendationCard({ rec }: { rec: RecommendationResult }) {
           <strong>{rec.buyerDemand}</strong>
         </div>
         <div>
-          <div className="small muted">Best market</div>
+          <div className="small muted">{t("crops.bestMarket")}</div>
           <strong>{rec.bestMarket.name}</strong>
         </div>
       </div>
       <p style={{ marginTop: 12 }}>
-        Expected net realization <strong>₹{rec.bestMarket.netPerKg}/kg</strong>
+        {t("crops.netRealization")} <strong>₹{rec.bestMarket.netPerKg}/kg</strong>
       </p>
       <p className="small">{rec.reasons[0]}</p>
       <Link className="btn btn-primary" to="/recommendation">
-        Open AI Decision Center
+        {t("recommendations.title")}
       </Link>
     </article>
   );

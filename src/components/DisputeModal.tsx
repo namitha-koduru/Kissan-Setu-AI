@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { AlertTriangle, X, CheckCircle2 } from "lucide-react";
 import buyerMatchingApi from "../services/buyerMatchingApi";
+import { useLanguage } from "../context/LanguageContext";
 
 interface Props {
   transactionId: number;
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function DisputeModal({ transactionId, isOpen, onClose, onDisputeFiled }: Props) {
+  const { t } = useLanguage();
   const [category, setCategory] = useState("payment");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
@@ -95,7 +97,7 @@ export function DisputeModal({ transactionId, isOpen, onClose, onDisputeFiled }:
               Your issue has been logged in the transaction audit trail. Our support and mediation desk will review the records.
             </p>
             <button className="btn btn-primary btn-block" onClick={onClose} style={{ marginTop: 16 }}>
-              Close Window
+              {t("common.close")}
             </button>
           </div>
         ) : (
@@ -125,10 +127,10 @@ export function DisputeModal({ transactionId, isOpen, onClose, onDisputeFiled }:
 
             <div style={{ display: "flex", gap: 10 }}>
               <button className="btn btn-primary" type="submit" disabled={loading || !description.trim()} style={{ flex: 1 }}>
-                {loading ? "Submitting..." : "Submit Grievance"}
+                {loading ? t("common.loading") : t("common.submit")}
               </button>
               <button className="btn btn-ghost" type="button" onClick={onClose} style={{ flex: 0.5 }}>
-                Cancel
+                {t("common.cancel")}
               </button>
             </div>
           </form>

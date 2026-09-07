@@ -1,7 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import type { LotRecord } from "../types";
+import { useLanguage } from "../context/LanguageContext";
 
 export function LotCard({ lot }: { lot: LotRecord }) {
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const getStatusBadge = (status: string) => {
@@ -49,7 +51,7 @@ export function LotCard({ lot }: { lot: LotRecord }) {
             type="button"
             onClick={() => navigate(`/offers?lot=${lot.id}`)}
           >
-            View Offers ({lot.interests || 2})
+            {t("nav.offers")} ({lot.interests || 2})
           </button>
         </div>
       </div>

@@ -1,8 +1,10 @@
 import { CheckCircle2, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { BuyerListing } from "../types";
+import { useLanguage } from "../context/LanguageContext";
 
 export function BuyerCard({ buyer }: { buyer: BuyerListing }) {
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   return (
@@ -50,14 +52,14 @@ export function BuyerCard({ buyer }: { buyer: BuyerListing }) {
             type="button"
             onClick={() => navigate(`/lots/create?buyer=${buyer.id}`)}
           >
-            Create Lot for Buyer
+            {t("buyers.connect")}
           </button>
           <button
             className="btn btn-primary btn-sm"
             type="button"
             onClick={() => navigate(`/buyers/${buyer.id}`)}
           >
-            View Details
+            {t("buyers.viewDetail")}
           </button>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { CheckCircle2 } from "lucide-react";
 import type { OfferRecord } from "../types";
+import { useLanguage } from "../context/LanguageContext";
 
 export function OfferCard({
   offer,
@@ -12,6 +13,7 @@ export function OfferCard({
   onReject: () => void;
   onCounter: () => void;
 }) {
+  const { t } = useLanguage();
   return (
     <div className="offer-card">
       <div className="buyer-top">
@@ -75,14 +77,14 @@ export function OfferCard({
       {offer.status === "Pending" && (
         <div className="buyer-foot">
           <button className="btn btn-danger-outline btn-sm" type="button" onClick={onReject}>
-            Reject Offer
+            {t("offers.reject")}
           </button>
           <div style={{ display: "flex", gap: 8 }}>
             <button className="btn btn-outline btn-sm" type="button" onClick={onCounter}>
-              Counter Offer
+              {t("offers.counter")}
             </button>
             <button className="btn btn-primary btn-sm" type="button" onClick={onAccept}>
-              Accept Offer
+              {t("offers.accept")}
             </button>
           </div>
         </div>

@@ -1,12 +1,14 @@
 import { AlertTriangle, CloudRain, Sun, Cloud } from "lucide-react";
 import type { WeatherSnapshot } from "../types";
+import { useLanguage } from "../context/LanguageContext";
 
 export function WeatherCard({ weather }: { weather: WeatherSnapshot }) {
+  const { t } = useLanguage();
   return (
     <div className="card card-pad">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
         <div>
-          <h3 style={{ fontSize: "16px", fontWeight: 800 }}>Weather Intelligence</h3>
+          <h3 style={{ fontSize: "16px", fontWeight: 800 }}>{t("weather.title")}</h3>
           <p style={{ fontSize: "12.5px", color: "var(--ink-soft)" }}>{weather.location}</p>
         </div>
         <span

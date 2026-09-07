@@ -2,7 +2,7 @@ import { useState } from "react";
 import { X, FlaskConical, Check, AlertCircle, Info, Sparkles } from "lucide-react";
 import { soilApi } from "../services/soilApi";
 import type { SoilProfileInput, SoilInterpretation } from "../services/soilApi";
-
+import { useLanguage } from "../context/LanguageContext";
 
 interface SoilFormModalProps {
   isOpen: boolean;
@@ -30,6 +30,7 @@ export function SoilFormModal({
   farmerId = 1,
   onSaved,
 }: SoilFormModalProps) {
+  const { t } = useLanguage();
   const profile = currentSoil?.profile;
 
   const [soilType, setSoilType] = useState<string>(profile?.soil_type || "Black");
@@ -473,7 +474,7 @@ export function SoilFormModal({
               className="btn btn-secondary"
               style={{ padding: "10px 18px", borderRadius: "8px" }}
             >
-              Cancel
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
@@ -489,7 +490,7 @@ export function SoilFormModal({
               }}
             >
               <Sparkles size={16} />
-              <span>{isSubmitting ? "Analyzing & Saving..." : "Save Soil Profile"}</span>
+              <span>{isSubmitting ? t("common.loading") : t("common.save")}</span>
             </button>
           </div>
         </form>
