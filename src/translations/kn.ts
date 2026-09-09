@@ -335,4 +335,34 @@ export const kn = {
   "decision.sell": "ಈಗಲೇ ಮಾರಿ (SELL NOW)",
   "decision.wait": "ಕಾಯಿರಿ (WAIT / HOLD)",
   "decision.switch": "ಮಾರುಕಟ್ಟೆ ಬದಲಾಯಿಸಿ (SWITCH MARKET)",
+
+  // 404 Page
+  "common.pageNotFound": "ಪುಟ ಕಂಡುಬಂದಿಲ್ಲ",
+  "common.wanderedOffField": "ನೀವು ಕೃಷಿ ಮಾರ್ಗದಿಂದ ಬೇರೆಡೆಗೆ ಹೋದಂತೆ ಕಾಣುತ್ತಿದೆ. ನೀವು ಹುಡುಕುತ್ತಿರುವ ಪುಟ ಅಸ್ತಿತ್ವದಲ್ಲಿಲ್ಲ ಅಥವಾ ಸ್ಥಳಾಂತರಿಸಲಾಗಿದೆ.",
+  "common.goToHome": "ಮುಖಪುಟಕ್ಕೆ ಹೋಗಿ",
+  "common.goBack": "ಹಿಂದೆ ಹೋಗಿ",
+
+  // Onboarding
+  "onboarding.back": "ಹಿಂದೆ",
+  "onboarding.continue": "ಮುಂದುವರಿಸಿ",
+  "onboarding.finish": "ಸೆಟಪ್ ಪೂರ್ಣಗೊಳಿಸಿ",
+  "onboarding.farmerTagline": "ನಿಮ್ಮ ಜಮೀನನ್ನು ಉತ್ತಮ ಮಾರುಕಟ್ಟೆಗಳಿಗೆ ಸಂಪರ್ಕಿಸಿ.",
+  "onboarding.fpoTagline": "ನಿಮ್ಮ ಸದಸ್ಯರನ್ನು ಸಂಘಟಿಸಿ, ಉತ್ಪನ್ನಗಳನ್ನು ಒಟ್ಟುಗೂಡಿಸಿ ಮತ್ತು ಖರೀದಿದಾರರೊಂದಿಗೆ ಸಂಪರ್ಕ ಸಾಧಿಸಿ.",
+  "onboarding.buyerTagline": "ರೈತರು ಮತ್ತು FPO ಗಳಿಂದ ಪರಿಶೀಲಿಸಿದ ಉತ್ಪನ್ನಗಳನ್ನು ಸಂಗ್ರಹಿಸಿ.",
+  "onboarding.farmerSetup": "ರೈತ ಸೆಟಪ್",
+  "onboarding.fpoSetup": "FPO ಸೆಟಪ್",
+  "onboarding.buyerSetup": "ಖರೀದಿದಾರರ ಸೆಟಪ್",
+  "onboarding.step": "ಹಂತ",
+  "onboarding.of": "ರ",
+  "onboarding.cropWiseLandAllocation": "ಬೆಳೆವಾರು ಜಮೀನು ಹಂಚಿಕೆ",
+  "onboarding.allocated": "ಹಂಚಿಕೆ ಮಾಡಲಾಗಿದೆ",
+  "onboarding.remaining": "ಉಳಿದಿದೆ",
+  "onboarding.acres": "ಎಕರೆ",
+  "onboarding.selectState": "ರಾಜ್ಯವನ್ನು ಆಯ್ಕೆಮಾಡಿ",
+  "onboarding.selectDistrict": "ಜಿಲ್ಲೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ",
+  "onboarding.searchCrop": "ಬೆಳೆಯನ್ನು ಹುಡುಕಿ (ಉದಾ. ಹತ್ತಿ, ಟೊಮೆಟೊ)...",
+  "onboarding.completeFarmerSetup": "ರೈತ ಸೆಟಪ್ ಪೂರ್ಣಗೊಳಿಸಿ",
+  "onboarding.completeFpoSetup": "FPO ಸೆಟಪ್ ಪೂರ್ಣಗೊಳಿಸಿ",
+  "onboarding.completeBuyerSetup": "ಖರೀದಿದಾರರ ಸೆಟಪ್ ಪೂರ್ಣಗೊಳಿಸಿ",
 };
+

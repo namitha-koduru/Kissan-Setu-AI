@@ -27,7 +27,7 @@ export function AppLayout() {
           />
           <div className="drawer-panel" role="dialog" aria-label="Navigation menu">
             <div className="flex flex-between flex-center mb-lg">
-              <Logo to="/dashboard" />
+              <Logo to={user.role === "fpo" ? "/fpo" : user.role === "buyer" ? "/buyers" : "/dashboard"} />
               <button
                 className="icon-btn"
                 type="button"

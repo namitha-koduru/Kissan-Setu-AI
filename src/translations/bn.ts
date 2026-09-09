@@ -335,4 +335,34 @@ export const bn = {
   "decision.sell": "এখনই বিক্রি করুন (SELL NOW)",
   "decision.wait": "অপেক্ষা করুন (WAIT / HOLD)",
   "decision.switch": "বাজার বদলান (SWITCH MARKET)",
+
+  // 404 Page
+  "common.pageNotFound": "পৃষ্ঠা পাওয়া যায়নি",
+  "common.wanderedOffField": "মনে হচ্ছে আপনি চাষের পথ থেকে দূরে চলে এসেছেন। আপনি যে পৃষ্ঠাটি খুঁজছেন তা বিদ্যমান নেই বা সরানো হয়েছে।",
+  "common.goToHome": "হোমে যান",
+  "common.goBack": "পিছনে যান",
+
+  // Onboarding
+  "onboarding.back": "পেছনে",
+  "onboarding.continue": "চালিয়ে যান",
+  "onboarding.finish": "সেটআপ সম্পন্ন করুন",
+  "onboarding.farmerTagline": "আপনার খামারকে আরও ভালো বাজারের সাথে সংযুক্ত করুন।",
+  "onboarding.fpoTagline": "আপনার সদস্যদের সংগঠিত করুন, ফসল একত্রিত করুন এবং ক্রেতাদের সাথে সংযুক্ত হন।",
+  "onboarding.buyerTagline": "কৃষক এবং FPO থেকে যাচাইকৃত ফসল সংগ্রহ করুন।",
+  "onboarding.farmerSetup": "কৃষক সেটআপ",
+  "onboarding.fpoSetup": "FPO সেটআপ",
+  "onboarding.buyerSetup": "ক্রেতা সেটআপ",
+  "onboarding.step": "ধাপ",
+  "onboarding.of": "এর",
+  "onboarding.cropWiseLandAllocation": "ফসল অনুযায়ী জমি বরাদ্দ",
+  "onboarding.allocated": "বরাদ্দকৃত",
+  "onboarding.remaining": "অবশিষ্ট",
+  "onboarding.acres": "একর",
+  "onboarding.selectState": "রাজ্য নির্বাচন করুন",
+  "onboarding.selectDistrict": "জেলা নির্বাচন করুন",
+  "onboarding.searchCrop": "ফসল অনুসন্ধান করুন (যেমন তুলা, টমেটো)...",
+  "onboarding.completeFarmerSetup": "কৃষক সেটআপ সম্পন্ন করুন",
+  "onboarding.completeFpoSetup": "FPO সেটআপ সম্পন্ন করুন",
+  "onboarding.completeBuyerSetup": "ক্রেতা সেটআপ সম্পন্ন করুন",
 };
+

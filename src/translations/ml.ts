@@ -335,4 +335,34 @@ export const ml = {
   "decision.sell": "ഇപ്പോൾ വിൽക്കുക (SELL NOW)",
   "decision.wait": "കാത്തിരിക്കുക (WAIT / HOLD)",
   "decision.switch": "വിപണി മാറ്റുക (SWITCH MARKET)",
+
+  // 404 Page
+  "common.pageNotFound": "പേജ് കണ്ടെത്തിയില്ല",
+  "common.wanderedOffField": "നിങ്ങൾ പാതയിൽ നിന്ന് മാറിയതായി തോന്നുന്നു. നിങ്ങൾ തിരയുന്ന പേജ് നിലവിലില്ല അല്ലെങ്കിൽ മാറ്റിയിരിക്കുന്നു.",
+  "common.goToHome": "ഹോമിലേക്ക് പോകുക",
+  "common.goBack": "പിന്നോട്ട് പോകുക",
+
+  // Onboarding
+  "onboarding.back": "തിരികെ",
+  "onboarding.continue": "തുടരുക",
+  "onboarding.finish": "പൂർത്തിയാക്കുക",
+  "onboarding.farmerTagline": "നിങ്ങളുടെ കൃഷിയിടത്തെ മികച്ച വിപണികളുമായി ബന്ധിപ്പിക്കുക.",
+  "onboarding.fpoTagline": "നിങ്ങളുടെ അംഗങ്ങളെ സംഘടിപ്പിക്കുക, വിളകൾ ശേഖരിക്കുക, വാങ്ങുന്നവരുമായി ബന്ധപ്പെടുക.",
+  "onboarding.buyerTagline": "കർഷകരിൽ നിന്നും എഫ്.പി.ഒകളിൽ നിന്നും പരിശോധിച്ചുറപ്പിച്ച വിളകൾ സംഭരിക്കുക.",
+  "onboarding.farmerSetup": "കർഷക സെറ്റപ്പ്",
+  "onboarding.fpoSetup": "FPO സെറ്റപ്പ്",
+  "onboarding.buyerSetup": "വാങ്ങുന്നയാൾ സെറ്റപ്പ്",
+  "onboarding.step": "ഘട്ടം",
+  "onboarding.of": "ൽ",
+  "onboarding.cropWiseLandAllocation": "വിള തിരിച്ചുള്ള ഭൂമി വിഹിതം",
+  "onboarding.allocated": "വിഹിതം നൽകിയത്",
+  "onboarding.remaining": "ബാക്കിയുള്ളത്",
+  "onboarding.acres": "ഏക്കർ",
+  "onboarding.selectState": "സംസ്ഥാനം തിരഞ്ഞെടുക്കുക",
+  "onboarding.selectDistrict": "ജില്ല തിരഞ്ഞെടുക്കുക",
+  "onboarding.searchCrop": "വിള തിരയുക (ഉദാ. പരുത്തി, തക്കാളി)...",
+  "onboarding.completeFarmerSetup": "കർഷക സെറ്റപ്പ് പൂർത്തിയാക്കുക",
+  "onboarding.completeFpoSetup": "FPO സെറ്റപ്പ് പൂർത്തിയാക്കുക",
+  "onboarding.completeBuyerSetup": "വാങ്ങുന്നയാൾ സെറ്റപ്പ് പൂർത്തിയാക്കുക",
 };
+

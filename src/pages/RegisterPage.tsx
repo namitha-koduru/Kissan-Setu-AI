@@ -37,6 +37,7 @@ export function RegisterPage() {
   const [buyerConfirmPassword, setBuyerConfirmPassword] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -176,35 +177,45 @@ export function RegisterPage() {
     setter: (val: string) => void,
     placeholder: string,
     isConfirm = false
-  ) => (
-    <div className="field">
-      <label htmlFor={id}>
-        {label} <span className="required">*</span>
-      </label>
-      <div className="password-wrapper">
-        <input
-          id={id}
-          type={showPassword ? "text" : "password"}
-          value={value}
-          onChange={(e) => setter(e.target.value)}
-          placeholder={placeholder}
-          autoComplete={isConfirm ? "new-password" : "new-password"}
-          required
-        />
-        {!isConfirm && (
+  ) => {
+    const isVisible = isConfirm ? showConfirmPassword : showPassword;
+    const toggleVisible = () => {
+      if (isConfirm) {
+        setShowConfirmPassword((prev) => !prev);
+      } else {
+        setShowPassword((prev) => !prev);
+      }
+    };
+
+    return (
+      <div className="field">
+        <label htmlFor={id}>
+          {label} <span className="required">*</span>
+        </label>
+        <div className="password-wrapper" style={{ position: "relative" }}>
+          <input
+            id={id}
+            type={isVisible ? "text" : "password"}
+            value={value}
+            onChange={(e) => setter(e.target.value)}
+            placeholder={placeholder}
+            autoComplete={isConfirm ? "new-password" : "new-password"}
+            required
+            style={{ paddingRight: "40px" }}
+          />
           <button
             type="button"
             className="password-toggle"
-            onClick={() => setShowPassword(!showPassword)}
-            aria-label={showPassword ? "Hide password" : "Show password"}
+            onClick={toggleVisible}
+            aria-label={isVisible ? "Hide password" : "Show password"}
             tabIndex={-1}
           >
-            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            {isVisible ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
-        )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="auth-shell">
