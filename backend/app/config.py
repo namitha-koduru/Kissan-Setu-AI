@@ -28,6 +28,7 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5173",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "https://kissan-setu-ai.vercel.app",
     ]
 
     @field_validator("CORS_ORIGINS", mode="before")
@@ -43,7 +44,7 @@ class Settings(BaseSettings):
             return self.CORS_ORIGINS
         if isinstance(self.CORS_ORIGINS, str):
             return [i.strip() for i in self.CORS_ORIGINS.split(",") if i.strip()]
-        return ["http://localhost:5173", "http://127.0.0.1:5173"]
+        return ["http://localhost:5173", "http://127.0.0.1:5173", "https://kissan-setu-ai.vercel.app"]
 
     # LLM Settings (Phase 2 & Ollama Local Inference)
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "ollama")  # 'ollama', 'gemini', 'openai', 'groq', 'mock'
