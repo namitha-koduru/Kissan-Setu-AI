@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import buyerMatchingApi, { type BuyerMatchResult } from "../services/buyerMatchingApi";
 import { buyers as demoBuyers } from "../data/demo";
+import type { BuyerListing } from "../types";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -42,9 +43,11 @@ export function BuyerDetailPage() {
       } catch (err) {
         console.warn("Could not fetch backend buyer detail, fallback to demo if available", err);
         // Fallback demo matching
-        const demo = demoBuyers.find((b) => b.id === id || b.id === `b-${id}`) as any;
+        const demo: BuyerListing | undefined = demoBuyers.find(
+          (b: BuyerListing) => b.id === id || b.id === `buyer-${id}` || b.id === `b-${id}`,
+        );
         if (demo) {
-          const rating = demo.rating || 4.8;
+          const rating = demo.paymentRating ? parseFloat(demo.paymentRating) || 4.8 : 4.8;
           setMatchDetail({
             buyer_id: Number(id) || 1,
             buyer_name: demo.name,
