@@ -70,10 +70,14 @@ export const imageApi = {
       if (cropId) formData.append("crop_id", cropId.toString());
 
       const res = await apiClient.postFormData<any>("/images/analyze", formData);
-      if (res && (res.observed_symptoms || res.crop_health || res.detected_crop)) {
+      if (res && (res.observed_symptoms || res.crop_health || res.detected_crop || res.is_mismatch !== undefined)) {
         return {
           image_url: res.image_url,
           detected_crop: res.detected_crop || cropHint || "Cultivated Crop",
+          selected_crop: res.selected_crop || cropHint || undefined,
+          is_mismatch: Boolean(res.is_mismatch),
+          crop_match: res.crop_match !== undefined ? res.crop_match : !res.is_mismatch,
+          mismatch_message: res.mismatch_message || undefined,
           image_quality: res.image_quality || "good",
           observed_symptoms: Array.isArray(res.observed_symptoms) && res.observed_symptoms.length > 0
             ? res.observed_symptoms

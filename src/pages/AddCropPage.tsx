@@ -197,6 +197,8 @@ export function AddCropPage() {
 
             // 1. Persist to Neon PostgreSQL database and obtain true persisted ID
             const farmerId = user?.id ? parseInt(user.id.replace(/\D/g, ""), 10) || 1 : 1;
+            const validAiObservation = aiObservation && !aiObservation.is_mismatch ? aiObservation : undefined;
+
             const savedCrop = await cropApi.createCrop({
               farmer_id: farmerId,
               crop_name: cropName,
@@ -207,7 +209,7 @@ export function AddCropPage() {
               expected_harvest_date: harvestDate,
               growth_stage: stage,
               image_url: imagePreviewUrl || undefined,
-              ai_observation: aiObservation || undefined,
+              ai_observation: validAiObservation,
             });
 
             const persistedId = savedCrop?.id ? String(savedCrop.id) : `crop-${Date.now()}`;
@@ -234,7 +236,7 @@ export function AddCropPage() {
               netRealization: netRate,
               confidence: 92,
               imageUrl: imagePreviewUrl || undefined,
-              aiObservation: aiObservation || undefined,
+              aiObservation: validAiObservation,
               trackingStatus: "Crop Tracking Active",
             };
 
@@ -818,65 +820,106 @@ export function AddCropPage() {
                     )}
 
                     {imageUploadState === "SUCCESS" && aiObservation && (
-                      <div
-                        style={{
-                          background: "#FAFCF9",
-                          border: "1px solid #D5E5D8",
-                          borderRadius: 10,
-                          padding: "12px 14px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            marginBottom: 8,
-                          }}
-                        >
-                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <Sparkles size={15} color="var(--green-deep)" />
-                            <strong style={{ fontSize: "13px", color: "var(--green-deep)" }}>
-                              AI Crop Observation
-                            </strong>
-                          </div>
-                          <span
+                      <div>
+                        {aiObservation.is_mismatch ? (
+                          <div
                             style={{
-                              fontSize: "11px",
-                              fontWeight: 800,
-                              background: "#E6F4EA",
-                              color: "var(--green-deep)",
-                              padding: "2px 8px",
-                              borderRadius: 12,
+                              background: "#FFFBEB",
+                              border: "1.5px solid #FCD34D",
+                              borderRadius: 10,
+                              padding: "14px",
                             }}
                           >
-                            Confidence: {aiObservation.confidence}%
-                          </span>
-                        </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#B45309", marginBottom: 6 }}>
+                              <AlertCircle size={18} />
+                              <strong style={{ fontSize: "13.5px" }}>Crop Image Mismatch</strong>
+                            </div>
+                            <div style={{ fontSize: "12.5px", color: "#92400E", lineHeight: 1.4 }}>
+                              {aiObservation.mismatch_message || `You selected ${cropName}, but the uploaded image appears to show ${aiObservation.detected_crop}.`}
+                            </div>
+                            <div style={{ fontSize: "12px", color: "#78350F", marginTop: 4 }}>
+                              Please upload a {cropName} image to continue.
+                            </div>
+                            <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
+                              <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="btn btn-sm"
+                                style={{
+                                  background: "#D97706",
+                                  color: "#FFFFFF",
+                                  borderRadius: 6,
+                                  fontSize: "11.5px",
+                                  padding: "5px 10px",
+                                  fontWeight: 700,
+                                }}
+                              >
+                                <Upload size={12} /> Replace with {cropName} Photo
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div
+                            style={{
+                              background: "#FAFCF9",
+                              border: "1px solid #D5E5D8",
+                              borderRadius: 10,
+                              padding: "12px 14px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                marginBottom: 8,
+                              }}
+                            >
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <Sparkles size={15} color="var(--green-deep)" />
+                                <strong style={{ fontSize: "13px", color: "var(--green-deep)" }}>
+                                  AI Crop Observation
+                                </strong>
+                              </div>
+                              <span
+                                style={{
+                                  fontSize: "11px",
+                                  fontWeight: 800,
+                                  background: "#E6F4EA",
+                                  color: "var(--green-deep)",
+                                  padding: "2px 8px",
+                                  borderRadius: 12,
+                                }}
+                              >
+                                Confidence: {aiObservation.confidence}%
+                              </span>
+                            </div>
 
-                        <div style={{ fontSize: "12px", color: "var(--navy)", marginBottom: 6 }}>
-                          <strong>Crop Health:</strong> {aiObservation.crop_health}
-                        </div>
+                            <div style={{ fontSize: "12px", color: "var(--navy)", marginBottom: 6 }}>
+                              <strong>Crop Health:</strong> {aiObservation.crop_health}
+                            </div>
 
-                        <div style={{ fontSize: "12px", color: "var(--ink-soft)", marginBottom: 6 }}>
-                          <strong>Observed Symptoms:</strong>
-                          <ul style={{ margin: "2px 0 6px 18px", padding: 0 }}>
-                            {aiObservation.observed_symptoms.map((sym, idx) => (
-                              <li key={idx}>{sym}</li>
-                            ))}
-                          </ul>
-                        </div>
+                            <div style={{ fontSize: "12px", color: "var(--ink-soft)", marginBottom: 6 }}>
+                              <strong>Observed Symptoms:</strong>
+                              <ul style={{ margin: "2px 0 6px 18px", padding: 0 }}>
+                                {aiObservation.observed_symptoms.map((sym, idx) => (
+                                  <li key={idx}>{sym}</li>
+                                ))}
+                              </ul>
+                            </div>
 
-                        {aiObservation.possible_issues && aiObservation.possible_issues.length > 0 && (
-                          <div style={{ fontSize: "11.5px", color: "var(--ink-soft)", marginBottom: 6 }}>
-                            <strong>Possible Observations:</strong>{" "}
-                            {aiObservation.possible_issues.map((i) => i.name).join(", ")}
+                            {aiObservation.possible_issues && aiObservation.possible_issues.length > 0 && (
+                              <div style={{ fontSize: "11.5px", color: "var(--ink-soft)", marginBottom: 6 }}>
+                                <strong>Possible Observations:</strong>{" "}
+                                {aiObservation.possible_issues.map((i) => i.name).join(", ")}
+                              </div>
+                            )}
+
+                            <div style={{ fontSize: "11px", color: "var(--green-deep)", fontWeight: 600 }}>
+                              ✓ Report saved with crop record. Will be monitored in decision engine.
+                            </div>
                           </div>
                         )}
-
-                        <div style={{ fontSize: "11px", color: "var(--green-deep)", fontWeight: 600 }}>
-                          ✓ Report saved with crop record. Will be monitored in decision engine.
-                        </div>
                       </div>
                     )}
                   </div>
