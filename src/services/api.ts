@@ -3,10 +3,22 @@
  * Connects to FastAPI Backend with configurable base URL and automatic JSON handling.
  */
 
-const API_BASE_URL =
+function normalizeApiBaseUrl(rawUrl?: string): string {
+  if (!rawUrl || !rawUrl.trim()) {
+    return "http://localhost:8000/api";
+  }
+  let sanitized = rawUrl.trim().replace(/\/+$/, "");
+  // Ensure the base URL always ends with /api for backend REST routers
+  if (!sanitized.endsWith("/api")) {
+    sanitized = `${sanitized}/api`;
+  }
+  return sanitized;
+}
+
+const API_BASE_URL = normalizeApiBaseUrl(
   import.meta.env.VITE_API_BASE_URL ||
-  import.meta.env.VITE_API_URL ||
-  "http://localhost:8000/api";
+  import.meta.env.VITE_API_URL
+);
 
 if (typeof window !== "undefined") {
   console.info(`[KissanSetu API] Resolved API Base URL: ${API_BASE_URL}`);
@@ -22,7 +34,7 @@ class ApiClient {
   private baseUrl: string;
 
   constructor(baseUrl: string) {
-    this.baseUrl = baseUrl.replace(/\/$/, "");
+    this.baseUrl = baseUrl.replace(/\/+$/, "");
   }
 
   private async request<T>(
