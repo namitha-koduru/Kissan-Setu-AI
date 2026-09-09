@@ -16,6 +16,7 @@ import {
 } from "../data/demo";
 import { useAuth } from "./AuthContext";
 import type {
+  CropAllocation,
   CropRecord,
   LotRecord,
   NotificationItem,
