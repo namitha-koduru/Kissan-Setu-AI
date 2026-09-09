@@ -12,7 +12,6 @@ import {
   Lightbulb,
   Users,
   Layers,
-  CheckCircle2,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";

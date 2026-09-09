@@ -17,6 +17,7 @@ import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
 import { MASTER_CROP_CATALOG, CROP_CATEGORIES, getCropCatalogItem, searchCrops } from "../data/cropCatalog";
 import { imageApi } from "../services/imageApi";
+import { cropApi } from "../services/cropApi";
 import type { CropRecord, CropStage, CropAiObservation } from "../types";
 
 export function AddCropPage() {
@@ -219,23 +220,18 @@ export function AddCropPage() {
           addCrop(newCrop);
 
           // Persist to Neon PostgreSQL database
-          try {
-            const { cropApi } = await import("../services/cropApi");
-            cropApi.createCrop({
-              farmer_id: 1,
-              crop_name: cropName,
-              variety: variety || "Standard Hybrid",
-              quantity: Number(quantityKg) || 500,
-              acreage: Number(acreage) || 1.0,
-              sowing_date: sowingDate,
-              expected_harvest_date: harvestDate,
-              growth_stage: stage,
-              image_url: imagePreviewUrl || undefined,
-              ai_observation: aiObservation || undefined,
-            }).catch((err) => console.warn("Background crop sync error:", err));
-          } catch (e) {
-            console.warn("Could not import cropApi:", e);
-          }
+          cropApi.createCrop({
+            farmer_id: 1,
+            crop_name: cropName,
+            variety: variety || "Standard Hybrid",
+            quantity: Number(quantityKg) || 500,
+            acreage: Number(acreage) || 1.0,
+            sowing_date: sowingDate,
+            expected_harvest_date: harvestDate,
+            growth_stage: stage,
+            image_url: imagePreviewUrl || undefined,
+            ai_observation: aiObservation || undefined,
+          }).catch((err) => console.warn("Background crop sync error:", err));
 
           if (user) {
             const currentCrops = user.preferredCrops || [];

@@ -13,6 +13,8 @@ export interface CropBackendModel {
   expected_harvest_date?: string;
   growth_stage?: string;
   soil_type?: string;
+  image_url?: string;
+  ai_observation?: any;
   created_at: string;
 }
 

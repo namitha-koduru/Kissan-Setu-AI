@@ -441,7 +441,13 @@ export function FPOPage() {
                 </tr>
               </thead>
               <tbody>
-                {inventorySummary?.items && inventorySummary.items.length > 0 ? (
+                {loadingStock && !inventorySummary ? (
+                  <tr>
+                    <td colSpan={7} style={{ textAlign: "center", padding: 20, color: "var(--ink-soft)" }}>
+                      Loading stock ledger from PostgreSQL database...
+                    </td>
+                  </tr>
+                ) : inventorySummary?.items && inventorySummary.items.length > 0 ? (
                   inventorySummary.items.map((item) => (
                     <tr key={item.id}>
                       <td>

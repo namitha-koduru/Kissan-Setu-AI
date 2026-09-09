@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { LogOut, Check, Camera, Upload, Trash2, Edit3, ShieldCheck, RefreshCw } from "lucide-react";
+import { LogOut, Check, Camera, Trash2, Edit3, ShieldCheck, RefreshCw } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useAppState } from "../context/AppStateContext";
@@ -59,8 +59,8 @@ export function ProfilePage() {
 
     try {
       // 1. Upload to Cloudinary via backend image service
-      const res = await imageApi.uploadImage(file, "profile");
-      const photoUrl = res.url || res.image_url;
+      const res = await imageApi.uploadImage(file, 1);
+      const photoUrl = res.image_url;
 
       if (!photoUrl) {
         throw new Error("No image URL returned from upload server.");

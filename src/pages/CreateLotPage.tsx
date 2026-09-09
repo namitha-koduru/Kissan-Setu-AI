@@ -6,6 +6,8 @@ import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
 import { cropOptions } from "../data/demo";
 import apiClient from "../services/api";
+import { cropApi } from "../services/cropApi";
+import { inventoryApi } from "../services/inventoryApi";
 import type { LotRecord } from "../types";
 
 export function CreateLotPage() {
@@ -79,9 +81,6 @@ export function CreateLotPage() {
     let backendLotId = generatedId;
 
     try {
-      const { inventoryApi } = await import("../services/inventoryApi");
-      const { cropApi } = await import("../services/cropApi");
-
       // 1. Verify stock availability
       try {
         const summary = await inventoryApi.getSummary(1);
@@ -99,16 +98,15 @@ export function CreateLotPage() {
       let targetCropId = 1;
       try {
         const farmerCrops = await cropApi.getFarmerCrops(1);
-        const matched = farmerCrops.find((c) => c.crop_name.toLowerCase() === crop.toLowerCase());
+        const matched = farmerCrops.find((c) => c.name.toLowerCase() === crop.toLowerCase());
         if (matched) {
-          targetCropId = matched.id;
+          targetCropId = parseInt(matched.id.replace(/\D/g, ""), 10) || 1;
         } else {
           const newC = await cropApi.createCrop({
             farmer_id: 1,
             crop_name: crop,
             variety: "Standard Hybrid",
             quantity: Math.max(qty * 2, 1000),
-            unit: "kg",
             growth_stage: "Ready to harvest",
           });
           targetCropId = newC.id;
