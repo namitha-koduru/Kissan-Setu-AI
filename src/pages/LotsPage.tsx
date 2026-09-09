@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Package, MapPin, Handshake, Filter, ArrowRight, ShieldCheck } from "lucide-react";
+import { Plus, MapPin, Handshake, Filter } from "lucide-react";
 import { LotCard } from "../components/LotCard";
 import { EmptyState } from "../components/States";
 import { allMarketplaceLots } from "../data/demo";

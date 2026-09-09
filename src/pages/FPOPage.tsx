@@ -6,20 +6,19 @@ import {
   Users,
   Layers,
   ShoppingBag,
-  TrendingUp,
   Warehouse,
   ArrowRight,
   Handshake,
   Package,
 } from "lucide-react";
-import { fpoFarmers, allMarketplaceLots } from "../data/demo";
+import { fpoFarmers } from "../data/demo";
 import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
 
 export function FPOPage() {
   const { user } = useAuth();
-  const { lots, offers } = useAppState();
+  const { lots } = useAppState();
   const { t } = useLanguage();
   const [params] = useSearchParams();
   const activeTabParam = params.get("tab") || "overview";
@@ -36,7 +35,6 @@ export function FPOPage() {
 
   const memberCount = user?.memberFarmerCount || 850;
   const totalVolume = membersList.reduce((sum, f) => sum + f.quantityKg, 0) + 12500;
-  const storageCapacity = "50,000 kg Cold Storage (82% Available)";
 
   const handleAddMember = (e: React.FormEvent) => {
     e.preventDefault();

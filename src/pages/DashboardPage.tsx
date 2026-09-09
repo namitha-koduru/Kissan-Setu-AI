@@ -10,7 +10,6 @@ import {
   CloudSun,
   ChevronRight,
   Lightbulb,
-  Store,
   Users,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";

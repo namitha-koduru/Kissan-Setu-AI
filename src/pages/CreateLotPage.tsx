@@ -10,7 +10,7 @@ import type { LotRecord } from "../types";
 
 export function CreateLotPage() {
   const { user } = useAuth();
-  const { crops, addLot, lots, showToast } = useAppState();
+  const { crops, addLot, showToast } = useAppState();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [params] = useSearchParams();

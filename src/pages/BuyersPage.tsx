@@ -8,8 +8,6 @@ import {
   Handshake,
   TrendingUp,
   ArrowRight,
-  Filter,
-  MapPin,
 } from "lucide-react";
 import { SmartBuyerCard } from "../components/SmartBuyerCard";
 import buyerMatchingApi from "../services/buyerMatchingApi";
@@ -22,7 +20,7 @@ import { useLanguage } from "../context/LanguageContext";
 
 export function BuyersPage() {
   const { user } = useAuth();
-  const { crops, transaction } = useAppState();
+  const { crops } = useAppState();
   const { t } = useLanguage();
 
   const isBuyer = user?.role === "buyer";
