@@ -13,6 +13,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
+import apiClient from "../services/api";
 import buyerMatchingApi, {
   type TransactionDetailResponse,
 } from "../services/buyerMatchingApi";
@@ -252,6 +253,7 @@ export function TransactionPage() {
             razorpay_signature: res.razorpay_signature,
           });
 
+          setPaymentMethod("RAZORPAY");
           setPaymentStatus("Payment Successful");
           setPaidAmount(order.amount);
           setTxDetail((prev) =>
@@ -416,7 +418,7 @@ export function TransactionPage() {
           </div>
         </div>
 
-        {/* Razorpay Procurement Payment Card */}
+        {/* Razorpay / COD Procurement Payment Card */}
         <div
           style={{
             background: txDetail?.payment_status === "PAID" ? "#F4FAF5" : "#FFFBF2",
@@ -432,7 +434,7 @@ export function TransactionPage() {
               <strong style={{ fontSize: 14, color: "var(--navy)" }}>
                 {txDetail?.payment_status === "PAID"
                   ? "Procurement Payment Completed"
-                  : "Razorpay Secure Procurement Settlement"}
+                  : "Settlement & Payment Gateway"}
               </strong>
             </div>
             <div className="flex flex-center gap-xs">
@@ -450,6 +452,17 @@ export function TransactionPage() {
                   Test Payment Mode
                 </span>
               )}
+              <span
+                className="badge-pill"
+                style={{
+                  fontSize: 11,
+                  background: "#E8F0FE",
+                  color: "#1A73E8",
+                  fontWeight: 700,
+                }}
+              >
+                {paymentMethod === "COD" ? "Cash on Delivery (COD)" : "Razorpay Online"}
+              </span>
               <span
                 className="badge-pill"
                 style={{
