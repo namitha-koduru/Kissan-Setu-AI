@@ -51,6 +51,20 @@ def create_crop(crop_in: CropCreate, db: Session = Depends(get_db)):
     db.add(crop)
     db.commit()
     db.refresh(crop)
+
+    # Initialize / sync inventory for this farmer and crop
+    try:
+        from app.services.inventory_service import inventory_service
+        inventory_service.get_or_create_inventory(
+            db=db,
+            farmer_id=crop.farmer_id,
+            crop_name=crop.crop_name,
+            initial_quantity=crop.quantity,
+            variety=crop.variety,
+        )
+    except Exception as e:
+        print(f"Warning initializing inventory for crop {crop.id}: {e}")
+
     return crop
 
 

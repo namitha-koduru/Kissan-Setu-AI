@@ -136,6 +136,17 @@ class TransactionService:
         )
         db.add_all([ev1, ev2])
 
+        # Reserve inventory stock for confirmed order
+        from app.services.inventory_service import inventory_service
+        crop_name = lot.crop.crop_name if lot.crop else "Produce"
+        inventory_service.reserve_for_order(
+            db=db,
+            farmer_id=lot.farmer_id,
+            crop_name=crop_name,
+            quantity=qty_kg,
+            transaction_id=tx.id,
+        )
+
         db.commit()
         db.refresh(tx)
         return tx
@@ -161,6 +172,36 @@ class TransactionService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid state transition from '{current}' to '{new_status}'. Allowed transitions: {allowed}"
             )
+
+        # Handle inventory state transitions
+        if new_status in ["COMPLETED", "DELIVERED"] and current not in ["COMPLETED", "DELIVERED"]:
+            from app.services.inventory_service import inventory_service
+            lot = tx.lot
+            crop_name = lot.crop.crop_name if lot and lot.crop else "Produce"
+            farmer_id = tx.farmer_id or (lot.farmer_id if lot else 1)
+            qty = tx.quantity_kg or (lot.quantity if lot else 0.0)
+            if qty > 0:
+                inventory_service.complete_order_sale(
+                    db=db,
+                    farmer_id=farmer_id,
+                    crop_name=crop_name,
+                    quantity=qty,
+                    transaction_id=tx.id,
+                )
+        elif new_status == "CANCELLED" and current != "CANCELLED":
+            from app.services.inventory_service import inventory_service
+            lot = tx.lot
+            crop_name = lot.crop.crop_name if lot and lot.crop else "Produce"
+            farmer_id = tx.farmer_id or (lot.farmer_id if lot else 1)
+            qty = tx.quantity_kg or (lot.quantity if lot else 0.0)
+            if qty > 0:
+                inventory_service.release_from_lot(
+                    db=db,
+                    farmer_id=farmer_id,
+                    crop_name=crop_name,
+                    quantity=qty,
+                    lot_id=tx.lot_id,
+                )
 
         tx.status = new_status
         tx.updated_at = datetime.utcnow()

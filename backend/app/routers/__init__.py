@@ -17,6 +17,7 @@ from .voice import router as voice_router
 from .knowledge import router as knowledge_router
 from .payments import router as payments_router
 from .negotiations import router as negotiations_router
+from .inventory import router as inventory_router
 
 __all__ = [
     "auth_router",
@@ -38,6 +39,7 @@ __all__ = [
     "knowledge_router",
     "payments_router",
     "negotiations_router",
+    "inventory_router",
 ]
 
 

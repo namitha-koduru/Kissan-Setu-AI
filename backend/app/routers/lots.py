@@ -83,6 +83,15 @@ def create_lot(
         if not img:
             lot_in.image_id = None  # Graceful fallback
 
+    # Validate stock and allocate inventory
+    from app.services.inventory_service import inventory_service
+    inventory_service.allocate_to_lot(
+        db=db,
+        farmer_id=lot_in.farmer_id,
+        crop_name=crop.crop_name,
+        quantity=lot_in.quantity,
+    )
+
     lot = Lot(**lot_in.model_dump())
     db.add(lot)
     db.commit()

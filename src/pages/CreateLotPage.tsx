@@ -6,6 +6,8 @@ import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
 import { cropOptions } from "../data/demo";
 import apiClient from "../services/api";
+import { cropApi } from "../services/cropApi";
+import { inventoryApi } from "../services/inventoryApi";
 import type { LotRecord } from "../types";
 
 export function CreateLotPage() {
@@ -63,8 +65,11 @@ export function CreateLotPage() {
   const [isCreated, setIsCreated] = useState(false);
   const [createdLotId, setCreatedLotId] = useState("");
 
+  const [stockError, setStockError] = useState<string | null>(null);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setStockError(null);
     setIsSubmitting(true);
 
     const prefix = isFpo ? "LOT-FPO" : "LOT-F";
@@ -73,26 +78,72 @@ export function CreateLotPage() {
     const qty = isNaN(parsedQty) || parsedQty <= 0 ? 1 : parsedQty;
     const price = Number(expectedPrice) || 30;
 
+    let backendLotId = generatedId;
+
     try {
-      await apiClient.post("/lots", {
-        crop,
-        quantity_kg: qty,
+      // 1. Verify stock availability
+      try {
+        const summary = await inventoryApi.getSummary(1);
+        const item = summary.items?.find((i) => i.crop_name.toLowerCase() === crop.toLowerCase());
+        if (item && item.available_quantity < qty) {
+          setStockError(`Only ${item.available_quantity} ${item.unit} is currently available to sell.`);
+          setIsSubmitting(false);
+          return;
+        }
+      } catch (stockErr) {
+        console.warn("Stock summary check skipped:", stockErr);
+      }
+
+      // 2. Get or create crop for crop_id
+      let targetCropId = 1;
+      try {
+        const farmerCrops = await cropApi.getFarmerCrops(1);
+        const matched = farmerCrops.find((c) => c.name.toLowerCase() === crop.toLowerCase());
+        if (matched) {
+          targetCropId = parseInt(matched.id.replace(/\D/g, ""), 10) || 1;
+        } else {
+          const newC = await cropApi.createCrop({
+            farmer_id: 1,
+            crop_name: crop,
+            variety: "Standard Hybrid",
+            quantity: Math.max(qty * 2, 1000),
+            growth_stage: "Ready to harvest",
+          });
+          targetCropId = newC.id;
+        }
+      } catch (cropErr) {
+        console.warn("Could not match crop_id:", cropErr);
+      }
+
+      // 3. Post to backend /lots
+      const created = await apiClient.post<any>("/lots", {
+        farmer_id: 1,
+        crop_id: targetCropId,
+        quantity: qty,
         unit: "kg",
+        asking_price: price,
         quality,
         quality_description: `${quality} ${isFpo ? "aggregated bulk pool" : "harvest"} from ${userDistrict}`,
         harvest_date: harvestDate,
         harvest_window: "2–4 days",
         location: userLocStr,
-        expected_price: price,
-        aggregated: isFpo,
-        farmer_count: isFpo ? farmerCount : 1,
+        status: "Open for Offers",
       });
-    } catch (err) {
-      console.warn("Backend lot creation fallback:", err);
+      if (created?.id) {
+        backendLotId = `LOT-${created.id}`;
+      }
+    } catch (err: any) {
+      console.warn("Backend lot creation error:", err);
+      const detailMsg = err?.response?.data?.detail || err?.message;
+      if (detailMsg && detailMsg.includes("available to sell")) {
+        setStockError(detailMsg);
+        setIsSubmitting(false);
+        return;
+      }
     }
 
     const newLot: LotRecord = {
-      id: generatedId,
+      id: backendLotId,
       crop,
       quantityKg: qty,
       quality,
@@ -107,7 +158,7 @@ export function CreateLotPage() {
     };
 
     addLot(newLot);
-    setCreatedLotId(generatedId);
+    setCreatedLotId(backendLotId);
     setIsCreated(true);
     setIsSubmitting(false);
   };
@@ -388,6 +439,23 @@ export function CreateLotPage() {
               Institutional buyers provide bids inclusive of logistics pickup from this hub.
             </div>
           </div>
+
+          {stockError && (
+            <div
+              className="form-error-alert"
+              style={{
+                padding: "12px 14px",
+                borderRadius: "8px",
+                background: "#FEE2E2",
+                border: "1px solid #FCA5A5",
+                color: "#991B1B",
+                fontSize: "13.5px",
+                fontWeight: 700,
+              }}
+            >
+              ⚠️ {stockError}
+            </div>
+          )}
 
           <button
             type="submit"

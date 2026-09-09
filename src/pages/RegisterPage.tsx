@@ -131,6 +131,29 @@ export function RegisterPage() {
       }
     }
 
+    // Phone validation helper (accepts digits, optional leading +)
+    const cleanPhone = (val: string) => {
+      let v = val.trim();
+      if (v.startsWith("+91")) v = v.slice(3);
+      else if (v.startsWith("91") && v.length === 12) v = v.slice(2);
+      else if (v.startsWith("0") && v.length === 11) v = v.slice(1);
+      return v.replace(/\D/g, "");
+    };
+
+    const normMobile = cleanPhone(mobile);
+    if (!normMobile || normMobile.length !== 10) {
+      setError(t("common.error", "Please enter a valid 10-digit Indian phone number."));
+      return;
+    }
+
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        setError(t("common.error", "Please enter a valid email address."));
+        return;
+      }
+    }
+
     if (!password || password.length < 6) {
       setError(t("common.error", "Password must be at least 6 characters long."));
       return;
@@ -306,12 +329,12 @@ export function RegisterPage() {
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="farmer-mobile">{t("auth.mobile", "Mobile Number")} <span className="required">*</span></label>
+                  <label htmlFor="farmer-mobile">Phone Number <span className="required">*</span></label>
                   <input
                     id="farmer-mobile"
                     type="tel"
                     value={farmerMobile}
-                    onChange={(e) => setFarmerMobile(e.target.value)}
+                    onChange={(e) => setFarmerMobile(e.target.value.replace(/[^\d+]/g, ""))}
                     placeholder="e.g. 9876543210"
                     autoComplete="tel"
                     required
@@ -319,7 +342,7 @@ export function RegisterPage() {
                 </div>
                 <div className="field">
                   <label htmlFor="farmer-email">
-                    {t("auth.email", "Email Address")} <span className="optional">(Optional)</span>
+                    Email <span className="optional">(Optional)</span>
                   </label>
                   <input
                     id="farmer-email"
@@ -360,19 +383,19 @@ export function RegisterPage() {
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="fpo-mobile">{t("auth.mobile", "Official Mobile Number")} <span className="required">*</span></label>
+                  <label htmlFor="fpo-mobile">Phone Number <span className="required">*</span></label>
                   <input
                     id="fpo-mobile"
                     type="tel"
                     value={fpoMobile}
-                    onChange={(e) => setFpoMobile(e.target.value)}
+                    onChange={(e) => setFpoMobile(e.target.value.replace(/[^\d+]/g, ""))}
                     placeholder="e.g. 9822011223"
                     autoComplete="tel"
                     required
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="fpo-email">{t("auth.email", "Official Email Address")} <span className="required">*</span></label>
+                  <label htmlFor="fpo-email">Email <span className="required">*</span></label>
                   <input
                     id="fpo-email"
                     type="email"
@@ -413,19 +436,19 @@ export function RegisterPage() {
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="buyer-mobile">{t("auth.mobile", "Contact Mobile Number")} <span className="required">*</span></label>
+                  <label htmlFor="buyer-mobile">Phone Number <span className="required">*</span></label>
                   <input
                     id="buyer-mobile"
                     type="tel"
                     value={buyerMobile}
-                    onChange={(e) => setBuyerMobile(e.target.value)}
+                    onChange={(e) => setBuyerMobile(e.target.value.replace(/[^\d+]/g, ""))}
                     placeholder="e.g. 9988776655"
                     autoComplete="tel"
                     required
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="buyer-email">{t("auth.email", "Business Email Address")} <span className="required">*</span></label>
+                  <label htmlFor="buyer-email">Email <span className="required">*</span></label>
                   <input
                     id="buyer-email"
                     type="email"

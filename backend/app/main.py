@@ -33,6 +33,7 @@ from app.routers import (
     knowledge_router,
     payments_router,
     negotiations_router,
+    inventory_router,
 )
 
 
@@ -149,6 +150,7 @@ app.include_router(voice_router, prefix="/api")
 app.include_router(knowledge_router, prefix="/api")
 app.include_router(payments_router, prefix="/api")
 app.include_router(negotiations_router, prefix="/api")
+app.include_router(inventory_router, prefix="/api")
 
 
 

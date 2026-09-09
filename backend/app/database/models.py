@@ -24,6 +24,9 @@ class Farmer(Base):
     email = Column(String(255), unique=True, index=True, nullable=True)
     hashed_password = Column(String(255), nullable=True)
     preferred_language = Column(String(10), default="en")
+    role = Column(String(20), default="farmer")  # "farmer" or "fpo"
+    profile_picture_url = Column(String(500), nullable=True)
+    organization_name = Column(String(255), nullable=True)
     state = Column(String(100), default="Maharashtra")
     district = Column(String(100), default="Nashik")
     village = Column(String(100), nullable=True)
@@ -106,6 +109,7 @@ class Buyer(Base):
     location = Column(String(255), nullable=False)
     phone = Column(String(50), unique=True, index=True, nullable=True)
     email = Column(String(255), unique=True, index=True, nullable=True)
+    profile_picture_url = Column(String(500), nullable=True)
     verified = Column(Boolean, default=False)
     verification_status = Column(String(50), default="UNVERIFIED")  # "VERIFIED", "PENDING", "UNVERIFIED"
     rating = Column(Float, default=4.5)
@@ -437,5 +441,55 @@ class KnowledgeChunk(Base):
 
     # Relationship
     document = relationship("KnowledgeDocument", back_populates="chunks")
+
+
+class InventoryItem(Base):
+    """Real Inventory / Stock source of truth for Farmers and FPOs."""
+    __tablename__ = "inventory_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    farmer_id = Column(Integer, ForeignKey("farmers.id", ondelete="CASCADE"), nullable=False, index=True)
+    crop_name = Column(String(100), nullable=False, index=True)
+    variety = Column(String(100), nullable=True)
+    total_quantity = Column(Float, default=0.0, nullable=False)
+    allocated_quantity = Column(Float, default=0.0, nullable=False)  # in active open lots
+    reserved_quantity = Column(Float, default=0.0, nullable=False)   # in accepted orders
+    sold_quantity = Column(Float, default=0.0, nullable=False)       # completed sales
+    unit = Column(String(20), default="kg")
+    quality_grade = Column(String(50), default="Grade A")
+    location = Column(String(255), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    farmer = relationship("Farmer")
+    adjustments = relationship("StockAdjustment", back_populates="inventory_item", cascade="all, delete-orphan")
+
+    @property
+    def available_quantity(self) -> float:
+        return max(0.0, round(self.total_quantity - self.allocated_quantity - self.reserved_quantity - self.sold_quantity, 2))
+
+
+class StockAdjustment(Base):
+    """Audit log of stock operations: offline sales, member aggregation, allocations, completions."""
+    __tablename__ = "stock_adjustments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    inventory_id = Column(Integer, ForeignKey("inventory_items.id", ondelete="SET NULL"), nullable=True, index=True)
+    farmer_id = Column(Integer, ForeignKey("farmers.id", ondelete="CASCADE"), nullable=False, index=True)
+    crop_name = Column(String(100), nullable=False, index=True)
+    adjustment_type = Column(String(50), nullable=False)  # "OFFLINE_SALE", "MEMBER_AGGREGATION", "MANUAL_ADJUSTMENT", "LOT_ALLOCATION", "LOT_RELEASE", "ORDER_RESERVED", "ORDER_COMPLETED", "ORDER_CANCELLED"
+    quantity = Column(Float, nullable=False)  # e.g. -120.0 or +500.0
+    unit = Column(String(20), default="kg")
+    customer_name = Column(String(255), nullable=True)
+    lot_id = Column(Integer, nullable=True)
+    transaction_id = Column(Integer, nullable=True)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    inventory_item = relationship("InventoryItem", back_populates="adjustments")
+    farmer = relationship("Farmer")
+
 
 

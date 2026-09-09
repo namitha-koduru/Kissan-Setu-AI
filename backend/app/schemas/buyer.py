@@ -9,6 +9,7 @@ class BuyerBase(BaseModel):
     location: str
     phone: Optional[str] = None
     email: Optional[str] = None
+    profile_picture_url: Optional[str] = None
     verified: Optional[bool] = False
     verification_status: Optional[str] = "UNVERIFIED"
     rating: Optional[float] = 4.5
@@ -24,6 +25,21 @@ class BuyerBase(BaseModel):
 
 class BuyerCreate(BuyerBase):
     pass
+
+
+class BuyerUpdate(BaseModel):
+    name: Optional[str] = None
+    organization: Optional[str] = None
+    location: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    profile_picture_url: Optional[str] = None
+    preferred_crops: Optional[List[str]] = None
+    min_quantity_qtl: Optional[float] = None
+    max_quantity_qtl: Optional[float] = None
+    preferred_quality: Optional[str] = None
+    indicative_price_per_kg: Optional[float] = None
+    business_type: Optional[str] = None
 
 
 class BuyerResponse(BuyerBase):
