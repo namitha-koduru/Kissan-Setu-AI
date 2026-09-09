@@ -121,7 +121,7 @@ def test_sell_decision_engine_evaluation():
             best_market=best_market,
             crop_stage="Near maturity"
         )
-        assert decision.action in ["SELL_NOW", "WAIT", "COMPARE_MARKETS", "INSUFFICIENT_DATA"]
+        assert decision.action in ["SELL_NOW", "HOLD", "MONITOR", "COMPARE_MARKETS", "WAIT", "INSUFFICIENT_DATA"]
         assert decision.decision_score >= 0 and decision.decision_score <= 100
         assert len(decision.reasons) > 0
         assert decision.storage_analysis is not None
@@ -198,7 +198,7 @@ def test_market_intelligence_decision_endpoint():
     res = client.get("/api/market-intelligence/decision?crop=Tomato&farmer_id=1")
     assert res.status_code == 200
     data = res.json()
-    assert data["action"] in ["SELL_NOW", "WAIT", "COMPARE_MARKETS"]
+    assert data["action"] in ["SELL_NOW", "HOLD", "MONITOR", "COMPARE_MARKETS", "WAIT"]
     assert "decision_score" in data
 
 

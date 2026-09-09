@@ -653,7 +653,7 @@ class MarketIntelligenceService:
                 reasons.append("Slight increase in regional mandi arrivals suggests locking in rates with direct mills now.")
                 suggested_timeline = "Next 3–5 days"
             elif trend in ["rising", "strongly_rising"] and net_holding_gain > 20:
-                action = "WAIT"
+                action = "HOLD"
                 action_label = "Hold / Monitor Mill Procurement Tenders"
                 score = 84
                 headline = f"Holding {history.crop} in dry storage is safe and profitable (+₹{int(net_holding_gain)}/Qtl net upside)."
@@ -682,9 +682,17 @@ class MarketIntelligenceService:
                 reasons.append(f"Current price is {round(history.change_30d_percent or 0, 1)}% above the 30-day baseline.")
                 reasons.append("Cold storage unloading and new arrivals will expand supply in 1-2 weeks.")
                 suggested_timeline = "Next 2–4 days"
-            elif net_holding_gain > 25 and not is_mature:
-                action = "WAIT"
-                action_label = "Hold in Cold Storage / Field Growth"
+            elif not is_mature:
+                action = "MONITOR"
+                action_label = "Monitor Crop Development"
+                score = 82
+                headline = f"{history.crop} is currently developing. Monitor sizing and field conditions."
+                reason_codes.append("crop_development")
+                reasons.append(f"{history.crop} has not reached harvest maturity. Sizing and cold storage readiness need monitoring.")
+                suggested_timeline = "Next 7–14 days"
+            elif net_holding_gain > 25:
+                action = "HOLD"
+                action_label = "Hold in Cold Storage"
                 score = 82
                 headline = f"Holding {history.crop} yields positive net margin over cold storage costs (+₹{int(net_holding_gain)}/Qtl)."
                 reason_codes.append("cold_storage_viability")
@@ -710,14 +718,23 @@ class MarketIntelligenceService:
                 reason_codes.append("price_peak_captured")
                 reasons.append(f"Current rate is {round(history.change_30d_percent or 0, 1)}% above 30-day average.")
                 suggested_timeline = "Next 2–3 days"
-            elif not is_mature and trend in ["rising", "strongly_rising"] and net_holding_gain > 30:
-                action = "WAIT"
+            elif not is_mature:
+                action = "MONITOR"
+                action_label = "Monitor Vegetative / Flowering Growth"
+                score = 83
+                headline = f"{history.crop} is in development. Maintain field care and monitoring."
+                reason_codes.append("immature_crop_stage")
+                reasons.append(f"Crop is not at harvest stage. Allow full fruit/grain filling.")
+                suggested_timeline = "Next 7–10 days"
+            elif trend in ["rising", "strongly_rising"] and net_holding_gain > 30:
+                action = "HOLD"
                 action_label = "Hold for Sizing & Price Gain"
                 score = 82
                 headline = f"Holding for 5–7 days is financially viable (Est. +₹{int(net_holding_gain)}/Qtl net improvement)."
                 reason_codes.append("favorable_price_momentum")
                 reasons.append(f"{history.crop} is gaining size and price forecast indicates potential rise to ₹{int(forecast_expected)}/Qtl.")
                 suggested_timeline = "Hold for 5–7 days"
+
             else:
                 action = "COMPARE_MARKETS"
                 action_label = "Compare Mandis & Route to Best Net Hub"
