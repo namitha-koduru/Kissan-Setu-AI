@@ -1093,13 +1093,6 @@ export function OnboardingPage() {
                 </div>
               </div>
             )}
-
-                <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--green-deep)", fontSize: 13.5 }}>
-                  <ShieldCheck size={18} />
-                  <span>Ready to generate AI price discovery and decision recommendations.</span>
-                </div>
-              </div>
-            )}
           </>
         )}
 
