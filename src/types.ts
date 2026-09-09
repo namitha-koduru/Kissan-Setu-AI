@@ -208,12 +208,24 @@ export interface OnboardingData {
   indicativePricePerKg?: number;
   procurementRadiusKm?: number;
   gstOrFssai?: string;
+  qualityRequirements?: string;
+  paymentTerms?: string;
+  settlementMethod?: string;
+  procurementFrequency?: string;
   // FPO specifics
   registrationNumber?: string;
   memberFarmerCount?: number;
   pooledAcreage?: number;
   annualAggregationCapacityTonnes?: number;
   storageAvailable?: boolean;
+  storageCapacityTonnes?: number;
+  storageType?: string;
+  collectionCentersCount?: number;
+  gradingCapability?: string;
+  marketsServed?: string[];
+  buyerRelationships?: string;
+  institutionalContracts?: boolean;
+  procurementRegions?: string;
 }
 
 export interface RecommendationResult {

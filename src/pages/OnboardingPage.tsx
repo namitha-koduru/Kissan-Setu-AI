@@ -9,7 +9,6 @@ import {
   ShieldCheck,
   Search,
   CheckCircle2,
-  TrendingUp,
 } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { useAuth } from "../context/AuthContext";
@@ -1802,6 +1801,23 @@ export function OnboardingPage() {
                 <p>
                   Review your FPO aggregation setup before connecting with verified institutional buyers.
                 </p>
+
+                <div className="field">
+                  <label htmlFor="fpo-mandis-served">Markets / Mandis Served</label>
+                  <input
+                    id="fpo-mandis-served"
+                    value={fpoMandisServed.join(", ")}
+                    onChange={(e) =>
+                      setFpoMandisServed(
+                        e.target.value
+                          .split(",")
+                          .map((s) => s.trim())
+                          .filter(Boolean)
+                      )
+                    }
+                    placeholder="e.g. Guntur Mirchi Yard, Warangal Mandi, Khammam Market"
+                  />
+                </div>
 
                 <div className="field">
                   <label htmlFor="fpo-buyers-served">Existing Buyer Relationships & Channels</label>
