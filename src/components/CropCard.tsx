@@ -41,7 +41,7 @@ export function CropCard({
             </span>
           </div>
           <div className="crop-meta">
-            {crop.location} · Harvest window: {harvestWindow || crop.harvestWindow || "2–4 days"}
+            {crop.acreage ? `${crop.acreage} ${crop.acreageUnit || "Acres"}` : "Area not specified"} · {crop.location} · Harvest window: {harvestWindow || crop.harvestWindow || "2–4 days"}
           </div>
         </div>
       </div>

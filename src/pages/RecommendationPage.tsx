@@ -573,7 +573,7 @@ export function RecommendationPage() {
               >
                 {crops.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name} ({c.quantityKg} {c.unit || "kg"})
+                    {c.name} {c.acreage ? `· ${c.acreage} ${c.acreageUnit || "Acres"}` : ""} ({c.quantityKg} {c.unit || "kg"})
                   </option>
                 ))}
               </select>

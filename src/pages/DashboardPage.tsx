@@ -308,43 +308,48 @@ export function DashboardPage() {
                       {c.name}
                     </div>
                     <div style={{ fontSize: 11, color: "var(--ink-soft)" }}>
-                      {c.quantityKg || 500} kg · {c.stage}
+                      {c.acreage ? `${c.acreage} ${c.acreageUnit || "Acres"} · ` : ""}{c.quantityKg || 500} kg · {c.stage}
                     </div>
                   </div>
                 </button>
               );
             })}
 
-            {profileCrops.map((pc) => (
-              <Link
-                key={pc}
-                to={`/crops/add?crop=${encodeURIComponent(pc)}`}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "10px 16px",
-                  borderRadius: 14,
-                  border: "1.5px dashed var(--green-leaf)",
-                  background: "#FAFCF9",
-                  textDecoration: "none",
-                  minWidth: 200,
-                  textAlign: "left",
-                  flexShrink: 0,
-                  transition: "all 0.15s ease",
-                }}
-              >
-                <span style={{ fontSize: 24 }}>🌱</span>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: "var(--navy)" }}>
-                    {pc}
+            {profileCrops.map((pc) => {
+              const matchedAlloc = Array.isArray(user?.cropAllocations)
+                ? user.cropAllocations.find((a) => a.crop.toLowerCase() === pc.toLowerCase())
+                : null;
+              return (
+                <Link
+                  key={pc}
+                  to={`/crops/add?crop=${encodeURIComponent(pc)}`}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "10px 16px",
+                    borderRadius: 14,
+                    border: "1.5px dashed var(--green-leaf)",
+                    background: "#FAFCF9",
+                    textDecoration: "none",
+                    minWidth: 200,
+                    textAlign: "left",
+                    flexShrink: 0,
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <span style={{ fontSize: 24 }}>🌱</span>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: "var(--navy)" }}>
+                      {pc}
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--green-deep)", fontWeight: 700 }}>
+                      {matchedAlloc && matchedAlloc.area ? `${matchedAlloc.area} ${matchedAlloc.unit} · ` : ""}{t("crops.clickToTrack", "Add details to enable AI tracking")}
+                    </div>
                   </div>
-                  <div style={{ fontSize: 11, color: "var(--green-deep)", fontWeight: 700 }}>
-                    {t("crops.clickToTrack", "Add details to enable AI tracking")}
-                  </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>
@@ -384,7 +389,7 @@ export function DashboardPage() {
           </div>
 
           <div style={{ fontSize: 15, fontWeight: 800, color: "var(--navy)", margin: "4px 0" }}>
-            {activeCrop.name} ({activeCrop.variety || "Grade A"}) · {activeCrop.quantityKg} kg
+            {activeCrop.name} ({activeCrop.variety || "Grade A"}) · {activeCrop.acreage ? `${activeCrop.acreage} ${activeCrop.acreageUnit || "Acres"} · ` : ""}{activeCrop.quantityKg} kg
           </div>
 
           <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: "4px 0 14px" }}>

@@ -16,6 +16,12 @@ export type CropStage =
 
 export type LanguageCode = "en" | "hi" | "te" | "mr" | "ta" | "kn" | "bn" | "ml";
 
+export interface CropAllocation {
+  crop: string;
+  area: number;
+  unit: string;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -35,6 +41,7 @@ export interface User {
   businessType?: string;
   verificationStatus?: "VERIFIED" | "PENDING" | "UNVERIFIED";
   preferredCrops?: string[];
+  cropAllocations?: CropAllocation[];
   procurementRadiusKm?: number;
   memberFarmerCount?: number;
   onboarded?: boolean;
@@ -47,6 +54,8 @@ export interface CropRecord {
   variety?: string;
   quantityKg: number;
   unit?: string;
+  acreage?: number;
+  acreageUnit?: string;
   sowingDate: string;
   stage: CropStage;
   location: string;
@@ -184,6 +193,7 @@ export interface OnboardingData {
   state: string;
   country?: string;
   crops: string[];
+  cropAllocations?: CropAllocation[];
   quantity: string;
   quantityUnit?: string;
   land: string;

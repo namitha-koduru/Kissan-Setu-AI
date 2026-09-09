@@ -32,6 +32,26 @@ export function AddCropPage() {
   const [stage, setStage] = useState<CropStage>("Near maturity");
   const [harvestDate, setHarvestDate] = useState("2026-09-08");
 
+  // Check if user has an allocation for initial/selected crop
+  const matchedAllocation = useMemo(() => {
+    if (!user?.cropAllocations || !Array.isArray(user.cropAllocations)) return null;
+    return user.cropAllocations.find((a) => a.crop.toLowerCase() === cropName.toLowerCase());
+  }, [user?.cropAllocations, cropName]);
+
+  const [acreage, setAcreage] = useState<number | string>(
+    matchedAllocation ? matchedAllocation.area : 1
+  );
+  const [acreageUnit, setAcreageUnit] = useState<string>(
+    matchedAllocation ? matchedAllocation.unit : (user?.landAcreage?.split(" ")[1] || "Acres")
+  );
+
+  useEffect(() => {
+    if (matchedAllocation) {
+      setAcreage(matchedAllocation.area);
+      setAcreageUnit(matchedAllocation.unit);
+    }
+  }, [matchedAllocation]);
+
   // Filtered crop list from catalog
   const filteredCrops = useMemo(() => {
     return searchCrops(cropSearchTerm, selectedCategory);
@@ -90,6 +110,8 @@ export function AddCropPage() {
             variety: variety || "Standard High-Yield",
             quantityKg: Number(quantityKg) || 500,
             unit: "kg",
+            acreage: Number(acreage) || undefined,
+            acreageUnit: acreageUnit || "Acres",
             sowingDate,
             stage,
             location: location || userLocationStr,
@@ -106,9 +128,30 @@ export function AddCropPage() {
 
           if (user) {
             const currentCrops = user.preferredCrops || [];
-            if (!currentCrops.some((c) => c.toLowerCase() === cropName.toLowerCase())) {
-              updateUserProfile({ preferredCrops: [...currentCrops, cropName] });
+            const updatedCrops = currentCrops.some((c) => c.toLowerCase() === cropName.toLowerCase())
+              ? currentCrops
+              : [...currentCrops, cropName];
+
+            const currentAllocations = Array.isArray(user.cropAllocations) ? [...user.cropAllocations] : [];
+            const allocIndex = currentAllocations.findIndex((a) => a.crop.toLowerCase() === cropName.toLowerCase());
+            if (allocIndex >= 0) {
+              currentAllocations[allocIndex] = {
+                crop: cropName,
+                area: Number(acreage) || currentAllocations[allocIndex].area,
+                unit: acreageUnit || currentAllocations[allocIndex].unit,
+              };
+            } else if (Number(acreage) > 0) {
+              currentAllocations.push({
+                crop: cropName,
+                area: Number(acreage),
+                unit: acreageUnit || "Acres",
+              });
             }
+
+            updateUserProfile({
+              preferredCrops: updatedCrops,
+              cropAllocations: currentAllocations,
+            });
           }
           navigate(`/crops/${newCropId}`);
         }, 600);
@@ -121,6 +164,8 @@ export function AddCropPage() {
     cropName,
     variety,
     quantityKg,
+    acreage,
+    acreageUnit,
     sowingDate,
     stage,
     location,
@@ -319,7 +364,7 @@ export function AddCropPage() {
             </div>
 
             <div className="field">
-              <label htmlFor="crop-qty">{t("crops.quantity", "Estimated Quantity (kg)")}</label>
+              <label htmlFor="crop-qty">{t("crops.quantity", "Estimated Harvest Quantity (kg)")}</label>
               <input
                 id="crop-qty"
                 type="number"
@@ -329,6 +374,24 @@ export function AddCropPage() {
                 min="1"
                 required
               />
+            </div>
+
+            <div className="field">
+              <label htmlFor="crop-acreage">Cultivated Land Area ({acreageUnit})</label>
+              <input
+                id="crop-acreage"
+                type="number"
+                step="0.1"
+                min="0.1"
+                value={acreage}
+                onChange={(e) => setAcreage(e.target.value)}
+                placeholder="e.g. 2.0"
+              />
+              {matchedAllocation && (
+                <span style={{ fontSize: "11px", color: "var(--green-deep)", marginTop: 2, display: "block" }}>
+                  ✓ Allocated in profile ({matchedAllocation.area} {matchedAllocation.unit})
+                </span>
+              )}
             </div>
 
             <div className="field">
