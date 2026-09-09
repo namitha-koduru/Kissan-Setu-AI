@@ -157,10 +157,6 @@ export function LoginPage() {
               </div>
             </div>
 
-            <a href="#" className="auth-forgot-link" onClick={(e) => e.preventDefault()}>
-              {t("auth.forgotPassword", "Forgot password?")}
-            </a>
-
             <div className="field">
               <label htmlFor="lang">{t("profile.languagePref", "Preferred Language")}</label>
               <select

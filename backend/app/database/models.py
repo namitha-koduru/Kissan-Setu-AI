@@ -212,6 +212,27 @@ class Transaction(Base):
     offer = relationship("Offer", foreign_keys=[offer_id])
     events = relationship("TransactionEvent", back_populates="transaction", cascade="all, delete-orphan", order_by="TransactionEvent.created_at")
     disputes = relationship("Dispute", back_populates="transaction", cascade="all, delete-orphan", order_by="Dispute.created_at.desc()")
+    payments = relationship("Payment", back_populates="transaction", cascade="all, delete-orphan", order_by="Payment.created_at.desc()")
+
+
+class Payment(Base):
+    __tablename__ = "payments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    transaction_id = Column(Integer, ForeignKey("transactions.id", ondelete="CASCADE"), nullable=False, index=True)
+    razorpay_order_id = Column(String(100), unique=True, index=True, nullable=False)
+    razorpay_payment_id = Column(String(100), unique=True, index=True, nullable=True)
+    payment_status = Column(String(50), default="Payment Pending", nullable=False)  # Payment Pending, Payment Processing, Payment Successful, Payment Failed, Payment Refunded
+    amount = Column(Float, nullable=False)
+    currency = Column(String(10), default="INR", nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    paid_at = Column(DateTime, nullable=True)
+    failure_reason = Column(Text, nullable=True)
+    signature_verified = Column(Boolean, default=False)
+    webhook_status = Column(String(50), nullable=True)
+
+    # Relationship
+    transaction = relationship("Transaction", back_populates="payments")
 
 
 class TransactionEvent(Base):

@@ -331,9 +331,11 @@ export function LotsPage() {
                 <label>{t("offers.quantity", "Procurement Quantity (kg)")}</label>
                 <input
                   type="number"
+                  step="0.01"
+                  min="0.01"
                   max={offerModalLot.quantityKg}
                   value={bidQty}
-                  onChange={(e) => setBidQty(Number(e.target.value))}
+                  onChange={(e) => setBidQty(parseFloat(e.target.value) || 0)}
                   className="form-control"
                   required
                 />

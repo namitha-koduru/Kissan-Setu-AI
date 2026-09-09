@@ -47,3 +47,17 @@ class ImageAnalysisResponse(BaseModel):
     model_name: str = "gemini-1.5-flash"
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
+
+
+class CropImageAnalyzeResponse(BaseModel):
+    image_url: str
+    storage_type: str = "local"  # "cloudinary" or "local"
+    detected_crop: Optional[str] = None
+    image_quality: str = "good"
+    crop_health: str = "Healthy (Visible growth standard)"
+    observed_symptoms: List[str] = Field(default_factory=list)
+    possible_issues: List[PossibleIssue] = Field(default_factory=list)
+    confidence: float = 0.85
+    recommendations: List[str] = Field(default_factory=list)
+    when_to_recheck: str = "Re-inspect in 3–5 days or following next irrigation/spraying"
+    disclaimer: str = "Visual agricultural observation, not a laboratory diagnosis."

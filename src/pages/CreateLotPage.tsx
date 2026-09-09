@@ -67,10 +67,24 @@ export function CreateLotPage() {
     e.preventDefault();
     setIsSubmitting(true);
 
+    const parsedQty = parseFloat(String(quantityKg));
+    if (isNaN(parsedQty) || parsedQty <= 0) {
+      showToast("Please enter a valid positive quantity greater than 0.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    const parsedPrice = parseFloat(String(expectedPrice));
+    if (isNaN(parsedPrice) || parsedPrice <= 0) {
+      showToast("Please enter a valid price greater than 0.");
+      setIsSubmitting(false);
+      return;
+    }
+
     const prefix = isFpo ? "LOT-FPO" : "LOT-F";
     const generatedId = `${prefix}-${Date.now().toString().slice(-4)}`;
-    const qty = Number(quantityKg) || 500;
-    const price = Number(expectedPrice) || 30;
+    const qty = parsedQty;
+    const price = parsedPrice;
 
     try {
       await apiClient.post("/lots", {
@@ -277,11 +291,11 @@ export function CreateLotPage() {
               </label>
               <input
                 type="number"
-                min={50}
-                step={50}
+                min="0.01"
+                step="0.01"
                 value={quantityKg}
                 onChange={(e) => setQuantityKg(e.target.value)}
-                placeholder={isFpo ? "e.g. 5000" : "e.g. 500"}
+                placeholder={isFpo ? "e.g. 5000 or 4250.5" : "e.g. 425"}
                 className="form-control"
                 required
               />

@@ -88,9 +88,14 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
     EMBEDDING_DIMENSION: int = 128
 
-    # External Service Keys (Future phases)
+    # External Service Keys (Optional integrations)
     OPENWEATHER_API_KEY: str = ""
     GOV_MANDI_API_KEY: str = ""
+
+    # Razorpay Payment Gateway Configuration (Phase 9)
+    RAZORPAY_KEY_ID: str = os.getenv("RAZORPAY_KEY_ID", "rzp_test_kisansetu2026")
+    RAZORPAY_KEY_SECRET: str = os.getenv("RAZORPAY_KEY_SECRET", "test_secret_kisansetu_secure")
+    RAZORPAY_WEBHOOK_SECRET: str = os.getenv("RAZORPAY_WEBHOOK_SECRET", "webhook_secret_kisansetu_2026")
 
     model_config = SettingsConfigDict(
         env_file=os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"),

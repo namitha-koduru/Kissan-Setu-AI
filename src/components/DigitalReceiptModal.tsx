@@ -230,20 +230,36 @@ export function DigitalReceiptModal({ isOpen, onClose, transaction }: Props) {
 
           <div
             style={{
-              fontSize: 10,
-              color: "var(--ink-muted)",
+              fontSize: 11,
+              color: "var(--ink-soft)",
               borderTop: "1px dashed var(--line)",
-              paddingTop: 8,
+              paddingTop: 10,
               display: "flex",
-              alignItems: "center",
-              gap: 6,
+              flexDirection: "column",
+              gap: 4,
             }}
           >
-            <ShieldCheck size={14} color="var(--green-deep)" />
-            <span>
-              Digital Verification Reference:{" "}
-              {transaction.paymentReference || `SETU-NEFT-2026-${transaction.id}`}
-            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700, color: "var(--navy)" }}>
+              <ShieldCheck size={14} color="var(--green-deep)" />
+              <span>
+                Payment Status: {transaction.paymentStatus || "Pending"}
+              </span>
+            </div>
+            {transaction.razorpayPaymentId && (
+              <div style={{ fontSize: 11, color: "var(--ink-soft)" }}>
+                Razorpay Payment ID: <strong>{transaction.razorpayPaymentId}</strong>
+              </div>
+            )}
+            {transaction.razorpayOrderId && (
+              <div style={{ fontSize: 11, color: "var(--ink-soft)" }}>
+                Razorpay Order ID: {transaction.razorpayOrderId}
+              </div>
+            )}
+            {transaction.paymentDate && (
+              <div style={{ fontSize: 11, color: "var(--ink-muted)" }}>
+                Paid at: {transaction.paymentDate}
+              </div>
+            )}
           </div>
         </div>
 

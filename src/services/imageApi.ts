@@ -65,6 +65,38 @@ export const imageApi = {
   async getCropImages(cropId: number): Promise<CropImageItem[]> {
     return await apiClient.get<CropImageItem[]>(`/images/crop/${cropId}`);
   },
+
+  /**
+   * Upload image and trigger Vision AI symptom analysis
+   */
+  async analyzeCropImage(
+    file: File,
+    cropName?: string,
+    cropId?: number,
+    farmerId: number = 1
+  ): Promise<CropImageAnalyzeResult> {
+    const formData = new FormData();
+    formData.append("image", file);
+    if (cropName) formData.append("crop_name", cropName);
+    if (cropId) formData.append("crop_id", cropId.toString());
+    formData.append("farmer_id", farmerId.toString());
+
+    return await apiClient.postFormData<CropImageAnalyzeResult>("/images/analyze-crop", formData);
+  },
 };
+
+export interface CropImageAnalyzeResult {
+  image_url: string;
+  storage_type: "cloudinary" | "local";
+  detected_crop?: string | null;
+  image_quality: string;
+  crop_health: string;
+  observed_symptoms: string[];
+  possible_issues: PossibleIssue[];
+  confidence: number;
+  recommendations: string[];
+  when_to_recheck: string;
+  disclaimer: string;
+}
 
 export default imageApi;

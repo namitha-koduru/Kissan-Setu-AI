@@ -44,6 +44,8 @@ interface AppStateValue {
   dismissToast: (id: string) => void;
   setActiveCropId: (id: string) => void;
   addCrop: (crop: CropRecord) => void;
+  updateCrop: (id: string, updates: Partial<CropRecord>) => void;
+  setTransaction: (tx: TransactionRecord | ((prev: TransactionRecord) => TransactionRecord)) => void;
   addLot: (lot: LotRecord) => void;
   updateOffer: (id: string, status: OfferRecord["status"]) => void;
   addOffer: (offer: OfferRecord) => void;
@@ -429,6 +431,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setOnboardData((prev) => ({ ...prev, ...data }));
   }, []);
 
+  const updateCrop = useCallback((id: string, updates: Partial<CropRecord>) => {
+    setCrops((prev) => prev.map((c) => (c.id === id ? { ...c, ...updates } : c)));
+  }, []);
+
   const unreadNotifsCount = useMemo(
     () => notifications.filter((n) => !n.read).length,
     [notifications],
@@ -440,6 +446,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       lots,
       offers,
       transaction,
+      setTransaction,
       notifications,
       unreadNotifsCount,
       activeCropId,
@@ -449,6 +456,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       dismissToast,
       setActiveCropId,
       addCrop,
+      updateCrop,
       addLot,
       updateOffer,
       addOffer,
@@ -460,6 +468,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       lots,
       offers,
       transaction,
+      setTransaction,
       notifications,
       unreadNotifsCount,
       activeCropId,
@@ -469,6 +478,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       dismissToast,
       setActiveCropId,
       addCrop,
+      updateCrop,
       addLot,
       updateOffer,
       addOffer,

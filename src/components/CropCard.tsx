@@ -46,6 +46,11 @@ export function CropCard({
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        {crop.cropTrackingActive !== false && (
+          <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--green-deep)", background: "rgba(23,107,69,0.08)", padding: "2px 8px", borderRadius: 8 }}>
+            Crop Tracking Active
+          </span>
+        )}
         {recommendation && <DecisionBadge decision={recommendation} size="sm" />}
         <span className={`stage-tag ${getStageClass(crop.stage)}`}>{crop.stage}</span>
       </div>

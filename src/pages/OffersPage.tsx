@@ -29,7 +29,7 @@ export function OffersPage() {
           buyerName: o.buyer?.name || "Institutional Procurer",
           verified: o.buyer?.verified ?? true,
           pricePerKg: o.offered_price,
-          quantityKg: o.quantity_kg || (localOffers[0]?.quantityKg || 500),
+          quantityKg: typeof o.quantity_kg === "number" && o.quantity_kg > 0 ? o.quantity_kg : (localOffers.find((lo) => lo.id === `off-${o.id}`)?.quantityKg || localOffers[0]?.quantityKg || o.quantity_kg),
           quality: o.quality_grade || "Grade A",
           expiresInDays: "2 days",
           status: o.status === "COUNTERED" ? "Countered" : o.status === "ACCEPTED" ? "Accepted" : o.status === "REJECTED" ? "Rejected" : "Pending",
