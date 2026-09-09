@@ -16,6 +16,7 @@ import {
 } from "../data/demo";
 import { useAuth } from "./AuthContext";
 import type {
+  CropAllocation,
   CropRecord,
   LotRecord,
   NotificationItem,
@@ -70,16 +71,28 @@ function cropIconFor(name: string): string {
   return "🌱";
 }
 
-function buildUserCropRecords(cropNames: string[], location: string): CropRecord[] {
+function buildUserCropRecords(
+  cropNames: string[],
+  location: string,
+  allocations?: CropAllocation[],
+): CropRecord[] {
   return cropNames.map((name, idx) => {
     const slug = name.toLowerCase().replace(/[^a-z0-9]/g, "-");
+    const matchedAlloc = allocations?.find(
+      (a) => a.crop.toLowerCase() === name.toLowerCase(),
+    );
+    const acreage = matchedAlloc && matchedAlloc.area > 0 ? matchedAlloc.area : undefined;
+    const acreageUnit = matchedAlloc?.unit || "Acres";
+
     return {
       id: `user-crop-${slug}-${idx}`,
       name,
       icon: cropIconFor(name),
       variety: "Certified Selection",
-      quantityKg: 500,
+      quantityKg: acreage ? Math.round(acreage * 400) : 500,
       unit: "kg",
+      acreage,
+      acreageUnit,
       sowingDate: "2026-06-15",
       stage: "Near maturity",
       location: location || "Farm Location",
@@ -110,7 +123,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       if (user.role === "buyer") return [];
       if (initialCropsByUserId[user.id]) return initialCropsByUserId[user.id];
       if (user.preferredCrops && user.preferredCrops.length > 0) {
-        return buildUserCropRecords(user.preferredCrops, user.location || user.district || "");
+        return buildUserCropRecords(
+          user.preferredCrops,
+          user.location || user.district || "",
+          user.cropAllocations,
+        );
       }
     }
     return [];
@@ -216,6 +233,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         const userCrops = buildUserCropRecords(
           user.preferredCrops,
           user.location || user.district || "",
+          user.cropAllocations,
         );
         setCrops(userCrops);
         if (userCrops[0]) setActiveCropId(userCrops[0].id);

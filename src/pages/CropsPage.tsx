@@ -57,30 +57,37 @@ export function CropsPage() {
               />
             ))}
 
-            {profileCrops.map((pc) => (
-              <div
-                key={pc}
-                className="card card-pad flex flex-between flex-center flex-wrap gap-sm"
-                style={{ background: "#FAFCF9", border: "1.5px dashed var(--green-leaf)", borderRadius: 12 }}
-              >
-                <div className="flex flex-center gap-md">
-                  <div style={{ fontSize: 26 }}>🌱</div>
-                  <div>
-                    <div style={{ fontSize: 16, fontWeight: 800, color: "var(--navy)" }}>{pc}</div>
-                    <div style={{ fontSize: 12, color: "var(--ink-soft)" }}>
-                      Cultivated crop from profile · Sowing & stage details needed for AI pricing
+            {profileCrops.map((pc) => {
+              const matchedAlloc = Array.isArray(user?.cropAllocations)
+                ? user.cropAllocations.find((a) => a.crop.toLowerCase() === pc.toLowerCase())
+                : null;
+              return (
+                <div
+                  key={pc}
+                  className="card card-pad flex flex-between flex-center flex-wrap gap-sm"
+                  style={{ background: "#FAFCF9", border: "1.5px dashed var(--green-leaf)", borderRadius: 12 }}
+                >
+                  <div className="flex flex-center gap-md">
+                    <div style={{ fontSize: 26 }}>🌱</div>
+                    <div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: "var(--navy)" }}>
+                        {pc} {matchedAlloc && matchedAlloc.area ? `· ${matchedAlloc.area} ${matchedAlloc.unit}` : ""}
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--ink-soft)" }}>
+                        {matchedAlloc && matchedAlloc.area ? `Allocated ${matchedAlloc.area} ${matchedAlloc.unit} in profile` : "Cultivated crop from profile"} · Sowing & stage details needed for AI pricing
+                      </div>
                     </div>
                   </div>
+                  <Link
+                    to={`/crops/add?crop=${encodeURIComponent(pc)}`}
+                    className="btn btn-outline btn-sm"
+                    style={{ borderRadius: 8 }}
+                  >
+                    <Plus size={14} /> Add Tracking Details
+                  </Link>
                 </div>
-                <Link
-                  to={`/crops/add?crop=${encodeURIComponent(pc)}`}
-                  className="btn btn-outline btn-sm"
-                  style={{ borderRadius: 8 }}
-                >
-                  <Plus size={14} /> Add Tracking Details
-                </Link>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

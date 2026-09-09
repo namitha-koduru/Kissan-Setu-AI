@@ -71,8 +71,14 @@ export function ProfilePage() {
           {t("crops.title", "Crops & Preferred Mandis")}
         </h3>
         <div className="pf-row">
-          <span className="l">{t("onboarding.primaryCrops", "Registered Crops")}</span>
-          <span className="v">{onboardData.crops.length > 0 ? onboardData.crops.join(", ") : "None registered yet"}</span>
+          <span className="l">{t("onboarding.primaryCrops", "Registered Crops & Allocation")}</span>
+          <span className="v">
+            {user?.cropAllocations && user.cropAllocations.length > 0
+              ? user.cropAllocations.map((a) => `${a.crop} (${a.area} ${a.unit})`).join(", ")
+              : onboardData.crops.length > 0
+              ? onboardData.crops.join(", ")
+              : "None registered yet"}
+          </span>
         </div>
         <div className="pf-row">
           <span className="l">{t("market.nearbyMandis", "Tracked Mandi Hubs")}</span>

@@ -77,10 +77,66 @@ export function OnboardingPage() {
     ? user.preferredCrops 
     : [];
   const [selectedCrops, setSelectedCrops] = useState<string[]>(initialCrops);
+  const [cropAllocations, setCropAllocations] = useState<Record<string, number | "">>(() => {
+    if (user.cropAllocations && user.cropAllocations.length > 0) {
+      const map: Record<string, number | ""> = {};
+      user.cropAllocations.forEach((a) => {
+        map[a.crop] = a.area;
+      });
+      return map;
+    }
+    return {};
+  });
   const [cropCategoryFilter, setCropCategoryFilter] = useState("All");
   const [cropSearchTerm, setCropSearchTerm] = useState("");
   const [otherCropInput, setOtherCropInput] = useState("");
   const [showOtherCrop, setShowOtherCrop] = useState(false);
+
+  // Unit conversion helper
+  const UNIT_IN_ACRES: Record<string, number> = {
+    Acres: 1.0,
+    Hectares: 2.47105,
+    Bigha: 0.625,
+    Guntha: 0.025,
+  };
+
+  const handleUnitChange = (newUnit: string) => {
+    if (newUnit === landUnit) return;
+    const factor = (UNIT_IN_ACRES[landUnit] || 1.0) / (UNIT_IN_ACRES[newUnit] || 1.0);
+    
+    if (landValue && !isNaN(Number(landValue))) {
+      const convertedLand = parseFloat((Number(landValue) * factor).toFixed(2));
+      setLandValue(String(convertedLand));
+    }
+    
+    setCropAllocations((prev) => {
+      const next: Record<string, number | ""> = {};
+      for (const [c, val] of Object.entries(prev)) {
+        if (val !== "" && typeof val === "number" && !isNaN(val)) {
+          next[c] = parseFloat((val * factor).toFixed(2));
+        } else {
+          next[c] = val;
+        }
+      }
+      return next;
+    });
+    
+    setLandUnit(newUnit);
+  };
+
+  // Dynamic Allocation Calculations
+  const totalLandNum = parseFloat(landValue) || 0;
+  const allocatedLandNum = parseFloat(
+    selectedCrops
+      .reduce((sum, c) => {
+        const val = cropAllocations[c];
+        return sum + (typeof val === "number" ? val : parseFloat(String(val)) || 0);
+      }, 0)
+      .toFixed(2)
+  );
+  const remainingLandNum = parseFloat(Math.max(0, totalLandNum - allocatedLandNum).toFixed(2));
+  const isAllocationExceeded = totalLandNum > 0 && allocatedLandNum > totalLandNum + 0.001;
+  const isFullyAllocated = totalLandNum > 0 && Math.abs(allocatedLandNum - totalLandNum) < 0.001;
 
   const [harvestQty, setHarvestQty] = useState("");
   const [harvestUnit, setHarvestUnit] = useState("kg");
@@ -187,9 +243,18 @@ export function OnboardingPage() {
     if (selectedCrops.includes(cropName)) {
       if (selectedCrops.length > 1) {
         setSelectedCrops(selectedCrops.filter((c) => c !== cropName));
+        setCropAllocations((prev) => {
+          const next = { ...prev };
+          delete next[cropName];
+          return next;
+        });
       }
     } else {
       setSelectedCrops([...selectedCrops, cropName]);
+      setCropAllocations((prev) => ({
+        ...prev,
+        [cropName]: "",
+      }));
     }
   };
 
@@ -198,6 +263,10 @@ export function OnboardingPage() {
     if (trimmed) {
       if (!selectedCrops.some((c) => c.toLowerCase() === trimmed.toLowerCase())) {
         setSelectedCrops([...selectedCrops, trimmed]);
+        setCropAllocations((prev) => ({
+          ...prev,
+          [trimmed]: "",
+        }));
       }
       setOtherCropInput("");
       setShowOtherCrop(false);
@@ -208,6 +277,11 @@ export function OnboardingPage() {
     e.stopPropagation();
     if (selectedCrops.length > 1) {
       setSelectedCrops(selectedCrops.filter((c) => c !== cropName));
+      setCropAllocations((prev) => {
+        const next = { ...prev };
+        delete next[cropName];
+        return next;
+      });
     }
   };
 
@@ -251,6 +325,12 @@ export function OnboardingPage() {
   const handleFarmerComplete = () => {
     const locStr = [village, district, state, country].filter(Boolean).join(", ");
     
+    const formattedAllocations = selectedCrops.map((c) => ({
+      crop: c,
+      area: typeof cropAllocations[c] === "number" ? (cropAllocations[c] as number) : parseFloat(String(cropAllocations[c])) || 0,
+      unit: landUnit,
+    }));
+
     // Update Auth Profile
     updateUserProfile({
       location: locStr || "India",
@@ -259,6 +339,7 @@ export function OnboardingPage() {
       village: village || "",
       landAcreage: `${landValue} ${landUnit}`,
       preferredCrops: selectedCrops,
+      cropAllocations: formattedAllocations,
       onboarded: true,
     });
 
@@ -269,6 +350,7 @@ export function OnboardingPage() {
       state: state || "India",
       country: "India",
       crops: selectedCrops,
+      cropAllocations: formattedAllocations,
       quantity: `${harvestQty} ${harvestUnit}`,
       quantityUnit: harvestUnit,
       land: `${landValue} ${landUnit}`,
@@ -353,6 +435,12 @@ export function OnboardingPage() {
       if (step === 1) {
         if (!state) {
           alert("Please select your State to configure localized mandi and weather feeds.");
+          return;
+        }
+      }
+      if (step === 2) {
+        if (isAllocationExceeded) {
+          alert(`Crop allocation exceeds your total cultivated land by ${(allocatedLandNum - totalLandNum).toFixed(1)} ${landUnit}. Please adjust crop acreage before proceeding.`);
           return;
         }
       }
@@ -513,7 +601,7 @@ export function OnboardingPage() {
                       min="0.1"
                       value={landValue}
                       onChange={(e) => setLandValue(e.target.value)}
-                      placeholder="e.g. 2.5"
+                      placeholder="e.g. 5.0"
                       required
                     />
                   </div>
@@ -522,7 +610,7 @@ export function OnboardingPage() {
                     <select
                       id="land-unit"
                       value={landUnit}
-                      onChange={(e) => setLandUnit(e.target.value)}
+                      onChange={(e) => handleUnitChange(e.target.value)}
                     >
                       <option value="Acres">Acres</option>
                       <option value="Hectares">Hectares</option>
@@ -572,7 +660,7 @@ export function OnboardingPage() {
                   ))}
                 </div>
 
-                <div className="chip-grid mb-lg" style={{ maxHeight: 220, overflowY: "auto", padding: 2 }}>
+                <div className="chip-grid mb-md" style={{ maxHeight: 180, overflowY: "auto", padding: 2 }}>
                   {ALL_SUPPORTED_CROPS
                     .filter((c) => {
                       const matchesCat = cropCategoryFilter === "All" || c.category === cropCategoryFilter;
@@ -673,6 +761,142 @@ export function OnboardingPage() {
                     >
                       Cancel
                     </button>
+                  </div>
+                )}
+
+                {/* CROP-WISE LAND ALLOCATION COMPACT SECTION */}
+                {selectedCrops.length > 0 && (
+                  <div
+                    style={{
+                      marginTop: 18,
+                      background: "#FAFCF9",
+                      border: isAllocationExceeded ? "1.5px solid var(--danger)" : "1.5px solid #D5E5D8",
+                      borderRadius: 14,
+                      padding: "16px",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
+                      <div>
+                        <div style={{ fontSize: "12px", fontWeight: 800, color: "var(--green-deep)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                          🌱 CROP-WISE LAND ALLOCATION
+                        </div>
+                        <div style={{ fontSize: "12px", color: "var(--ink-soft)", marginTop: 2 }}>
+                          Specify how many {landUnit.toLowerCase()} are allocated to each cultivated crop.
+                        </div>
+                      </div>
+
+                      <div style={{ textAlign: "right" }}>
+                        <div
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            fontSize: "12.5px",
+                            fontWeight: 800,
+                            color: isAllocationExceeded ? "var(--danger)" : isFullyAllocated ? "var(--green-deep)" : "var(--navy)",
+                            background: isAllocationExceeded ? "#FDE8E8" : isFullyAllocated ? "#E6F4EA" : "#FFFFFF",
+                            border: isAllocationExceeded ? "1px solid #F8B4B4" : "1px solid var(--line)",
+                            padding: "4px 10px",
+                            borderRadius: 8,
+                          }}
+                        >
+                          {isFullyAllocated ? "✓ " : ""}Allocated: {allocatedLandNum} / {totalLandNum || 0} {landUnit}
+                        </div>
+                        <div style={{ fontSize: "11.5px", color: isAllocationExceeded ? "var(--danger)" : "var(--ink-soft)", marginTop: 3 }}>
+                          {isAllocationExceeded ? (
+                            <strong>Exceeds by {(allocatedLandNum - totalLandNum).toFixed(1)} {landUnit}</strong>
+                          ) : (
+                            <span>Remaining: {remainingLandNum.toFixed(1)} {landUnit}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Allocation Rows */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {selectedCrops.map((cName) => {
+                        const catalogItem = ALL_SUPPORTED_CROPS.find((ac) => ac.name.toLowerCase() === cName.toLowerCase());
+                        const emoji = catalogItem?.emoji || "🌱";
+                        const val = cropAllocations[cName] !== undefined ? cropAllocations[cName] : "";
+
+                        return (
+                          <div
+                            key={cName}
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              background: "#FFFFFF",
+                              border: "1px solid var(--line)",
+                              borderRadius: 10,
+                              padding: "8px 12px",
+                              gap: 12,
+                            }}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 120 }}>
+                              <span style={{ fontSize: "18px" }}>{emoji}</span>
+                              <span style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--navy)" }}>{cName}</span>
+                            </div>
+
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <div style={{ position: "relative", width: 110 }}>
+                                <input
+                                  type="number"
+                                  step="0.1"
+                                  min="0"
+                                  max={totalLandNum || undefined}
+                                  value={val}
+                                  onChange={(e) => {
+                                    const parsed = e.target.value === "" ? "" : Math.max(0, parseFloat(e.target.value));
+                                    setCropAllocations((prev) => ({
+                                      ...prev,
+                                      [cName]: parsed,
+                                    }));
+                                  }}
+                                  placeholder="0.0"
+                                  style={{
+                                    width: "100%",
+                                    padding: "6px 10px",
+                                    fontSize: "13px",
+                                    fontWeight: 700,
+                                    textAlign: "right",
+                                    borderRadius: 8,
+                                    border: isAllocationExceeded ? "1.5px solid var(--danger)" : "1px solid var(--line)",
+                                  }}
+                                />
+                              </div>
+                              <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--ink-soft)", minWidth: 55 }}>
+                                {landUnit}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Inline Error Message */}
+                    {isAllocationExceeded && (
+                      <div
+                        style={{
+                          marginTop: 10,
+                          padding: "8px 12px",
+                          background: "#FDE8E8",
+                          border: "1px solid #F8B4B4",
+                          borderRadius: 8,
+                          color: "var(--danger)",
+                          fontSize: "12px",
+                          fontWeight: 700,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                        }}
+                      >
+                        <span>⚠️</span>
+                        <span>
+                          Crop allocation exceeds your total cultivated land by {(allocatedLandNum - totalLandNum).toFixed(1)} {landUnit}.
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -830,8 +1054,23 @@ export function OnboardingPage() {
                       <span>{landValue} {landUnit}</span>
                     </div>
                     <div>
-                      <strong style={{ color: "var(--ink-soft)", display: "block", fontSize: 12 }}>CULTIVATED CROPS</strong>
-                      <span>{selectedCrops.join(", ")}</span>
+                      <strong style={{ color: "var(--ink-soft)", display: "block", fontSize: 12 }}>CULTIVATED CROPS & ALLOCATION</strong>
+                      <div style={{ marginTop: 2 }}>
+                        {selectedCrops.map((c) => {
+                          const catalogItem = ALL_SUPPORTED_CROPS.find((ac) => ac.name.toLowerCase() === c.toLowerCase());
+                          const emoji = catalogItem?.emoji || "🌱";
+                          const area = cropAllocations[c];
+                          const hasArea = typeof area === "number" && area > 0;
+                          return (
+                            <div key={c} style={{ fontSize: "13px", marginBottom: 2 }}>
+                              {emoji} {c} — {hasArea ? `${area} ${landUnit}` : "Area not specified"}
+                            </div>
+                          );
+                        })}
+                        <div style={{ fontSize: "11.5px", color: "var(--green-deep)", fontWeight: 700, marginTop: 4 }}>
+                          Total Allocated: {allocatedLandNum} {landUnit} {remainingLandNum > 0 ? `(${remainingLandNum.toFixed(1)} ${landUnit} unallocated/fallow)` : ""}
+                        </div>
+                      </div>
                     </div>
                     <div>
                       <strong style={{ color: "var(--ink-soft)", display: "block", fontSize: 12 }}>SEASONAL VOLUME</strong>
@@ -1276,7 +1515,13 @@ export function OnboardingPage() {
             <div />
           )}
 
-          <button className="btn btn-primary" type="button" onClick={handleNext}>
+          <button
+            className="btn btn-primary"
+            type="button"
+            onClick={handleNext}
+            disabled={role === "farmer" && step === 2 && isAllocationExceeded}
+            style={role === "farmer" && step === 2 && isAllocationExceeded ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
+          >
             {step < totalSteps ? (
               <>
                 {t("onboarding.continue")} <ArrowRight size={16} />

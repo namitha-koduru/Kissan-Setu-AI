@@ -53,7 +53,7 @@ export function CropDetailsPage() {
             {crop.icon || "🌱"} {crop.name}
           </h1>
           <p style={{ color: "var(--ink-soft)", fontSize: "14px", marginTop: 2 }}>
-            {crop.quantityKg} {crop.unit || "kg"} · {t("crops.variety")}: {crop.variety || "Hybrid"} · {t("auth.location")}: {crop.location}
+            {crop.acreage ? `${crop.acreage} ${crop.acreageUnit || "Acres"} · ` : ""}{crop.quantityKg} {crop.unit || "kg"} · {t("crops.variety")}: {crop.variety || "Hybrid"} · {t("auth.location")}: {crop.location}
           </p>
         </div>
 
@@ -97,6 +97,10 @@ export function CropDetailsPage() {
             <div className="pf-row">
               <span className="l">Crop Variety / Hybrid</span>
               <span className="v">{crop.variety || "Hybrid F1"}</span>
+            </div>
+            <div className="pf-row">
+              <span className="l">Allocated Cultivated Land</span>
+              <span className="v">{crop.acreage ? `${crop.acreage} ${crop.acreageUnit || "Acres"}` : "Area not specified"}</span>
             </div>
             <div className="pf-row">
               <span className="l">Total Registered Volume</span>
