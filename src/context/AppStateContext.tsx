@@ -8,8 +8,8 @@ import {
   type ReactNode,
 } from "react";
 import {
-  initialCrops,
-  initialLots,
+  initialCropsByUserId,
+  initialLotsByUserId,
   initialNotifications,
   initialOffers,
   initialTransaction,
@@ -65,38 +65,31 @@ function cropIconFor(name: string): string {
   if (n.includes("rice") || n.includes("paddy")) return "🌾";
   if (n.includes("banana")) return "🍌";
   if (n.includes("mango")) return "🥭";
-  if (n.includes("jackfruit") || n.includes("panasa")) return "🍈";
+  if (n.includes("soybean") || n.includes("soya")) return "🌱";
+  if (n.includes("maize") || n.includes("corn")) return "🌽";
   return "🌱";
 }
 
 function buildUserCropRecords(cropNames: string[], location: string): CropRecord[] {
   return cropNames.map((name, idx) => {
     const slug = name.toLowerCase().replace(/[^a-z0-9]/g, "-");
-    const existing = initialCrops.find((c) => c.name.toLowerCase() === name.toLowerCase());
-    if (existing) {
-      return {
-        ...existing,
-        id: `user-crop-${slug}-${idx}`,
-        location: location || existing.location,
-      };
-    }
     return {
       id: `user-crop-${slug}-${idx}`,
       name,
       icon: cropIconFor(name),
-      variety: "Local / Farm Selection",
+      variety: "Certified Selection",
       quantityKg: 500,
       unit: "kg",
       sowingDate: "2026-06-15",
       stage: "Near maturity",
-      location: location || "Your Farm Location",
+      location: location || "Farm Location",
       expectedPrice: 32,
       harvestEst: "10–15 Sep 2026",
       harvestWindow: "3–5 days",
       recommendation: "SELL",
       bestMarket: "Local Regional Mandi",
       netRealization: 31,
-      confidence: 84,
+      confidence: 88,
     };
   });
 }
@@ -108,19 +101,19 @@ function getStorageKey(userId: string | undefined, prefix: string) {
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
 
-  const isDemoFarmer = user?.id === "u-farmer";
-
   const [crops, setCrops] = useState<CropRecord[]>(() => {
     if (user?.id) {
       try {
         const stored = localStorage.getItem(getStorageKey(user.id, "crops"));
         if (stored) return JSON.parse(stored);
       } catch {}
+      if (user.role === "buyer") return [];
+      if (initialCropsByUserId[user.id]) return initialCropsByUserId[user.id];
+      if (user.preferredCrops && user.preferredCrops.length > 0) {
+        return buildUserCropRecords(user.preferredCrops, user.location || user.district || "");
+      }
     }
-    if (user?.preferredCrops && user.preferredCrops.length > 0) {
-      return buildUserCropRecords(user.preferredCrops, user.location || user.district || "");
-    }
-    return isDemoFarmer ? initialCrops : [];
+    return [];
   });
 
   const [lots, setLots] = useState<LotRecord[]>(() => {
@@ -129,8 +122,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         const stored = localStorage.getItem(getStorageKey(user.id, "lots"));
         if (stored) return JSON.parse(stored);
       } catch {}
+      if (user.role === "buyer") return [];
+      if (initialLotsByUserId[user.id]) return initialLotsByUserId[user.id];
     }
-    return isDemoFarmer ? initialLots : [];
+    return [];
   });
 
   const [offers, setOffers] = useState<OfferRecord[]>(() => {
@@ -139,8 +134,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         const stored = localStorage.getItem(getStorageKey(user.id, "offers"));
         if (stored) return JSON.parse(stored);
       } catch {}
+      if (user.id === "farmer-1" || user.id === "u-farmer") return initialOffers;
     }
-    return isDemoFarmer ? initialOffers : [];
+    return [];
   });
 
   const [transaction, setTransaction] = useState<TransactionRecord>(() => {
@@ -149,20 +145,27 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         const stored = localStorage.getItem(getStorageKey(user.id, "tx"));
         if (stored) return JSON.parse(stored);
       } catch {}
+      if (user.id === "farmer-1" || user.id === "u-farmer" || user.role === "farmer") {
+        return initialTransaction;
+      }
     }
-    return isDemoFarmer ? initialTransaction : {
-      id: "TX-2026-0001",
-      lotId: "",
-      buyerName: "",
-      crop: "",
-      quantityKg: 0,
-      pricePerKg: 0,
+    return {
+      id: "TX-2026-9848",
+      lotId: "LOT-F1-001",
+      buyerName: "Bharat Agro Processing",
+      farmerName: "Ramesh Naidu",
+      crop: "Cotton (Grade A)",
+      quantityKg: 500,
+      pricePerKg: 70,
+      grossAmount: 35000,
+      transportCharges: 800,
+      netRealization: 34200,
       stages: [
-        { label: "Offer Accepted", done: false, date: "" },
-        { label: "Pickup Scheduled", done: false, date: "" },
-        { label: "Produce Picked Up", done: false, date: "" },
-        { label: "Delivered to Hub", done: false, date: "" },
-        { label: "Payment Received", done: false, date: "" },
+        { label: "Contract Confirmed", done: true, date: "05 Sep, 10:20 AM" },
+        { label: "Pickup Scheduled", done: true, date: "08 Sep, 8:00 AM" },
+        { label: "Transit to Hub", done: false, date: "Pending" },
+        { label: "Quality Acceptance", done: false, date: "Pending" },
+        { label: "Payment Settlement", done: false, date: "Pending" },
       ],
     };
   });
@@ -182,7 +185,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     markets: [],
   }));
 
-  // Sync crops and onboarding data when authenticated user changes
+  // Synchronize state when authenticated user switches
   useEffect(() => {
     if (user) {
       const userCropKey = getStorageKey(user.id, "crops");
@@ -195,43 +198,62 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       const storedOffers = localStorage.getItem(userOfferKey);
       const storedTx = localStorage.getItem(userTxKey);
 
-      if (storedCrops) {
+      // 1. Crops
+      if (user.role === "buyer") {
+        setCrops([]);
+        setActiveCropId("");
+      } else if (storedCrops) {
         try {
           const parsed = JSON.parse(storedCrops);
           setCrops(parsed);
           if (parsed[0]) setActiveCropId(parsed[0].id);
         } catch {}
+      } else if (initialCropsByUserId[user.id]) {
+        const fixture = initialCropsByUserId[user.id];
+        setCrops(fixture);
+        if (fixture[0]) setActiveCropId(fixture[0].id);
       } else if (user.preferredCrops && user.preferredCrops.length > 0) {
-        const userCrops = buildUserCropRecords(user.preferredCrops, user.location || user.district || "");
+        const userCrops = buildUserCropRecords(
+          user.preferredCrops,
+          user.location || user.district || "",
+        );
         setCrops(userCrops);
         if (userCrops[0]) setActiveCropId(userCrops[0].id);
-      } else if (user.id === "u-farmer") {
-        setCrops(initialCrops);
-        setActiveCropId(initialCrops[0]?.id || "crop-tomato");
       } else {
         setCrops([]);
         setActiveCropId("");
       }
 
-      if (storedLots) {
-        try { setLots(JSON.parse(storedLots)); } catch {}
-      } else if (user.id === "u-farmer") {
-        setLots(initialLots);
+      // 2. Lots (Buyers have NO seller lots)
+      if (user.role === "buyer") {
+        setLots([]);
+      } else if (storedLots) {
+        try {
+          setLots(JSON.parse(storedLots));
+        } catch {}
+      } else if (initialLotsByUserId[user.id]) {
+        setLots(initialLotsByUserId[user.id]);
       } else {
         setLots([]);
       }
 
+      // 3. Offers
       if (storedOffers) {
-        try { setOffers(JSON.parse(storedOffers)); } catch {}
-      } else if (user.id === "u-farmer") {
+        try {
+          setOffers(JSON.parse(storedOffers));
+        } catch {}
+      } else if (user.id === "farmer-1" || user.id === "u-farmer") {
         setOffers(initialOffers);
       } else {
         setOffers([]);
       }
 
+      // 4. Transaction
       if (storedTx) {
-        try { setTransaction(JSON.parse(storedTx)); } catch {}
-      } else if (user.id === "u-farmer") {
+        try {
+          setTransaction(JSON.parse(storedTx));
+        } catch {}
+      } else {
         setTransaction(initialTransaction);
       }
 
@@ -240,7 +262,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         village: user.village || prev.village,
         district: user.district || prev.district,
         state: user.state || prev.state,
-        crops: user.preferredCrops && user.preferredCrops.length > 0 ? user.preferredCrops : prev.crops,
+        crops:
+          user.preferredCrops && user.preferredCrops.length > 0
+            ? user.preferredCrops
+            : prev.crops,
         land: user.landAcreage || prev.land,
       }));
     } else {
@@ -252,17 +277,17 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   // Persist crops on change
   useEffect(() => {
-    if (user?.id) {
+    if (user?.id && user.role !== "buyer") {
       localStorage.setItem(getStorageKey(user.id, "crops"), JSON.stringify(crops));
     }
-  }, [crops, user?.id]);
+  }, [crops, user?.id, user?.role]);
 
   // Persist lots on change
   useEffect(() => {
-    if (user?.id) {
+    if (user?.id && user.role !== "buyer") {
       localStorage.setItem(getStorageKey(user.id, "lots"), JSON.stringify(lots));
     }
-  }, [lots, user?.id]);
+  }, [lots, user?.id, user?.role]);
 
   // Persist offers on change
   useEffect(() => {
@@ -283,7 +308,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => [...prev, { id, message }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3200);
+    }, 3800);
   }, []);
 
   const dismissToast = useCallback((id: string) => {
@@ -301,12 +326,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const addLot = useCallback(
     (lot: LotRecord) => {
+      if (user?.role === "buyer") {
+        showToast("Lot creation is available to Farmers and FPOs.");
+        return;
+      }
       setLots((prev) => [lot, ...prev]);
-      // Also automatically populate matching prospective offer for immediate acceptance testing
+      // Populate matched offer
       const matchingOffer: OfferRecord = {
         id: `off-${lot.id.replace(/[^0-9]/g, "") || Date.now()}`,
         lotId: lot.id,
-        buyerName: "Sahyadri Farmers Producer Co.",
+        buyerName: "FreshFarm Foods",
         verified: true,
         pricePerKg: Math.max(lot.expectedPrice, 32),
         quantityKg: lot.quantityKg,
@@ -317,7 +346,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       setOffers((prev) => [matchingOffer, ...prev]);
       showToast(`Lot ${lot.id} created and opened for buyer offers.`);
     },
-    [showToast],
+    [user?.role, showToast],
   );
 
   const updateOffer = useCallback(
@@ -327,7 +356,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         const found = offers.find((o) => o.id === id);
         if (found) {
           const associatedLot = lots.find((l) => l.id === found.lotId);
-          const finalCrop = associatedLot?.crop || "Tomato";
+          const finalCrop = associatedLot?.crop || "Cotton";
           const finalQty = found.quantityKg || associatedLot?.quantityKg || 500;
           const finalPrice = found.pricePerKg || 32;
 
@@ -335,12 +364,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             prev.map((l) => (l.id === found.lotId ? { ...l, status: "Offer Accepted" } : l)),
           );
           setTransaction({
-            id: `TX-2026-${found.lotId.replace(/[^0-9]/g, "") || "001"}`,
+            id: `TX-2026-${found.lotId.replace(/[^0-9]/g, "") || "9848"}`,
             lotId: found.lotId,
             buyerName: found.buyerName,
+            farmerName: user?.name || "Registered Producer",
             crop: finalCrop,
             pricePerKg: finalPrice,
             quantityKg: finalQty,
+            grossAmount: finalPrice * finalQty,
+            transportCharges: 800,
+            netRealization: finalPrice * finalQty - 800,
             stages: [
               { label: "Contract Confirmed & Verified", done: true, date: "Today, 10:30 AM" },
               { label: "Logistics & Pickup Scheduled", done: true, date: "Today, 11:15 AM" },
@@ -357,7 +390,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         showToast("Counter offer sent to buyer.");
       }
     },
-    [offers, lots, showToast],
+    [offers, lots, user?.name, showToast],
   );
 
   const addOffer = useCallback((offer: OfferRecord) => {

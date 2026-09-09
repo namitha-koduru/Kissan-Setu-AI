@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
-import { demoUsers } from "../data/demo";
+import { demoUsersWithCred } from "../data/demo";
 import type { User, UserRole } from "../types";
 
 export interface RegisterInput {
@@ -23,7 +23,7 @@ interface StoredUserWithCred extends User {
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
-  login: (emailOrMobile: string, password: string) => Promise<string | null>;
+  login: (emailOrMobile: string, password: string, requestedRole?: UserRole) => Promise<string | null>;
   register: (input: RegisterInput) => Promise<string | null>;
   updateUserProfile: (updates: Partial<User>) => void;
   logout: () => void;
@@ -51,6 +51,14 @@ function readRegisteredUsers(): StoredUserWithCred[] {
   }
 }
 
+function roleToTitle(role: UserRole | string): string {
+  if (role === "farmer") return "Farmer";
+  if (role === "fpo") return "FPO";
+  if (role === "buyer") return "Buyer";
+  if (role === "admin") return "Admin";
+  return String(role);
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => readStored());
   const [loading] = useState(false);
@@ -59,26 +67,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       loading,
-      async login(emailOrMobile, password) {
+      async login(emailOrMobile, password, requestedRole) {
         if (!emailOrMobile?.trim() || !password?.trim()) {
           return "Please provide both email/mobile and password.";
         }
         const cleanIdentifier = emailOrMobile.trim().toLowerCase();
         const cleanDigits = emailOrMobile.replace(/\D/g, "");
         const registered = readRegisteredUsers();
-        
+
         // 1. Check registered users first
         const registeredMatch = registered.find((u) => {
           const matchEmail = u.email && u.email.toLowerCase() === cleanIdentifier;
           const userDigits = u.mobile ? u.mobile.replace(/\D/g, "") : "";
-          const matchMobile = cleanDigits && userDigits && (userDigits === cleanDigits || userDigits.endsWith(cleanDigits) || cleanDigits.endsWith(userDigits));
+          const matchMobile =
+            cleanDigits &&
+            userDigits &&
+            (userDigits === cleanDigits ||
+              userDigits.endsWith(cleanDigits) ||
+              cleanDigits.endsWith(userDigits));
           return matchEmail || matchMobile;
         });
 
         if (registeredMatch) {
-          if (registeredMatch.registeredPassword && registeredMatch.registeredPassword !== password) {
+          if (
+            registeredMatch.registeredPassword &&
+            registeredMatch.registeredPassword !== password
+          ) {
             return "Invalid credentials. Please verify your password.";
           }
+
+          // Strict Role Validation
+          if (requestedRole && registeredMatch.role !== requestedRole) {
+            return `These credentials belong to a ${roleToTitle(
+              registeredMatch.role,
+            )} account. Please use ${roleToTitle(registeredMatch.role)} Login.`;
+          }
+
           const safeUser: User = { ...registeredMatch };
           delete (safeUser as any).passwordHash;
           delete (safeUser as any).registeredPassword;
@@ -87,32 +111,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return null;
         }
 
-        // 2. Check demo users fixture (for SIH evaluations/tests)
-        const demoMatch = demoUsers.find((u) => {
+        // 2. Check 15 sample demo users
+        const demoMatch = demoUsersWithCred.find((u) => {
           const matchEmail = u.email?.toLowerCase() === cleanIdentifier;
           const userDigits = u.mobile ? u.mobile.replace(/\D/g, "") : "";
-          const matchMobile = cleanDigits && userDigits && (userDigits === cleanDigits || userDigits.endsWith(cleanDigits) || cleanDigits.endsWith(userDigits));
+          const matchMobile =
+            cleanDigits &&
+            userDigits &&
+            (userDigits === cleanDigits ||
+              userDigits.endsWith(cleanDigits) ||
+              cleanDigits.endsWith(userDigits));
           return matchEmail || matchMobile;
         });
 
         if (demoMatch) {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(demoMatch));
-          setUser(demoMatch);
+          if (demoMatch.password !== password) {
+            return "Invalid credentials. Please verify your password.";
+          }
+
+          // Strict Role Validation
+          if (requestedRole && demoMatch.role !== requestedRole) {
+            return `These credentials belong to a ${roleToTitle(
+              demoMatch.role,
+            )} account. Please use ${roleToTitle(demoMatch.role)} Login.`;
+          }
+
+          const { password: _p, ...safeUser } = demoMatch;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(safeUser));
+          setUser(safeUser);
           return null;
         }
 
         return "Invalid credentials. Please verify your email/mobile and password.";
       },
       async register(input) {
-        const initials = input.name
-          .split(" ")
-          .map((n) => n[0])
-          .slice(0, 2)
-          .join("")
-          .toUpperCase() || "KS";
+        const initials =
+          input.name
+            .split(" ")
+            .map((n) => n[0])
+            .slice(0, 2)
+            .join("")
+            .toUpperCase() || "KS";
 
-        const primaryEmail = input.email?.trim() || `${input.mobile?.replace(/\D/g, "") || Date.now()}@kisansetu.in`;
-        
+        const primaryEmail =
+          input.email?.trim() ||
+          `${input.mobile?.replace(/\D/g, "") || Date.now()}@kisansetu.in`;
+
         const createdUser: StoredUserWithCred = {
           id: `u-${Date.now()}`,
           name: input.name.trim(),
@@ -135,7 +179,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ...currentRegistered.filter(
             (u) =>
               (input.email && u.email?.toLowerCase() !== input.email.toLowerCase()) ||
-              (input.mobile && u.mobile?.replace(/\D/g, "") !== input.mobile.replace(/\D/g, ""))
+              (input.mobile &&
+                u.mobile?.replace(/\D/g, "") !== input.mobile.replace(/\D/g, "")),
           ),
           createdUser,
         ];
@@ -157,7 +202,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Also update in registered list
           const currentRegistered = readRegisteredUsers();
           const listUpdated = currentRegistered.map((u) => {
-            if (u.id === prev.id || (prev.email && u.email?.toLowerCase() === prev.email.toLowerCase())) {
+            if (
+              u.id === prev.id ||
+              (prev.email && u.email?.toLowerCase() === prev.email.toLowerCase())
+            ) {
               return { ...u, ...updates };
             }
             return u;

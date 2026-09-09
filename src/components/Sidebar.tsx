@@ -13,63 +13,97 @@ import {
   UserCheck,
   LogOut,
   Sparkles,
+  BarChart3,
+  Layers,
+  ShoppingBag,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { Logo } from "./Logo";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 
-const navItems = [
-  // Primary Marketplace Flow
-  { to: "/dashboard", labelKey: "nav.home", defaultLabel: "Home", icon: LayoutDashboard, roles: ["farmer", "fpo", "buyer", "admin"], group: "main" },
-  { to: "/market", labelKey: "nav.market", defaultLabel: "Marketplace", icon: Store, roles: ["farmer", "fpo", "buyer", "admin"], group: "main" },
-  { to: "/lots", labelKey: "nav.lots", defaultLabel: "My Lots", icon: Package, roles: ["farmer", "fpo", "buyer"], group: "main" },
-  { to: "/offers", labelKey: "nav.offers", defaultLabel: "Buyer Offers", icon: Handshake, roles: ["farmer", "fpo", "buyer"], group: "main" },
-  { to: "/transactions", labelKey: "nav.transactions", defaultLabel: "Transactions & Receipts", icon: Truck, roles: ["farmer", "fpo", "buyer"], group: "main" },
-  
-  // Secondary Intelligence & Farm Tools
-  { to: "/chat", labelKey: "nav.askAi", defaultLabel: "Ask KissanSetu AI", icon: Sparkles, roles: ["farmer", "fpo", "buyer", "admin"], group: "tools" },
-  { to: "/crops", labelKey: "nav.myCrops", defaultLabel: "My Crops", icon: Sprout, roles: ["farmer", "fpo"], group: "tools" },
-  { to: "/weather", labelKey: "nav.weather", defaultLabel: "Weather & Risk", icon: CloudSun, roles: ["farmer", "fpo", "buyer", "admin"], group: "tools" },
-  { to: "/recommendation", labelKey: "nav.recommendations", defaultLabel: "Decision Center", icon: Lightbulb, roles: ["farmer", "fpo"], group: "tools" },
-  { to: "/buyers", labelKey: "nav.buyers", defaultLabel: "Direct Buyers", icon: Users, roles: ["farmer", "fpo", "admin"], group: "tools" },
-  { to: "/fpo", labelKey: "nav.fpo", defaultLabel: "FPO Pooling", icon: Building2, roles: ["farmer", "fpo", "admin"], group: "tools" },
-  { to: "/profile", labelKey: "nav.profile", defaultLabel: "Profile & Settings", icon: UserCheck, roles: ["farmer", "fpo", "buyer", "admin"], group: "settings" },
-] as const;
-
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { user, logout } = useAuth();
   const { t } = useLanguage();
   const role = user?.role ?? "farmer";
 
-  const filteredItems = navItems.filter((i) => (i.roles as readonly string[]).includes(role));
+  // Role-Specific Navigation Definitions (Part 2)
+  const farmerNavItems = [
+    { to: "/dashboard", label: t("nav.home", "Home"), icon: LayoutDashboard },
+    { to: "/crops", label: t("nav.myCrops", "Crops"), icon: Sprout },
+    { to: "/market", label: t("nav.market", "Markets"), icon: Store },
+    { to: "/offers", label: t("nav.offers", "Deals"), icon: Handshake },
+    { to: "/lots", label: t("nav.lots", "Lots"), icon: Package },
+    { to: "/weather", label: t("nav.weather", "Weather"), icon: CloudSun },
+    { to: "/recommendation", label: t("nav.recommendations", "Decision Center"), icon: Lightbulb },
+    { to: "/chat", label: t("nav.askAi", "AI Assistant"), icon: Sparkles },
+    { to: "/transactions", label: t("nav.transactions", "Transactions"), icon: Truck },
+    { to: "/profile", label: t("nav.profile", "Profile"), icon: UserCheck },
+  ];
 
-  let lastGroup = "";
+  const fpoNavItems = [
+    { to: "/fpo", label: t("nav.fpoDashboard", "FPO Dashboard"), icon: Building2 },
+    { to: "/fpo?tab=members", label: t("nav.members", "Members"), icon: Users },
+    { to: "/fpo?tab=aggregation", label: t("nav.aggregation", "Aggregation"), icon: Layers },
+    { to: "/market", label: t("nav.market", "Markets"), icon: Store },
+    { to: "/buyers", label: t("nav.buyers", "Buyers"), icon: ShoppingBag },
+    { to: "/lots", label: t("nav.bulkLots", "Bulk Lots"), icon: Package },
+    { to: "/offers", label: t("nav.offers", "Deals"), icon: Handshake },
+    { to: "/transactions", label: t("nav.transactions", "Transactions"), icon: Truck },
+    { to: "/analytics", label: t("nav.analytics", "Analytics"), icon: BarChart3 },
+    { to: "/profile", label: t("nav.profile", "Profile"), icon: UserCheck },
+  ];
+
+  const buyerNavItems = [
+    { to: "/buyers", label: t("nav.procurement", "Procurement"), icon: ShoppingBag },
+    { to: "/lots", label: t("nav.availableLots", "Available Lots"), icon: Package },
+    { to: "/market", label: t("nav.marketPrices", "Market Prices"), icon: Store },
+    { to: "/offers", label: t("nav.offers", "Offers"), icon: Handshake },
+    { to: "/transactions", label: t("nav.deals", "Deals & Transactions"), icon: Truck },
+    { to: "/analytics", label: t("nav.analytics", "Analytics"), icon: BarChart3 },
+    { to: "/profile", label: t("nav.profile", "Profile"), icon: UserCheck },
+  ];
+
+  const currentNavItems =
+    role === "fpo" ? fpoNavItems : role === "buyer" ? buyerNavItems : farmerNavItems;
+
+  const homeUrl = role === "fpo" ? "/fpo" : role === "buyer" ? "/buyers" : "/dashboard";
 
   return (
     <aside className="sidebar">
-      <Logo to="/dashboard" className="logo" />
-      <nav className="sidebar-nav" aria-label="Main Navigation">
-        {filteredItems.map((item) => {
-          const Icon = item.icon;
-          const label = t(item.labelKey, item.defaultLabel);
-          const showDivider = lastGroup && item.group !== lastGroup;
-          lastGroup = item.group;
+      <Logo to={homeUrl} className="logo" />
+      <div
+        style={{
+          padding: "4px 14px 10px",
+          fontSize: "11px",
+          fontWeight: 800,
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+          color: "var(--ink-soft)",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          marginBottom: 10,
+        }}
+      >
+        {role === "farmer"
+          ? `🌾 ${t("auth.roleFarmer", "Farmer Producer")}`
+          : role === "fpo"
+          ? `🏛 ${t("auth.roleFpo", "FPO Aggregator")}`
+          : `🏪 ${t("auth.roleBuyer", "Buyer Procurement")}`}
+      </div>
 
+      <nav className="sidebar-nav" aria-label="Main Navigation">
+        {currentNavItems.map((item) => {
+          const Icon = item.icon;
           return (
-            <div key={item.to}>
-              {showDivider && (
-                <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "8px 12px" }} />
-              )}
-              <NavLink
-                to={item.to}
-                className={({ isActive }) => `sidebar-link ${isActive ? "active" : ""}`}
-                onClick={onNavigate}
-              >
-                <Icon size={17} />
-                <span>{label}</span>
-              </NavLink>
-            </div>
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) => `sidebar-link ${isActive ? "active" : ""}`}
+              onClick={onNavigate}
+            >
+              <Icon size={17} />
+              <span>{item.label}</span>
+            </NavLink>
           );
         })}
       </nav>
@@ -99,23 +133,60 @@ export function MobileNav() {
   const { t } = useLanguage();
   const { user, logout } = useAuth();
   const [moreOpen, setMoreOpen] = useState(false);
+  const role = user?.role ?? "farmer";
 
-  const primaryLinks = [
+  // Role-Specific Mobile Primary Links (Part 14)
+  const farmerPrimary = [
     { to: "/dashboard", label: t("nav.home", "Home"), icon: LayoutDashboard },
     { to: "/market", label: t("nav.market", "Markets"), icon: Store },
     { to: "/crops", label: t("nav.myCrops", "Crops"), icon: Sprout },
     { to: "/offers", label: t("nav.offers", "Deals"), icon: Handshake },
   ];
 
-  const secondaryLinks = [
-    { to: "/lots", label: t("nav.lots", "Harvest Lots"), icon: Package },
-    { to: "/transactions", label: t("nav.transactions", "Orders & Receipts"), icon: Truck },
-    { to: "/weather", label: t("nav.weather", "Weather Risk"), icon: CloudSun },
-    { to: "/recommendation", label: t("nav.recommendations", "Decision Center"), icon: Lightbulb },
-    { to: "/chat", label: t("nav.askAi", "Ask AI Assistant"), icon: Sparkles },
-    { to: "/buyers", label: t("nav.buyers", "Direct Buyers"), icon: Users },
-    { to: "/profile", label: t("nav.profile", "Profile & Settings"), icon: UserCheck },
+  const fpoPrimary = [
+    { to: "/fpo", label: t("nav.overview", "Overview"), icon: Building2 },
+    { to: "/fpo?tab=members", label: t("nav.members", "Members"), icon: Users },
+    { to: "/market", label: t("nav.market", "Markets"), icon: Store },
+    { to: "/offers", label: t("nav.offers", "Deals"), icon: Handshake },
   ];
+
+  const buyerPrimary = [
+    { to: "/buyers", label: t("nav.procurement", "Procure"), icon: ShoppingBag },
+    { to: "/lots", label: t("nav.lots", "Lots"), icon: Package },
+    { to: "/offers", label: t("nav.offers", "Offers"), icon: Handshake },
+    { to: "/transactions", label: t("nav.deals", "Deals"), icon: Truck },
+  ];
+
+  // Role-Specific Mobile Secondary Drawer Links
+  const farmerSecondary = [
+    { to: "/weather", label: t("nav.weather", "Weather"), icon: CloudSun },
+    { to: "/recommendation", label: t("nav.recommendations", "Decision Center"), icon: Lightbulb },
+    { to: "/chat", label: t("nav.askAi", "AI Assistant"), icon: Sparkles },
+    { to: "/lots", label: t("nav.lots", "My Lots"), icon: Package },
+    { to: "/transactions", label: t("nav.transactions", "Transactions"), icon: Truck },
+    { to: "/profile", label: t("nav.profile", "Profile"), icon: UserCheck },
+  ];
+
+  const fpoSecondary = [
+    { to: "/fpo?tab=aggregation", label: t("nav.aggregation", "Aggregation"), icon: Layers },
+    { to: "/buyers", label: t("nav.buyers", "Buyers"), icon: ShoppingBag },
+    { to: "/lots", label: t("nav.bulkLots", "Bulk Lots"), icon: Package },
+    { to: "/transactions", label: t("nav.transactions", "Transactions"), icon: Truck },
+    { to: "/analytics", label: t("nav.analytics", "Analytics"), icon: BarChart3 },
+    { to: "/profile", label: t("nav.profile", "Profile"), icon: UserCheck },
+  ];
+
+  const buyerSecondary = [
+    { to: "/market", label: t("nav.marketPrices", "Market Prices"), icon: Store },
+    { to: "/transactions", label: t("nav.transactions", "Transactions"), icon: Truck },
+    { to: "/analytics", label: t("nav.analytics", "Analytics"), icon: BarChart3 },
+    { to: "/profile", label: t("nav.profile", "Profile"), icon: UserCheck },
+  ];
+
+  const primaryLinks =
+    role === "fpo" ? fpoPrimary : role === "buyer" ? buyerPrimary : farmerPrimary;
+  const secondaryLinks =
+    role === "fpo" ? fpoSecondary : role === "buyer" ? buyerSecondary : farmerSecondary;
 
   return (
     <>
@@ -144,11 +215,20 @@ export function MobileNav() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 16,
+              }}
+            >
               <div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: "var(--navy)" }}>More Features</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "var(--navy)" }}>
+                  {t("nav.moreFeatures", "More Features")}
+                </div>
                 <div style={{ fontSize: 12, color: "var(--ink-soft)" }}>
-                  {user?.name || "Farmer"} · {user?.district || "India"}
+                  {user?.name || "User"} · {user?.district || user?.state || "India"}
                 </div>
               </div>
               <button
@@ -173,7 +253,14 @@ export function MobileNav() {
               </button>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 20 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: 10,
+                marginBottom: 20,
+              }}
+            >
               {secondaryLinks.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -196,10 +283,19 @@ export function MobileNav() {
                       textAlign: "center",
                     }}
                   >
-                    <div style={{ padding: 6, borderRadius: 8, background: "rgba(23,107,69,0.08)", color: "var(--green-deep)" }}>
+                    <div
+                      style={{
+                        padding: 6,
+                        borderRadius: 8,
+                        background: "rgba(23,107,69,0.08)",
+                        color: "var(--green-deep)",
+                      }}
+                    >
                       <Icon size={20} />
                     </div>
-                    <span style={{ fontSize: 11.5, fontWeight: 700, lineHeight: 1.2 }}>{item.label}</span>
+                    <span style={{ fontSize: 11.5, fontWeight: 700, lineHeight: 1.2 }}>
+                      {item.label}
+                    </span>
                   </NavLink>
                 );
               })}
@@ -212,7 +308,12 @@ export function MobileNav() {
                 setMoreOpen(false);
                 logout();
               }}
-              style={{ borderRadius: 10, borderColor: "var(--danger)", color: "var(--danger)", gap: 6 }}
+              style={{
+                borderRadius: 10,
+                borderColor: "var(--danger)",
+                color: "var(--danger)",
+                gap: 6,
+              }}
             >
               <LogOut size={15} />
               <span>{t("nav.signOut", "Sign Out")}</span>
@@ -243,12 +344,20 @@ export function MobileNav() {
           className={`bn-item ${moreOpen ? "active" : ""}`}
           style={{ background: "transparent", border: "none", cursor: "pointer" }}
         >
-          <div style={{ display: "flex", gap: 3, alignItems: "center", justifyContent: "center", height: 19 }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 3,
+              alignItems: "center",
+              justifyContent: "center",
+              height: 19,
+            }}
+          >
             <span style={{ width: 4, height: 4, borderRadius: "50%", background: "currentColor" }} />
             <span style={{ width: 4, height: 4, borderRadius: "50%", background: "currentColor" }} />
             <span style={{ width: 4, height: 4, borderRadius: "50%", background: "currentColor" }} />
           </div>
-          <span>More</span>
+          <span>{t("nav.more", "More")}</span>
         </button>
       </nav>
     </>

@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Header, status
 from sqlalchemy.orm import Session
 from app.database.connection import get_db
 from app.database.models import Lot, Farmer, Crop, CropImage, Buyer
@@ -47,7 +47,21 @@ def get_lot(lot_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/lots", response_model=LotResponse, status_code=status.HTTP_201_CREATED)
-def create_lot(lot_in: LotCreate, db: Session = Depends(get_db)):
+def create_lot(
+    lot_in: LotCreate,
+    x_user_role: Optional[str] = Header(None, alias="X-User-Role"),
+    db: Session = Depends(get_db)
+):
+    """
+    Creates a new harvest lot.
+    Strict Permission Enforcement: Buyers are strictly forbidden from creating lots.
+    """
+    if x_user_role and x_user_role.lower() == "buyer":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Lot creation is available only to Farmers and FPOs. Buyers are not permitted to list produce lots."
+        )
+
     # Verify farmer exists
     farmer = db.query(Farmer).filter(Farmer.id == lot_in.farmer_id).first()
     if not farmer:
@@ -77,7 +91,18 @@ def create_lot(lot_in: LotCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/lots/{lot_id}", response_model=LotResponse)
-def update_lot(lot_id: int, lot_in: LotUpdate, db: Session = Depends(get_db)):
+def update_lot(
+    lot_id: int,
+    lot_in: LotUpdate,
+    x_user_role: Optional[str] = Header(None, alias="X-User-Role"),
+    db: Session = Depends(get_db)
+):
+    if x_user_role and x_user_role.lower() == "buyer":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Buyers cannot edit seller harvest lots."
+        )
+
     lot = db.query(Lot).filter(Lot.id == lot_id).first()
     if not lot:
         raise HTTPException(

@@ -9,6 +9,9 @@ import {
   Sparkles,
   CloudSun,
   ChevronRight,
+  Lightbulb,
+  Store,
+  Users,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
@@ -28,72 +31,88 @@ export function DashboardPage() {
   const preferredCropsList: string[] = Array.isArray(user?.preferredCrops)
     ? (user.preferredCrops as string[])
     : typeof user?.preferredCrops === "string"
-    ? [(user.preferredCrops as string)]
+    ? [user.preferredCrops as string]
     : [];
   const profileCrops: string[] = preferredCropsList.filter(
-    (pc: string) => !crops.some((c) => c.name.toLowerCase() === pc.toLowerCase())
+    (pc: string) => !crops.some((c) => c.name.toLowerCase() === pc.toLowerCase()),
   );
   const hasAnyCrops = crops.length > 0 || profileCrops.length > 0;
-  const activeCrop = hasCrops ? (crops[selectedCropIndex] || crops[0]) : null;
+  const activeCrop = hasCrops ? crops[selectedCropIndex] || crops[0] : null;
 
-  const userDistrict = user?.district || (user?.location ? user.location.split(",")[0].trim() : "Farm Location");
-  const userLocationStr = user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : userDistrict || "Set Location");
-  
+  const userDistrict =
+    user?.district || (user?.location ? user.location.split(",")[0].trim() : "Vadlamudi");
+  const userLocationStr =
+    user?.location ||
+    (user?.district && user?.state ? `${user.district}, ${user.state}` : userDistrict);
+
   // Resolve localized weather
-  const weather = weatherByLocation[userDistrict] || (user?.location && Object.keys(weatherByLocation).find((k) => user.location.toLowerCase().includes(k.toLowerCase())) ? weatherByLocation[Object.keys(weatherByLocation).find((k) => user.location.toLowerCase().includes(k.toLowerCase()))!] : null) || {
-    location: userLocationStr,
-    currentTempC: 31,
-    condition: "Clear Skies",
-    rainProbability: 20,
-    humidity: 60,
-    forecast: [],
-    risk: "Low" as const,
-    riskNote: `Seasonal conditions across ${userDistrict} are favorable for harvesting and mandi logistics.`,
-    demo: false,
-  };
+  const weather =
+    weatherByLocation[userDistrict] ||
+    (user?.location &&
+    Object.keys(weatherByLocation).find((k) =>
+      user.location.toLowerCase().includes(k.toLowerCase()),
+    )
+      ? weatherByLocation[
+          Object.keys(weatherByLocation).find((k) =>
+            user.location.toLowerCase().includes(k.toLowerCase()),
+          )!
+        ]
+      : null) || {
+      location: userLocationStr,
+      currentTempC: 32,
+      condition: "Mostly Clear",
+      rainProbability: 20,
+      humidity: 62,
+      forecast: [],
+      risk: "Low" as const,
+      riskNote: `Seasonal conditions across ${userDistrict} are favorable for harvesting and mandi logistics.`,
+      demo: false,
+    };
 
-  // Nearby opportunities calculated for active crop if present
-  const basePrice = activeCrop ? (activeCrop.expectedPrice || 28) * 100 : 2800; // ₹/Qtl
-  const cropName = activeCrop ? activeCrop.name : "Produce";
+  // Opportunities calculated for active crop
+  const basePrice = activeCrop ? (activeCrop.expectedPrice || 68) * 100 : 6800; // ₹/Qtl
+  const cropName = activeCrop ? activeCrop.name : "Cotton";
 
-  const nearbyOpportunities = activeCrop ? [
-    {
-      name: `Regional Institutional FPC (${userDistrict} Hub)`,
-      type: "Institutional Buyer",
-      priceQtl: basePrice + 150,
-      distanceKm: 18,
-      freightQtl: 60,
-      netRealizationQtl: basePrice + 150 - 60,
-      arrivalVolume: "Direct Bank Settlement",
-      quality: "Grade A",
-      paymentSpeed: "Payment in 2 days",
-      isBest: true,
-    },
-    {
-      name: `${userDistrict} APMC Central Mandi`,
-      type: "Mandi Benchmark",
-      priceQtl: basePrice,
-      distanceKm: 14,
-      freightQtl: 110,
-      netRealizationQtl: basePrice - 110 - 25,
-      arrivalVolume: "Daily Open Auction",
-      quality: "All Grades",
-      paymentSpeed: "APMC Commission Agent Slip",
-      isBest: false,
-    },
-    {
-      name: "FreshFarm Retail Chain",
-      type: "Direct Retailer",
-      priceQtl: basePrice + 80,
-      distanceKm: 24,
-      freightQtl: 90,
-      netRealizationQtl: basePrice + 80 - 90,
-      arrivalVolume: "Scheduled Supply",
-      quality: "Grade A",
-      paymentSpeed: "24h Bank Transfer",
-      isBest: false,
-    },
-  ] : [];
+  const nearbyOpportunities = activeCrop
+    ? [
+        {
+          name: `Institutional Procurement Hub (${userDistrict})`,
+          type: "Direct Corporate Buyer",
+          priceQtl: basePrice + 150,
+          distanceKm: 18,
+          freightQtl: 60,
+          netRealizationQtl: basePrice + 150 - 60,
+          arrivalVolume: "Direct Bank Settlement",
+          quality: "Grade A",
+          paymentSpeed: "Instant T+1 Settlement",
+          isBest: true,
+        },
+        {
+          name: `${userDistrict} APMC Central Mandi`,
+          type: "APMC Mandi Yard",
+          priceQtl: basePrice,
+          distanceKm: 14,
+          freightQtl: 110,
+          netRealizationQtl: basePrice - 110 - 25,
+          arrivalVolume: "Daily Open Auction",
+          quality: "All Grades",
+          paymentSpeed: "APMC Commission Agent Slip",
+          isBest: false,
+        },
+        {
+          name: "FreshFarm Agro Processing",
+          type: "Food Processor",
+          priceQtl: basePrice + 80,
+          distanceKm: 24,
+          freightQtl: 90,
+          netRealizationQtl: basePrice + 80 - 90,
+          arrivalVolume: "Scheduled Farm Pickup",
+          quality: "Grade A",
+          paymentSpeed: "24h Bank Transfer",
+          isBest: false,
+        },
+      ]
+    : [];
 
   const hasActiveDeal = transaction && transaction.quantityKg > 0;
 
@@ -114,7 +133,7 @@ export function DashboardPage() {
       >
         <div>
           <div style={{ fontSize: 13, color: "var(--ink-soft)", fontWeight: 600 }}>
-            {t("dashboard.greeting", "Good day")}, {user?.name?.split(" ")[0] || "Farmer"}
+            {t("dashboard.greeting", "Good morning")}, {user?.name?.split(" ")[0] || "Farmer"}
           </div>
           <button
             type="button"
@@ -131,8 +150,18 @@ export function DashboardPage() {
             }}
           >
             <MapPin size={18} color="var(--green-deep)" />
-            <span style={{ fontSize: 18, fontWeight: 800, color: "var(--navy)" }}>{userLocationStr}</span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--green-deep)", textDecoration: "underline", marginLeft: 4 }}>
+            <span style={{ fontSize: 18, fontWeight: 800, color: "var(--navy)" }}>
+              {userLocationStr}
+            </span>
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: "var(--green-deep)",
+                textDecoration: "underline",
+                marginLeft: 4,
+              }}
+            >
               {t("common.edit", "Change")}
             </span>
           </button>
@@ -156,7 +185,9 @@ export function DashboardPage() {
             }}
           >
             <CloudSun size={16} />
-            <span>{weather.currentTempC}°C · {weather.condition}</span>
+            <span>
+              {weather.currentTempC}°C · {weather.condition}
+            </span>
           </Link>
           <Link to="/chat" className="btn btn-outline btn-sm" style={{ borderRadius: 20 }}>
             <Sparkles size={14} color="var(--green-deep)" />
@@ -165,13 +196,48 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {/* 2. "YOUR CROPS" — Crop Selector */}
+      {/* 2. Farmer Primary CTAs & Quick Actions */}
+      <div className="card card-pad mb-lg" style={{ background: "var(--bg-warm)", border: "1px solid var(--line)" }}>
+        <div className="flex flex-between flex-center flex-wrap gap-sm">
+          <div className="fw-700 text-sm" style={{ color: "var(--navy)" }}>
+            🌾 {t("dashboard.quickActions", "Farmer Quick Actions")}:
+          </div>
+          <div className="flex gap-sm flex-wrap">
+            <Link to="/crops/add" className="btn btn-primary btn-sm">
+              <Plus size={14} /> {t("crops.addCrop", "Add Crop")}
+            </Link>
+            <Link to="/lots/create" className="btn btn-primary btn-sm" style={{ background: "var(--navy)", borderColor: "var(--navy)" }}>
+              <Package size={14} /> {t("lots.createLot", "Create Harvest Lot")}
+            </Link>
+            <Link to="/buyers" className="btn btn-outline btn-sm">
+              <Users size={14} /> {t("nav.buyers", "Find Buyers")}
+            </Link>
+            <Link to="/recommendation" className="btn btn-outline btn-sm">
+              <Lightbulb size={14} /> {t("nav.recommendations", "Decision Center")}
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. "YOUR CROPS" — Crop Selector */}
       <div className="mb-xl">
         <div className="flex flex-between flex-center mb-sm">
-          <div style={{ fontSize: 12, fontWeight: 800, color: "var(--ink-muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-            {t("crops.myCrops", "Your Crops")}
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 800,
+              color: "var(--ink-muted)",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+            }}
+          >
+            {t("crops.myCrops", "My Cultivated Crops")}
           </div>
-          <Link to="/crops/add" className="flex flex-center gap-xs text-sm fw-700" style={{ color: "var(--green-deep)" }}>
+          <Link
+            to="/crops/add"
+            className="flex flex-center gap-xs text-sm fw-700"
+            style={{ color: "var(--green-deep)" }}
+          >
             <Plus size={14} />
             <span>{t("crops.addCrop", "Add Crop")}</span>
           </Link>
@@ -180,12 +246,31 @@ export function DashboardPage() {
         {!hasAnyCrops ? (
           <div
             className="card card-pad text-center"
-            style={{ padding: "28px 16px", background: "var(--bg-warm)", border: "1.5px dashed var(--line-strong)", borderRadius: 14 }}
+            style={{
+              padding: "28px 16px",
+              background: "var(--bg-warm)",
+              border: "1.5px dashed var(--line-strong)",
+              borderRadius: 14,
+            }}
           >
             <div style={{ fontSize: 28, marginBottom: 6 }}>🌱</div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: "var(--navy)" }}>No crops added yet</div>
-            <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: "4px 0 16px", maxWidth: 440, marginLeft: "auto", marginRight: "auto" }}>
-              Add your crop to enable localized price discovery, harvest predictions, and direct buyer bids near {userDistrict}.
+            <div style={{ fontSize: 16, fontWeight: 800, color: "var(--navy)" }}>
+              {t("crops.noCropsTitle", "No active crops added yet")}
+            </div>
+            <p
+              style={{
+                fontSize: 13,
+                color: "var(--ink-soft)",
+                margin: "4px 0 16px",
+                maxWidth: 440,
+                marginLeft: "auto",
+                marginRight: "auto",
+              }}
+            >
+              {t(
+                "crops.noCrops",
+                "Add your crop to enable localized price discovery, harvest predictions, and direct buyer bids.",
+              )}
             </p>
             <Link to="/crops/add" className="btn btn-primary btn-sm">
               <Plus size={15} /> {t("crops.addCrop", "Add Your First Crop")}
@@ -206,11 +291,13 @@ export function DashboardPage() {
                     gap: 10,
                     padding: "10px 16px",
                     borderRadius: 14,
-                    border: isSelected ? "2px solid var(--green-deep)" : "1px solid var(--line)",
+                    border: isSelected
+                      ? "2px solid var(--green-deep)"
+                      : "1px solid var(--line)",
                     background: isSelected ? "#FFFFFF" : "var(--bg-warm)",
                     boxShadow: isSelected ? "0 4px 12px rgba(23,107,69,0.12)" : "none",
                     cursor: "pointer",
-                    minWidth: 150,
+                    minWidth: 160,
                     textAlign: "left",
                     flexShrink: 0,
                     transition: "all 0.15s ease",
@@ -218,8 +305,12 @@ export function DashboardPage() {
                 >
                   <span style={{ fontSize: 24 }}>{c.icon || "🌱"}</span>
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: "var(--navy)" }}>{c.name}</div>
-                    <div style={{ fontSize: 11, color: "var(--ink-soft)" }}>{c.quantityKg || 500} kg ready</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: "var(--navy)" }}>
+                      {c.name}
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--ink-soft)" }}>
+                      {c.quantityKg || 500} kg · {c.stage}
+                    </div>
                   </div>
                 </button>
               );
@@ -246,63 +337,111 @@ export function DashboardPage() {
               >
                 <span style={{ fontSize: 24 }}>🌱</span>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: "var(--navy)" }}>{pc}</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "var(--navy)" }}>
+                    {pc}
+                  </div>
                   <div style={{ fontSize: 11, color: "var(--green-deep)", fontWeight: 700 }}>
-                    Cultivated crop · Add details to enable AI tracking
+                    {t("crops.clickToTrack", "Add details to enable AI tracking")}
                   </div>
                 </div>
               </Link>
             ))}
-
-            <Link
-              to="/crops/add"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-                padding: "10px 16px",
-                borderRadius: 14,
-                border: "1.5px dashed var(--line-strong)",
-                background: "transparent",
-                color: "var(--ink-soft)",
-                fontSize: 13,
-                fontWeight: 700,
-                minWidth: 120,
-                flexShrink: 0,
-              }}
-            >
-              <Plus size={16} />
-              <span>{t("common.add", "Add")}</span>
-            </Link>
           </div>
         )}
       </div>
 
-      {/* 3. "BEST PLACES TO SELL" — Ranked Opportunities */}
+      {/* 4. "TODAY'S AI RECOMMENDATION" & BEST BUYER */}
+      {activeCrop && (
+        <div
+          className="card card-pad mb-xl"
+          style={{
+            background: "linear-gradient(135deg, #F9FCF8 0%, #FFFFFF 100%)",
+            border: "1.5px solid var(--green-deep)",
+            borderRadius: 16,
+          }}
+        >
+          <div className="flex flex-between flex-center flex-wrap gap-sm mb-xs">
+            <div className="flex flex-center gap-xs">
+              <Lightbulb size={18} color="var(--green-deep)" />
+              <span style={{ fontSize: 14, fontWeight: 800, color: "var(--green-deep)" }}>
+                {t("recommendations.todayRecommendation", "Today's AI Agronomic Recommendation")}
+              </span>
+            </div>
+            <span
+              className={`badge-pill ${
+                activeCrop.recommendation === "SELL"
+                  ? "badge-high"
+                  : activeCrop.recommendation === "WAIT"
+                  ? "badge-medium"
+                  : "badge-low"
+              }`}
+            >
+              {activeCrop.recommendation === "SELL"
+                ? `⚡ ${t("decision.sell", "SELL NOW")}`
+                : activeCrop.recommendation === "WAIT"
+                ? `⏳ ${t("decision.wait", "WAIT / HOLD")}`
+                : `🔄 ${t("decision.switch", "SWITCH MARKET")}`}
+            </span>
+          </div>
+
+          <div style={{ fontSize: 15, fontWeight: 800, color: "var(--navy)", margin: "4px 0" }}>
+            {activeCrop.name} ({activeCrop.variety || "Grade A"}) · {activeCrop.quantityKg} kg
+          </div>
+
+          <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: "4px 0 14px" }}>
+            {activeCrop.recommendation === "SELL"
+              ? `Optimal harvest window: ${activeCrop.harvestEst || "Next 2–4 days"}. Nearby institutional buyers are offering above APMC modal rates with zero farmgate deductions.`
+              : `Holding produce recommended. Wholesale mandi rates in ${userDistrict} are projected to strengthen over the next 10 days.`}
+          </p>
+
+          <div className="flex gap-sm flex-wrap">
+            <Link
+              to={`/lots/create?crop=${encodeURIComponent(activeCrop.name)}&qty=${activeCrop.quantityKg}&price=${activeCrop.expectedPrice}`}
+              className="btn btn-primary btn-sm"
+            >
+              <Package size={14} />
+              <span>{t("lots.create", "Sell Lot Now")}</span>
+            </Link>
+            <Link to="/recommendation" className="btn btn-outline btn-sm">
+              <span>{t("recommendations.viewAnalysis", "View Full Decision Breakdown")}</span>
+              <ArrowRight size={14} />
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* 5. "BEST PLACES TO SELL" — Ranked Opportunities */}
       <div className="mb-xl">
         <div className="flex flex-between flex-center mb-sm">
           <div>
-            <div style={{ fontSize: 12, fontWeight: 800, color: "var(--ink-muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+            <div
+              style={{
+                fontSize: 12,
+                fontWeight: 800,
+                color: "var(--ink-muted)",
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+              }}
+            >
               {t("market.title", "Best Places to Sell Near You")}
             </div>
             <div style={{ fontSize: 12, color: "var(--ink-soft)" }}>
-              {hasCrops ? `Showing highest in-hand net realization for ${cropName} near ${userDistrict}` : `Add a crop to view buyers near ${userDistrict}`}
+              {hasCrops
+                ? `Highest in-hand net realization for ${cropName} near ${userDistrict}`
+                : `Add a crop to view buyers near ${userDistrict}`}
             </div>
           </div>
-          <Link to="/market" className="flex flex-center gap-xs text-sm fw-700" style={{ color: "var(--green-deep)" }}>
+          <Link
+            to="/market"
+            className="flex flex-center gap-xs text-sm fw-700"
+            style={{ color: "var(--green-deep)" }}
+          >
             <span>{t("common.viewAll", "Compare All")}</span>
             <ChevronRight size={15} />
           </Link>
         </div>
 
-        {!hasCrops ? (
-          <div className="card card-pad text-center" style={{ padding: "24px 16px", background: "#FFFFFF", border: "1px solid var(--line)" }}>
-            <div style={{ fontSize: 14, color: "var(--ink-soft)" }}>
-              Please add a crop above to see nearby buyer opportunities and net realization comparisons.
-            </div>
-          </div>
-        ) : (
+        {hasCrops && (
           <div className="flex-col gap-sm">
             {nearbyOpportunities.map((op, i) => (
               <div
@@ -337,7 +476,7 @@ export function DashboardPage() {
                       textTransform: "uppercase",
                     }}
                   >
-                    ★ Best In-Hand Realization
+                    ★ {t("market.bestBuyer", "Best In-Hand Realization")}
                   </div>
                 )}
 
@@ -359,7 +498,9 @@ export function DashboardPage() {
                     {i + 1}
                   </div>
                   <div>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: "var(--navy)" }}>{op.name}</div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "var(--navy)" }}>
+                      {op.name}
+                    </div>
                     <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 2 }}>
                       📍 {op.distanceKm} km away · Freight -₹{op.freightQtl}/Qtl · {op.paymentSpeed}
                     </div>
@@ -368,9 +509,18 @@ export function DashboardPage() {
 
                 <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                   <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 18, fontWeight: 900, color: op.isBest ? "var(--green-deep)" : "var(--navy)" }}>
+                    <div
+                      style={{
+                        fontSize: 18,
+                        fontWeight: 900,
+                        color: op.isBest ? "var(--green-deep)" : "var(--navy)",
+                      }}
+                    >
                       ₹{op.netRealizationQtl.toLocaleString("en-IN")}
-                      <span style={{ fontSize: 11, fontWeight: 600, color: "var(--ink-soft)" }}> / Qtl Net</span>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: "var(--ink-soft)" }}>
+                        {" "}
+                        / Qtl Net
+                      </span>
                     </div>
                     <div style={{ fontSize: 11, color: "var(--ink-muted)" }}>
                       Gross ₹{op.priceQtl.toLocaleString("en-IN")} / Qtl
@@ -392,10 +542,13 @@ export function DashboardPage() {
         )}
       </div>
 
-      {/* 4. ACTIVE LOTS & DEALS SUMMARY */}
+      {/* 6. ACTIVE LOTS & ACTIVE DEAL SUMMARY */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
         {/* Active Lots */}
-        <div className="card card-pad" style={{ background: "#FFFFFF", border: "1px solid var(--line)" }}>
+        <div
+          className="card card-pad"
+          style={{ background: "#FFFFFF", border: "1px solid var(--line)" }}
+        >
           <div className="flex flex-between flex-center mb-sm">
             <div className="flex flex-center gap-xs">
               <Package size={17} color="var(--green-deep)" />
@@ -410,8 +563,8 @@ export function DashboardPage() {
 
           <div style={{ fontSize: 13, color: "var(--ink-soft)", marginBottom: 12 }}>
             {lots.length > 0
-              ? `${lots[0].crop} (${lots[0].quantityKg} kg) is open for institutional buyer bidding.`
-              : "No harvest lots active. Create a lot to receive verified buyer tenders."}
+              ? `${lots[0].crop} (${lots[0].quantityKg} kg) is open for buyer offers.`
+              : t("lots.noLots", "No harvest lots listed yet.")}
           </div>
 
           <div className="flex gap-sm">
@@ -420,13 +573,16 @@ export function DashboardPage() {
             </Link>
             <Link to="/lots/create" className="btn btn-primary btn-sm flex-1">
               <Plus size={14} />
-              <span>{t("lots.create", "New Lot")}</span>
+              <span>{t("lots.createLot", "New Lot")}</span>
             </Link>
           </div>
         </div>
 
         {/* Active Transaction */}
-        <div className="card card-pad" style={{ background: "#FFFFFF", border: "1px solid var(--line)" }}>
+        <div
+          className="card card-pad"
+          style={{ background: "#FFFFFF", border: "1px solid var(--line)" }}
+        >
           <div className="flex flex-between flex-center mb-sm">
             <div className="flex flex-center gap-xs">
               <Truck size={17} color="var(--green-deep)" />
@@ -434,7 +590,10 @@ export function DashboardPage() {
                 {t("transactions.title", "Active Deal Tracker")}
               </span>
             </div>
-            <span className={`badge-pill ${hasActiveDeal ? "badge-medium" : "badge-low"}`} style={{ fontSize: 11 }}>
+            <span
+              className={`badge-pill ${hasActiveDeal ? "badge-medium" : "badge-low"}`}
+              style={{ fontSize: 11 }}
+            >
               {hasActiveDeal ? "In Progress" : "No Active Deals"}
             </span>
           </div>
@@ -445,7 +604,8 @@ export function DashboardPage() {
                 {transaction.buyerName} · {transaction.crop} ({transaction.quantityKg} kg)
               </div>
               <div style={{ fontSize: 12, color: "var(--ink-soft)", margin: "2px 0 12px" }}>
-                Pickup scheduled · Agreed Value: ₹{(transaction.pricePerKg * transaction.quantityKg).toLocaleString("en-IN")}
+                Pickup scheduled · Agreed Value: ₹
+                {(transaction.pricePerKg * transaction.quantityKg).toLocaleString("en-IN")}
               </div>
               <Link to="/transactions" className="btn btn-secondary btn-sm btn-block">
                 <span>{t("transactions.timeline", "Track Deal & Receipt")}</span>
@@ -466,7 +626,7 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {/* 5. Concised Farm Weather Advisory */}
+      {/* 7. Agricultural Weather Advisory */}
       <div
         style={{
           background: "linear-gradient(90deg, #FFFDF8 0%, #F5FAF6 100%)",
@@ -481,7 +641,14 @@ export function DashboardPage() {
         }}
       >
         <div className="flex flex-center gap-md">
-          <div style={{ padding: 10, borderRadius: 10, background: "rgba(46,139,87,0.12)", color: "var(--green-deep)" }}>
+          <div
+            style={{
+              padding: 10,
+              borderRadius: 10,
+              background: "rgba(46,139,87,0.12)",
+              color: "var(--green-deep)",
+            }}
+          >
             <CloudSun size={24} />
           </div>
           <div>
@@ -494,7 +661,11 @@ export function DashboardPage() {
           </div>
         </div>
 
-        <Link to="/weather" className="btn btn-outline btn-sm" style={{ padding: "6px 12px", fontSize: 12 }}>
+        <Link
+          to="/weather"
+          className="btn btn-outline btn-sm"
+          style={{ padding: "6px 12px", fontSize: 12 }}
+        >
           <span>{t("weather.forecast5d", "7-Day Forecast")}</span>
           <ArrowRight size={12} />
         </Link>

@@ -1,6 +1,6 @@
-import { useState, useMemo, type FormEvent } from "react";
-import { useSearchParams, Link } from "react-router-dom";
-import { CheckCircle2, Package, ArrowLeft, ArrowRight, MapPin } from "lucide-react";
+import { useState, useMemo, useEffect, type FormEvent } from "react";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
+import { CheckCircle2, Package, ArrowLeft, ArrowRight, MapPin, Building2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -10,9 +10,23 @@ import type { LotRecord } from "../types";
 
 export function CreateLotPage() {
   const { user } = useAuth();
-  const { crops, addLot, lots } = useAppState();
+  const { crops, addLot, lots, showToast } = useAppState();
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [params] = useSearchParams();
+
+  const isFpo = user?.role === "fpo";
+  const isBuyer = user?.role === "buyer";
+
+  // Strict Buyer Access Guard: Block immediately if a buyer navigates here
+  useEffect(() => {
+    if (isBuyer) {
+      showToast(t("lots.buyerBlocked", "Lot creation is available to Farmers and FPOs."));
+      navigate("/buyers", { replace: true });
+    }
+  }, [isBuyer, navigate, showToast, t]);
+
+  if (isBuyer) return null;
 
   const paramCrop = params.get("crop");
   const paramQty = params.get("qty");
@@ -26,15 +40,25 @@ export function CreateLotPage() {
     return list;
   }, [crops]);
 
-  const userDistrict = user?.district || (user?.location ? user.location.split(",")[0].trim() : "Farm Location");
-  const userLocStr = user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : userDistrict);
+  const userDistrict =
+    user?.district || (user?.location ? user.location.split(",")[0].trim() : "Farm Location");
+  const userLocStr =
+    user?.location ||
+    (user?.district && user?.state ? `${user.district}, ${user.state}` : userDistrict);
 
-  const [crop, setCrop] = useState(paramCrop || crops[0]?.name || availableCrops[0] || "Tomato");
-  const [quantityKg, setQuantityKg] = useState<number | string>(paramQty ? Number(paramQty) : (crops[0]?.quantityKg || 500));
+  const [crop, setCrop] = useState(
+    paramCrop || crops[0]?.name || availableCrops[0] || "Cotton",
+  );
+  const [quantityKg, setQuantityKg] = useState<number | string>(
+    paramQty ? Number(paramQty) : isFpo ? 5000 : crops[0]?.quantityKg || 500,
+  );
   const [quality, setQuality] = useState("Grade A");
   const [harvestDate, setHarvestDate] = useState("2026-09-10");
   const [readyDate, setReadyDate] = useState("2026-09-12");
-  const [expectedPrice, setExpectedPrice] = useState<number | string>(paramPrice ? Number(paramPrice) : (crops[0]?.expectedPrice || 30));
+  const [expectedPrice, setExpectedPrice] = useState<number | string>(
+    paramPrice ? Number(paramPrice) : isFpo ? 65 : crops[0]?.expectedPrice || 32,
+  );
+  const [farmerCount, setFarmerCount] = useState<number>(isFpo ? 12 : 1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCreated, setIsCreated] = useState(false);
   const [createdLotId, setCreatedLotId] = useState("");
@@ -43,7 +67,8 @@ export function CreateLotPage() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const generatedId = `KS-2026-00${lots.length + 1}`;
+    const prefix = isFpo ? "LOT-FPO" : "LOT-F";
+    const generatedId = `${prefix}-${Date.now().toString().slice(-4)}`;
     const qty = Number(quantityKg) || 500;
     const price = Number(expectedPrice) || 30;
 
@@ -53,11 +78,13 @@ export function CreateLotPage() {
         quantity_kg: qty,
         unit: "kg",
         quality,
-        quality_description: `${quality} uniform harvest from ${userDistrict}`,
+        quality_description: `${quality} ${isFpo ? "aggregated bulk pool" : "harvest"} from ${userDistrict}`,
         harvest_date: harvestDate,
         harvest_window: "2–4 days",
         location: userLocStr,
         expected_price: price,
+        aggregated: isFpo,
+        farmer_count: isFpo ? farmerCount : 1,
       });
     } catch (err) {
       console.warn("Backend lot creation fallback:", err);
@@ -74,6 +101,8 @@ export function CreateLotPage() {
       status: "Open for Offers",
       interests: 3,
       createdDate: "Today",
+      aggregated: isFpo,
+      farmerCount: isFpo ? farmerCount : 1,
     };
 
     addLot(newLot);
@@ -87,7 +116,12 @@ export function CreateLotPage() {
       <div className="wrap" style={{ maxWidth: 560, padding: "40px 16px" }}>
         <div
           className="card card-pad text-center"
-          style={{ background: "#FFFFFF", border: "1.5px solid var(--line)", borderRadius: 16, padding: "32px 24px" }}
+          style={{
+            background: "#FFFFFF",
+            border: "1.5px solid var(--line)",
+            borderRadius: 16,
+            padding: "32px 24px",
+          }}
         >
           <div
             style={{
@@ -106,7 +140,9 @@ export function CreateLotPage() {
           </div>
 
           <h2 style={{ fontSize: 22, fontWeight: 800, color: "var(--navy)", marginBottom: 4 }}>
-            Harvest Lot Created Successfully!
+            {isFpo
+              ? t("lots.fpoLotCreated", "Bulk Lot Created Successfully!")
+              : t("lots.lotCreated", "Harvest Lot Created Successfully!")}
           </h2>
           <div style={{ fontSize: 13, color: "var(--ink-soft)", marginBottom: 20 }}>
             Lot ID: <strong>{createdLotId}</strong> · {userLocStr}
@@ -124,22 +160,33 @@ export function CreateLotPage() {
           >
             <div className="flex flex-between mb-xs">
               <span style={{ fontSize: 13, color: "var(--ink-soft)" }}>Produce</span>
-              <span style={{ fontSize: 14, fontWeight: 800, color: "var(--navy)" }}>{crop} ({quality})</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: "var(--navy)" }}>
+                {crop} ({quality})
+              </span>
             </div>
             <div className="flex flex-between mb-xs">
               <span style={{ fontSize: 13, color: "var(--ink-soft)" }}>Quantity</span>
-              <span style={{ fontSize: 14, fontWeight: 800, color: "var(--navy)" }}>{quantityKg} kg</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: "var(--navy)" }}>
+                {quantityKg} kg {isFpo && `(from ${farmerCount} member farmers)`}
+              </span>
             </div>
             <div className="flex flex-between mb-xs">
               <span style={{ fontSize: 13, color: "var(--ink-soft)" }}>Expected Rate</span>
-              <span style={{ fontSize: 14, fontWeight: 800, color: "var(--green-deep)" }}>₹{expectedPrice} / kg (₹{Number(expectedPrice) * 100} / Qtl)</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: "var(--green-deep)" }}>
+                ₹{expectedPrice} / kg (₹{Number(expectedPrice) * 100} / Qtl)
+              </span>
             </div>
-            <div className="flex flex-between" style={{ borderTop: "1px solid var(--line)", paddingTop: 8, marginTop: 8 }}>
+            <div
+              className="flex flex-between"
+              style={{ borderTop: "1px solid var(--line)", paddingTop: 8, marginTop: 8 }}
+            >
               <span style={{ fontSize: 13, color: "var(--ink-soft)" }}>Matched Network Demand</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--sell)" }}>3 verified buyers match this lot</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--sell)" }}>
+                3 verified buyers match this lot
+              </span>
             </div>
             <div style={{ fontSize: 11.5, color: "var(--ink-muted)", marginTop: 6 }}>
-              Buyers have been notified of your lot availability. When they submit binding purchase offers, they will appear under Buyer Offers.
+              Buyers have been notified of your lot availability. Direct procurement bids will appear under Offers.
             </div>
           </div>
 
@@ -151,8 +198,8 @@ export function CreateLotPage() {
             <Link to="/buyers" className="btn btn-outline btn-block">
               <span>{t("nav.buyers", "View Matched Buyers in Area")}</span>
             </Link>
-            <Link to="/dashboard" className="btn btn-secondary btn-block">
-              <span>{t("nav.home", "Return to Dashboard")}</span>
+            <Link to={isFpo ? "/fpo" : "/dashboard"} className="btn btn-secondary btn-block">
+              <span>{isFpo ? t("nav.fpoDashboard", "Return to FPO Dashboard") : t("nav.home", "Return to Dashboard")}</span>
             </Link>
           </div>
         </div>
@@ -163,26 +210,43 @@ export function CreateLotPage() {
   return (
     <div className="wrap" style={{ maxWidth: 640, paddingBottom: 60 }}>
       <div className="flex flex-between flex-center mb-lg">
-        <Link to="/lots" className="back-link">
+        <Link to={isFpo ? "/fpo" : "/lots"} className="back-link">
           <ArrowLeft size={16} />
-          <span>{t("common.back", "Back to Lots")}</span>
+          <span>{isFpo ? t("common.backToFpo", "Back to FPO Dashboard") : t("common.back", "Back to Lots")}</span>
         </Link>
         <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink-soft)" }}>
-          📍 {userDistrict} Farm Location
+          📍 {userDistrict} {isFpo ? "Collection Hub" : "Farm Location"}
         </div>
       </div>
 
-      <div className="card card-pad" style={{ background: "#FFFFFF", borderRadius: 16, border: "1px solid var(--line)" }}>
-        <div className="flex flex-center gap-sm mb-lg" style={{ borderBottom: "1px solid var(--line)", paddingBottom: 14 }}>
-          <div style={{ padding: 10, borderRadius: 10, background: "rgba(23,107,69,0.1)", color: "var(--green-deep)" }}>
-            <Package size={22} />
+      <div
+        className="card card-pad"
+        style={{ background: "#FFFFFF", borderRadius: 16, border: "1px solid var(--line)" }}
+      >
+        <div
+          className="flex flex-center gap-sm mb-lg"
+          style={{ borderBottom: "1px solid var(--line)", paddingBottom: 14 }}
+        >
+          <div
+            style={{
+              padding: 10,
+              borderRadius: 10,
+              background: "rgba(23,107,69,0.1)",
+              color: "var(--green-deep)",
+            }}
+          >
+            {isFpo ? <Building2 size={22} /> : <Package size={22} />}
           </div>
           <div>
             <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--navy)", margin: 0 }}>
-              {t("lots.create", "List Produce for Buyer Offers")}
+              {isFpo
+                ? t("lots.createBulkLot", "Create Aggregated Bulk Lot")
+                : t("lots.create", "List Produce for Buyer Offers")}
             </h1>
             <p style={{ fontSize: 12.5, color: "var(--ink-soft)", margin: 0 }}>
-              Create an open lot to receive competitive bids from verified buyers & FPCs
+              {isFpo
+                ? t("lots.fpoCreateSubtitle", "Consolidate member smallholder volume for high-value corporate bids")
+                : t("lots.farmerCreateSubtitle", "Create an open lot to receive competitive bids from verified buyers & FPCs")}
             </p>
           </div>
         </div>
@@ -197,28 +261,34 @@ export function CreateLotPage() {
               required
             >
               {availableCrops.map((c) => (
-                <option key={c} value={c}>{c}</option>
+                <option key={c} value={c}>
+                  {c}
+                </option>
               ))}
             </select>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div className="field">
-              <label>{t("lots.quantity", "Quantity (kg)")}</label>
+              <label>
+                {isFpo
+                  ? t("fpo.bulkQuantity", "Total Aggregated Quantity (kg)")
+                  : t("lots.quantity", "Quantity (kg)")}
+              </label>
               <input
                 type="number"
                 min={50}
                 step={50}
                 value={quantityKg}
                 onChange={(e) => setQuantityKg(e.target.value)}
-                placeholder="e.g. 500"
+                placeholder={isFpo ? "e.g. 5000" : "e.g. 500"}
                 className="form-control"
                 required
               />
             </div>
 
             <div className="field">
-              <label>{t("lots.quality", "Quality Grade")}</label>
+              <label>{t("lots.qualityGrade", "Quality Grade")}</label>
               <select
                 value={quality}
                 onChange={(e) => setQuality(e.target.value)}
@@ -230,6 +300,21 @@ export function CreateLotPage() {
               </select>
             </div>
           </div>
+
+          {isFpo && (
+            <div className="field">
+              <label>{t("fpo.contributingFarmersCount", "Contributing Member Farmers")}</label>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={farmerCount}
+                onChange={(e) => setFarmerCount(Number(e.target.value))}
+                className="form-control"
+                required
+              />
+            </div>
+          )}
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div className="field">
@@ -269,19 +354,37 @@ export function CreateLotPage() {
                 className="form-control"
                 required
               />
-              <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: "var(--ink-soft)" }}>
+              <span
+                style={{
+                  position: "absolute",
+                  right: 14,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  fontSize: 12,
+                  color: "var(--ink-soft)",
+                }}
+              >
                 = ₹{Number(expectedPrice || 0) * 100} / Qtl
               </span>
             </div>
           </div>
 
-          <div style={{ background: "var(--bg-warm)", borderRadius: 10, padding: "12px 14px", border: "1px solid var(--line)" }}>
+          <div
+            style={{
+              background: "var(--bg-warm)",
+              borderRadius: 10,
+              padding: "12px 14px",
+              border: "1px solid var(--line)",
+            }}
+          >
             <div className="flex flex-center gap-xs text-sm fw-700" style={{ color: "var(--navy)" }}>
               <MapPin size={15} color="var(--green-deep)" />
-              <span>Farm Pickup Origin: {userLocStr}</span>
+              <span>
+                {isFpo ? "Collection Hub Origin" : "Farm Pickup Origin"}: {userLocStr}
+              </span>
             </div>
             <div style={{ fontSize: 11.5, color: "var(--ink-soft)", marginTop: 2 }}>
-              Buyers will provide quotes inclusive of farmgate logistics to this location.
+              Institutional buyers provide bids inclusive of logistics pickup from this hub.
             </div>
           </div>
 
@@ -292,7 +395,13 @@ export function CreateLotPage() {
             style={{ marginTop: 8 }}
           >
             <Package size={17} />
-            <span>{isSubmitting ? "Creating Lot..." : "List Harvest Lot for Bidding"}</span>
+            <span>
+              {isSubmitting
+                ? "Creating Lot..."
+                : isFpo
+                ? "Publish Bulk Lot for Bidding"
+                : "List Harvest Lot for Bidding"}
+            </span>
           </button>
         </form>
       </div>

@@ -25,13 +25,14 @@ export function LoginPage() {
 
   const handleRoleSelect = (role: UserRole) => {
     setSelectedRole(role);
+    setError(null);
   };
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const msg = await login(email, password);
+    const msg = await login(email, password, selectedRole);
     setBusy(false);
     if (msg) {
       setError(msg);
@@ -51,12 +52,20 @@ export function LoginPage() {
             {t("landing.tagline", "From knowing the market price to knowing the best action.")}
           </h2>
           <p>
-            {t("landing.heroSubtitle", "AI-powered farm-to-market intelligence combining weather, mandi prices, buyer demand, and logistics into one transparent recommendation.")}
+            {t(
+              "landing.heroSubtitle",
+              "AI-powered farm-to-market intelligence combining weather, mandi prices, buyer demand, and logistics into one transparent recommendation.",
+            )}
           </p>
           <div className="auth-value-props">
             <div className="auth-value-prop">
               <ShieldCheck size={18} />
-              <span>{t("landing.verifiedIntelligence", "Pan-India market intelligence across all states")}</span>
+              <span>
+                {t(
+                  "landing.verifiedIntelligence",
+                  "Pan-India market intelligence across all states",
+                )}
+              </span>
             </div>
             <div className="auth-value-prop">
               <ShieldCheck size={18} />
@@ -70,18 +79,28 @@ export function LoginPage() {
         </div>
         <div className="auth-visual-footer">
           <ShieldCheck size={14} />
-          <span>{t("nav.credit", "Smart India Hackathon · SIH26132")}</span>
+          <span>{t("nav.credit", "Skill Squad · SIH26132")}</span>
         </div>
       </div>
 
       <div className="auth-form-side">
         <div className="auth-box">
-          <h2>{t("auth.loginTitle", "Welcome Back")}</h2>
+          <h2>
+            {selectedRole === "farmer"
+              ? t("auth.farmerLoginTitle", "Farmer Sign In")
+              : selectedRole === "fpo"
+              ? t("auth.fpoLoginTitle", "FPO Sign In")
+              : t("auth.buyerLoginTitle", "Buyer Procurement Sign In")}
+          </h2>
           <p className="auth-subtitle">
-            {t("auth.loginSubtitle", "Sign in to access your agricultural decision dashboard.")}
+            {selectedRole === "farmer"
+              ? t("auth.farmerLoginSubtitle", "Access your crops, live market rates, weather risk, and buyer offers.")
+              : selectedRole === "fpo"
+              ? t("auth.fpoLoginSubtitle", "Manage member farmers, aggregated bulk lots, and institutional demand.")
+              : t("auth.buyerLoginSubtitle", "Discover verified produce supply, create bids, and track trade logistics.")}
           </p>
 
-          {/* Role selector */}
+          {/* Role selector tabs */}
           <div className="role-tabs">
             {(["farmer", "fpo", "buyer"] as const).map((r) => (
               <div
@@ -92,7 +111,11 @@ export function LoginPage() {
                 tabIndex={0}
                 onKeyDown={(e) => e.key === "Enter" && handleRoleSelect(r)}
               >
-                {r === "farmer" ? `🌾 ${t("auth.roleFarmer", "Farmer")}` : r === "fpo" ? `🏛 ${t("auth.roleFpo", "FPO")}` : `🏪 ${t("auth.roleBuyer", "Buyer")}`}
+                {r === "farmer"
+                  ? `🌾 ${t("auth.roleFarmer", "Farmer")}`
+                  : r === "fpo"
+                  ? `🏛 ${t("auth.roleFpo", "FPO")}`
+                  : `🏪 ${t("auth.roleBuyer", "Buyer")}`}
               </div>
             ))}
           </div>
@@ -104,7 +127,7 @@ export function LoginPage() {
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="e.g. 9876543210 or farmer@email.com"
+                placeholder="e.g. 9848022338 or user@kisansetu.demo"
                 autoComplete="username"
                 required
               />
@@ -153,17 +176,19 @@ export function LoginPage() {
               </select>
             </div>
 
-            {error && (
-              <div className="form-error-alert">
-                {error}
-              </div>
-            )}
+            {error && <div className="form-error-alert">{error}</div>}
 
             <button
               className={`btn btn-primary btn-block btn-lg ${busy ? "btn-loading" : ""}`}
               disabled={busy}
             >
-              {busy ? `${t("common.loading", "Signing In...")}` : t("auth.loginButton", "Sign In")}
+              {busy
+                ? `${t("common.loading", "Signing In...")}`
+                : selectedRole === "farmer"
+                ? t("auth.farmerLoginBtn", "Sign In as Farmer")
+                : selectedRole === "fpo"
+                ? t("auth.fpoLoginBtn", "Sign In as FPO")
+                : t("auth.buyerLoginBtn", "Sign In as Buyer")}
             </button>
           </form>
 
