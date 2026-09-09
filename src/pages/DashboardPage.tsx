@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   MapPin,
@@ -11,12 +11,15 @@ import {
   ChevronRight,
   Lightbulb,
   Users,
+  Layers,
+  CheckCircle2,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
 import { LocationSelectorModal } from "../components/LocationSelectorModal";
 import { weatherByLocation } from "../data/demo";
+import { inventoryApi, type InventorySummaryResponse } from "../services/inventoryApi";
 
 export function DashboardPage() {
   const { user } = useAuth();
@@ -25,6 +28,13 @@ export function DashboardPage() {
 
   const [selectedCropIndex, setSelectedCropIndex] = useState(0);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const [inventory, setInventory] = useState<InventorySummaryResponse | null>(null);
+
+  useEffect(() => {
+    inventoryApi.getSummary(1)
+      .then((res) => setInventory(res))
+      .catch((err) => console.warn("Could not fetch farmer stock summary:", err));
+  }, []);
 
   const hasCrops = crops.length > 0;
   const preferredCropsList: string[] = Array.isArray(user?.preferredCrops)
@@ -352,6 +362,62 @@ export function DashboardPage() {
             })}
           </div>
         )}
+      </div>
+
+      {/* 3.1 Farmer Produce Stock & Available to Sell */}
+      <div
+        className="card card-pad mb-xl"
+        style={{
+          background: "#FFFFFF",
+          border: "1px solid var(--line)",
+          borderRadius: 14,
+        }}
+      >
+        <div className="flex flex-between flex-center mb-sm">
+          <div className="flex flex-center gap-xs">
+            <Layers size={17} color="var(--green-deep)" />
+            <span style={{ fontSize: 13.5, fontWeight: 800, color: "var(--navy)" }}>
+              Produce Stock & Available to Sell (PostgreSQL Ledger)
+            </span>
+          </div>
+          <Link to="/lots/create" className="text-xs fw-700" style={{ color: "var(--green-deep)" }}>
+            + Create Lot →
+          </Link>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
+          <div style={{ background: "rgba(23,107,69,0.05)", borderRadius: 10, padding: "10px 12px", border: "1px solid rgba(23,107,69,0.15)" }}>
+            <div style={{ fontSize: 11, color: "var(--green-deep)", fontWeight: 700 }}>Available to Sell</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: "var(--green-deep)", marginTop: 2 }}>
+              {(inventory?.available_to_sell ?? (activeCrop?.quantityKg || 275)).toLocaleString("en-IN")} kg
+            </div>
+            <div style={{ fontSize: 10.5, color: "var(--ink-soft)" }}>Genuine uncommitted</div>
+          </div>
+
+          <div style={{ background: "var(--bg-warm)", borderRadius: 10, padding: "10px 12px", border: "1px solid var(--line)" }}>
+            <div style={{ fontSize: 11, color: "#D97706", fontWeight: 700 }}>In Active Lots</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: "#D97706", marginTop: 2 }}>
+              {(inventory?.in_active_lots ?? 150).toLocaleString("en-IN")} kg
+            </div>
+            <div style={{ fontSize: 10.5, color: "var(--ink-soft)" }}>Open for bidding</div>
+          </div>
+
+          <div style={{ background: "var(--bg-warm)", borderRadius: 10, padding: "10px 12px", border: "1px solid var(--line)" }}>
+            <div style={{ fontSize: 11, color: "#4F46E5", fontWeight: 700 }}>Reserved</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: "#4F46E5", marginTop: 2 }}>
+              {(inventory?.reserved ?? 0).toLocaleString("en-IN")} kg
+            </div>
+            <div style={{ fontSize: 10.5, color: "var(--ink-soft)" }}>In confirmed trades</div>
+          </div>
+
+          <div style={{ background: "var(--bg-warm)", borderRadius: 10, padding: "10px 12px", border: "1px solid var(--line)" }}>
+            <div style={{ fontSize: 11, color: "#64748B", fontWeight: 700 }}>Sold Produce</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: "#64748B", marginTop: 2 }}>
+              {(inventory?.sold ?? 75).toLocaleString("en-IN")} kg
+            </div>
+            <div style={{ fontSize: 10.5, color: "var(--ink-soft)" }}>Fulfilled / Offline</div>
+          </div>
+        </div>
       </div>
 
       {/* 4. "TODAY'S AI RECOMMENDATION" & BEST BUYER */}

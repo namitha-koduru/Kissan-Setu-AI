@@ -6,7 +6,7 @@ from app.database.connection import get_db
 from app.database.models import Farmer
 from app.schemas.auth import LoginRequest, LoginResponse, Token
 from app.schemas.farmer import FarmerResponse
-from app.services.auth_validation import check_mobile_exists, check_email_exists
+from app.services.auth_validation import check_mobile_exists, check_email_exists, normalize_mobile, normalize_email
 import hashlib
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])

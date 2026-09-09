@@ -118,3 +118,21 @@ def create_buyer(buyer_in: BuyerCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(buyer)
     return buyer
+
+
+@router.put("/{buyer_id}", response_model=BuyerResponse)
+def update_buyer(buyer_id: int, buyer_in: BuyerUpdate, db: Session = Depends(get_db)):
+    buyer = db.query(Buyer).filter(Buyer.id == buyer_id).first()
+    if not buyer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Buyer with ID {buyer_id} not found"
+        )
+    
+    update_data = buyer_in.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(buyer, field, value)
+    
+    db.commit()
+    db.refresh(buyer)
+    return buyer

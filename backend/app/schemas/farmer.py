@@ -8,6 +8,9 @@ class FarmerBase(BaseModel):
     phone: str
     email: Optional[str] = None
     preferred_language: Optional[str] = "en"
+    role: Optional[str] = "farmer"
+    profile_picture_url: Optional[str] = None
+    organization_name: Optional[str] = None
     state: Optional[str] = "Maharashtra"
     district: Optional[str] = "Nashik"
     village: Optional[str] = None
@@ -24,6 +27,9 @@ class FarmerUpdate(BaseModel):
     phone: Optional[str] = None
     email: Optional[str] = None
     preferred_language: Optional[str] = None
+    role: Optional[str] = None
+    profile_picture_url: Optional[str] = None
+    organization_name: Optional[str] = None
     state: Optional[str] = None
     district: Optional[str] = None
     village: Optional[str] = None

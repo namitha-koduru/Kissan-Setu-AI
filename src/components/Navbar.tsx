@@ -125,8 +125,22 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
             )}
           </div>
 
-          <Link className="profile-chip" to="/profile" aria-label="Profile">
-            <span className="avatar">{user?.initials || user?.name?.slice(0, 2).toUpperCase() || "KS"}</span>
+          <Link className="profile-chip" to="/profile" aria-label="Profile" style={{ display: "flex", alignItems: "center" }}>
+            {user?.profilePictureUrl ? (
+              <img
+                src={user.profilePictureUrl}
+                alt={user?.name || "Profile"}
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  border: "2px solid var(--green-deep)",
+                }}
+              />
+            ) : (
+              <span className="avatar">{user?.initials || user?.name?.slice(0, 2).toUpperCase() || "KS"}</span>
+            )}
           </Link>
         </div>
       </div>

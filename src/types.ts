@@ -44,6 +44,7 @@ export interface User {
   cropAllocations?: CropAllocation[];
   procurementRadiusKm?: number;
   memberFarmerCount?: number;
+  profilePictureUrl?: string;
   onboarded?: boolean;
 }
 
