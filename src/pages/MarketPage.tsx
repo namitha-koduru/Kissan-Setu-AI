@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   MapPin,
   ArrowRight,
@@ -19,6 +19,7 @@ export function MarketPage() {
   const { user } = useAuth();
   const { crops } = useAppState();
   const { t } = useLanguage();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const availableCrops = useMemo(() => {
     const catalogList = MASTER_CROP_CATALOG.map((c) => c.name);
@@ -27,7 +28,10 @@ export function MarketPage() {
     return Array.from(set);
   }, [crops]);
 
-  const [selectedCrop, setSelectedCrop] = useState<string>(() => crops[0]?.name || "Tomato");
+  const cropFromUrl = searchParams.get("crop");
+  const [selectedCrop, setSelectedCrop] = useState<string>(
+    () => cropFromUrl || crops[0]?.name || "Tomato"
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState<"ALL" | "MANDI" | "BUYER" | "FPC">("ALL");
   const [quantityQuintals] = useState<number>(20);
@@ -36,13 +40,25 @@ export function MarketPage() {
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [overview, setOverview] = useState<MarketIntelligenceOverview | null>(null);
 
-  const userDistrict = user?.district || (user?.location ? user.location.split(",")[0].trim() : "Farm Location");
+  const userDistrict = user?.district || (user?.location ? user.location.split(",")[0].trim() : "Nashik");
+
+  // Sync selected crop with URL parameter on direct link or backward navigation
+  useEffect(() => {
+    if (cropFromUrl && cropFromUrl !== selectedCrop) {
+      setSelectedCrop(cropFromUrl);
+    }
+  }, [cropFromUrl]);
+
+  const handleSelectCrop = (cropName: string) => {
+    setSelectedCrop(cropName);
+    setSearchParams({ crop: cropName });
+  };
 
   const loadMarketData = async (crop: string, qty: number) => {
     try {
       setLoading(true);
       setError(null);
-      const data = await marketIntelligenceApi.getOverview(crop, qty);
+      const data = await marketIntelligenceApi.getOverview(crop, qty, userDistrict);
       setOverview(data);
     } catch (err: unknown) {
       console.warn("Market intelligence fetch warning:", err);
@@ -57,16 +73,48 @@ export function MarketPage() {
 
   useEffect(() => {
     loadMarketData(selectedCrop, quantityQuintals);
-  }, [selectedCrop, quantityQuintals]);
+  }, [selectedCrop, quantityQuintals, userDistrict]);
 
-  // Derived opportunities list
-  const baseRate = overview?.analytics?.current_modal_price || 2850;
+  // Derived opportunities list directly from crop intelligence response
   const opportunities = useMemo(() => {
+    if (overview?.buyer_opportunities?.opportunities && overview.buyer_opportunities.opportunities.length > 0) {
+      return overview.buyer_opportunities.opportunities.map((b, idx) => {
+        const title = b.company_name || b.buyer_name;
+        const isFPC = title.toLowerCase().includes("fpc") || title.toLowerCase().includes("consortium") || title.toLowerCase().includes("producer");
+        const isMandi = title.toLowerCase().includes("apmc") || title.toLowerCase().includes("mandi") || title.toLowerCase().includes("yard");
+        const type = isFPC ? ("FPC" as const) : isMandi ? ("MANDI" as const) : ("BUYER" as const);
+        const typeLabel = isFPC ? "FPC Aggregator" : isMandi ? "Regulated APMC" : "Institutional Buyer";
+        const freightQtl = Math.round(b.distance_km * 1.4 + 35);
+        const netRealizationQtl = Math.max(0, b.offered_price_per_quintal - freightQtl);
+        const netRealizationKg = Math.round((netRealizationQtl / 100) * 10) / 10;
+
+        return {
+          id: b.buyer_id || idx + 1,
+          name: title,
+          type,
+          typeLabel,
+          verified: b.is_verified,
+          priceQtl: b.offered_price_per_quintal,
+          priceKg: b.offered_price_per_kg,
+          distanceKm: b.distance_km,
+          freightQtl,
+          netRealizationQtl,
+          netRealizationKg,
+          demand: `${b.quantity_required_quintals} Qtl (${b.crop_name} procurement)`,
+          paymentTerms: b.payment_terms || "Direct Bank Settlement",
+          quality: b.quality_grade || "Grade A",
+          rating: b.rating || 4.8,
+          isBest: idx === 0,
+        };
+      });
+    }
+
+    const baseRate = overview?.analytics?.current_modal_price || 2850;
     return [
       {
         id: 1,
-        name: "Sahyadri Farmers Producer Co.",
-        type: "FPC",
+        name: `${selectedCrop} Regional Producer Co.`,
+        type: "FPC" as const,
         typeLabel: "FPC Aggregator",
         verified: true,
         priceQtl: baseRate + 150,
@@ -75,7 +123,7 @@ export function MarketPage() {
         freightQtl: 60,
         netRealizationQtl: baseRate + 150 - 60,
         netRealizationKg: (baseRate + 150 - 60) / 100,
-        demand: "15 MT (Weekly procurement)",
+        demand: `15 MT (${selectedCrop} weekly procurement)`,
         paymentTerms: "Same-Day Direct Bank Settlement",
         quality: "Grade A",
         rating: 4.9,
@@ -84,7 +132,7 @@ export function MarketPage() {
       {
         id: 2,
         name: `${userDistrict} APMC Central Mandi`,
-        type: "MANDI",
+        type: "MANDI" as const,
         typeLabel: "Regulated APMC",
         verified: true,
         priceQtl: baseRate,
@@ -99,50 +147,15 @@ export function MarketPage() {
         rating: 4.5,
         isBest: false,
       },
-      {
-        id: 3,
-        name: "FreshFarm Retail Hypermarket",
-        type: "BUYER",
-        typeLabel: "Direct Retail Chain",
-        verified: true,
-        priceQtl: baseRate + 80,
-        priceKg: (baseRate + 80) / 100,
-        distanceKm: 22,
-        freightQtl: 90,
-        netRealizationQtl: baseRate + 80 - 90,
-        netRealizationKg: (baseRate + 80 - 90) / 100,
-        demand: "8 MT (Daily supply contract)",
-        paymentTerms: "Direct bank settlement within 24h",
-        quality: "Grade A",
-        rating: 4.7,
-        isBest: false,
-      },
-      {
-        id: 4,
-        name: "MahaAgro Export Consortium",
-        type: "BUYER",
-        typeLabel: "Export Procurer",
-        verified: true,
-        priceQtl: baseRate + 250,
-        priceKg: (baseRate + 250) / 100,
-        distanceKm: 65,
-        freightQtl: 220,
-        netRealizationQtl: baseRate + 250 - 220,
-        netRealizationKg: (baseRate + 250 - 220) / 100,
-        demand: "25 MT (Export lot)",
-        paymentTerms: "Instant Bank Transfer",
-        quality: "Export Grade (Brix > 17°)",
-        rating: 4.8,
-        isBest: false,
-      },
     ];
-  }, [baseRate, userDistrict]);
+  }, [overview, selectedCrop, userDistrict]);
 
   const filteredOpportunities = opportunities.filter((op) => {
     if (activeFilter !== "ALL" && op.type !== activeFilter) return false;
     if (searchTerm && !op.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
   });
+
 
   return (
     <div className="wrap" style={{ maxWidth: 960, paddingBottom: 60 }}>
@@ -205,7 +218,7 @@ export function MarketPage() {
             <button
               key={c}
               type="button"
-              onClick={() => setSelectedCrop(c)}
+              onClick={() => handleSelectCrop(c)}
               style={{
                 padding: "8px 16px",
                 borderRadius: 20,
