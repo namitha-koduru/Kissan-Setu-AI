@@ -10,6 +10,10 @@ class PossibleIssue(BaseModel):
 
 class VisionAnalysisResult(BaseModel):
     detected_crop: Optional[str] = None
+    selected_crop: Optional[str] = None
+    is_mismatch: bool = False
+    crop_match: Optional[bool] = True
+    mismatch_message: Optional[str] = None
     image_quality: str = "good"  # "good", "fair", "poor"
     observed_symptoms: List[str] = Field(default_factory=list)
     possible_issues: List[PossibleIssue] = Field(default_factory=list)

@@ -163,28 +163,32 @@ async def analyze_crop_photo(
         possible_issues=[{"name": i.name, "confidence": i.confidence} for i in vision_res.possible_issues],
         confidence=vision_res.overall_confidence,
         recommendations=vision_res.recommendations,
-        model_name="vision-service",
+        model_name="mismatch-rejected" if vision_res.is_mismatch else "vision-service",
         created_at=datetime.utcnow(),
     )
     db.add(img_analysis)
 
-    # 5. If crop_id is provided, link to Crop model
+    # 5. If crop_id is provided AND NOT a mismatch, link observation to Crop model
     if crop_id:
         target_crop = db.query(Crop).filter(Crop.id == crop_id).first()
         if target_crop:
             target_crop.image_url = upload_meta["image_url"]
-            target_crop.ai_observation = {
-                "image_url": upload_meta["image_url"],
-                "detected_crop": vision_res.detected_crop or crop_hint,
-                "observed_symptoms": vision_res.observed_symptoms,
-                "crop_health": "Good / Normal Vegetative Development" if vision_res.overall_confidence > 0.8 else "Fair / Moderate Stress",
-                "confidence": round(vision_res.overall_confidence * 100),
-                "possible_issues": [{"name": i.name, "confidence": i.confidence} for i in vision_res.possible_issues],
-                "recommendations": vision_res.recommendations,
-                "when_to_recheck": "Scout field in 3–5 days or after rainfall.",
-                "disclaimer": vision_res.disclaimer,
-                "analyzed_at": datetime.utcnow().strftime("%d %b %Y"),
-            }
+            if not vision_res.is_mismatch:
+                target_crop.ai_observation = {
+                    "image_url": upload_meta["image_url"],
+                    "detected_crop": vision_res.detected_crop or crop_hint,
+                    "selected_crop": crop_hint,
+                    "is_mismatch": False,
+                    "crop_match": True,
+                    "observed_symptoms": vision_res.observed_symptoms,
+                    "crop_health": "Good / Normal Vegetative Development" if vision_res.overall_confidence > 0.8 else "Fair / Moderate Stress",
+                    "confidence": round(vision_res.overall_confidence * 100),
+                    "possible_issues": [{"name": i.name, "confidence": i.confidence} for i in vision_res.possible_issues],
+                    "recommendations": vision_res.recommendations,
+                    "when_to_recheck": "Scout field in 3–5 days or after rainfall.",
+                    "disclaimer": vision_res.disclaimer,
+                    "analyzed_at": datetime.utcnow().strftime("%d %b %Y"),
+                }
 
     db.commit()
 
@@ -192,6 +196,10 @@ async def analyze_crop_photo(
         "image_url": upload_meta["image_url"],
         "image_id": crop_img.id,
         "detected_crop": vision_res.detected_crop or crop_hint,
+        "selected_crop": vision_res.selected_crop or crop_hint,
+        "is_mismatch": vision_res.is_mismatch,
+        "crop_match": vision_res.crop_match,
+        "mismatch_message": vision_res.mismatch_message,
         "image_quality": vision_res.image_quality,
         "observed_symptoms": vision_res.observed_symptoms,
         "crop_health": "Good / Normal Vegetative Development" if vision_res.overall_confidence > 0.8 else "Fair / Moderate Stress",

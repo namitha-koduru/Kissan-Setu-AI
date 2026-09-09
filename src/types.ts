@@ -51,6 +51,10 @@ export interface User {
 export interface CropAiObservation {
   image_url?: string;
   detected_crop?: string;
+  selected_crop?: string;
+  is_mismatch?: boolean;
+  crop_match?: boolean;
+  mismatch_message?: string;
   image_quality?: string;
   observed_symptoms: string[];
   crop_health?: string;
