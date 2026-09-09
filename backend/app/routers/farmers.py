@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.database.connection import get_db
 from app.database.models import Farmer
 from app.schemas.farmer import FarmerCreate, FarmerUpdate, FarmerResponse
+from app.services.auth_validation import check_mobile_exists, check_email_exists
 
 router = APIRouter(prefix="/farmers", tags=["Farmers"])
 
@@ -28,12 +29,16 @@ def get_farmer(farmer_id: int, db: Session = Depends(get_db)):
 @router.post("", response_model=FarmerResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=FarmerResponse, status_code=status.HTTP_201_CREATED)
 def create_farmer(farmer_in: FarmerCreate, db: Session = Depends(get_db)):
-
-    existing = db.query(Farmer).filter(Farmer.phone == farmer_in.phone).first()
-    if existing:
+    if farmer_in.phone and check_mobile_exists(db, farmer_in.phone):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Farmer with phone {farmer_in.phone} already exists"
+            detail="This mobile number is already registered. Please log in or use a different number."
+        )
+
+    if farmer_in.email and check_email_exists(db, farmer_in.email):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This email is already registered. Please log in or use a different email."
         )
     
     farmer_data = farmer_in.model_dump()

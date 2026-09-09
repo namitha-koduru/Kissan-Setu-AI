@@ -42,13 +42,84 @@ function readStored(): User | null {
   }
 }
 
-function readRegisteredUsers(): StoredUserWithCred[] {
+export function normalizeMobile(mobile?: string): string {
+  if (!mobile) return "";
+  const digits = mobile.replace(/\D/g, "");
+  if (digits.length === 12 && digits.startsWith("91")) {
+    return digits.slice(2);
+  }
+  if (digits.length === 11 && digits.startsWith("0")) {
+    return digits.slice(1);
+  }
+  if (digits.length >= 10) {
+    return digits.slice(-10);
+  }
+  return digits;
+}
+
+export function normalizeEmail(email?: string): string {
+  if (!email) return "";
+  return email.trim().toLowerCase();
+}
+
+export function readRegisteredUsers(): StoredUserWithCred[] {
   try {
     const raw = localStorage.getItem(REGISTERED_USERS_KEY);
     return raw ? (JSON.parse(raw) as StoredUserWithCred[]) : [];
   } catch {
     return [];
   }
+}
+
+export function checkAccountAvailability(
+  mobile?: string,
+  email?: string,
+): { available: boolean; error?: string } {
+  const normMobile = normalizeMobile(mobile);
+  const normEmail = normalizeEmail(email);
+  const registered = readRegisteredUsers();
+
+  // 1. Mobile Uniqueness across ALL accounts & roles (Farmers, FPOs, Buyers)
+  if (normMobile && normMobile.length >= 10) {
+    const mobileExistsInRegistered = registered.some((u) => {
+      const uMobile = normalizeMobile(u.mobile);
+      return uMobile && uMobile === normMobile;
+    });
+
+    const mobileExistsInDemo = demoUsersWithCred.some((u) => {
+      const uMobile = normalizeMobile(u.mobile);
+      return uMobile && uMobile === normMobile;
+    });
+
+    if (mobileExistsInRegistered || mobileExistsInDemo) {
+      return {
+        available: false,
+        error: "This mobile number is already registered. Please log in or use a different number.",
+      };
+    }
+  }
+
+  // 2. Email Uniqueness across ALL accounts & roles
+  if (normEmail) {
+    const emailExistsInRegistered = registered.some((u) => {
+      const uEmail = normalizeEmail(u.email);
+      return uEmail && uEmail === normEmail;
+    });
+
+    const emailExistsInDemo = demoUsersWithCred.some((u) => {
+      const uEmail = normalizeEmail(u.email);
+      return uEmail && uEmail === normEmail;
+    });
+
+    if (emailExistsInRegistered || emailExistsInDemo) {
+      return {
+        available: false,
+        error: "This email is already registered. Please log in or use a different email.",
+      };
+    }
+  }
+
+  return { available: true };
 }
 
 function roleToTitle(role: UserRole | string): string {
@@ -71,20 +142,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!emailOrMobile?.trim() || !password?.trim()) {
           return "Please provide both email/mobile and password.";
         }
-        const cleanIdentifier = emailOrMobile.trim().toLowerCase();
-        const cleanDigits = emailOrMobile.replace(/\D/g, "");
+        const cleanEmail = normalizeEmail(emailOrMobile);
+        const cleanMobile = normalizeMobile(emailOrMobile);
         const registered = readRegisteredUsers();
 
         // 1. Check registered users first
         const registeredMatch = registered.find((u) => {
-          const matchEmail = u.email && u.email.toLowerCase() === cleanIdentifier;
-          const userDigits = u.mobile ? u.mobile.replace(/\D/g, "") : "";
-          const matchMobile =
-            cleanDigits &&
-            userDigits &&
-            (userDigits === cleanDigits ||
-              userDigits.endsWith(cleanDigits) ||
-              cleanDigits.endsWith(userDigits));
+          const matchEmail = cleanEmail && normalizeEmail(u.email) === cleanEmail;
+          const matchMobile = cleanMobile && normalizeMobile(u.mobile) === cleanMobile;
           return matchEmail || matchMobile;
         });
 
@@ -113,14 +178,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // 2. Check 15 sample demo users
         const demoMatch = demoUsersWithCred.find((u) => {
-          const matchEmail = u.email?.toLowerCase() === cleanIdentifier;
-          const userDigits = u.mobile ? u.mobile.replace(/\D/g, "") : "";
-          const matchMobile =
-            cleanDigits &&
-            userDigits &&
-            (userDigits === cleanDigits ||
-              userDigits.endsWith(cleanDigits) ||
-              cleanDigits.endsWith(userDigits));
+          const matchEmail = cleanEmail && normalizeEmail(u.email) === cleanEmail;
+          const matchMobile = cleanMobile && normalizeMobile(u.mobile) === cleanMobile;
           return matchEmail || matchMobile;
         });
 
@@ -145,6 +204,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return "Invalid credentials. Please verify your email/mobile and password.";
       },
       async register(input) {
+        // Enforce global uniqueness across ALL roles & existing accounts
+        const availability = checkAccountAvailability(input.mobile, input.email);
+        if (!availability.available && availability.error) {
+          return availability.error;
+        }
+
         const initials =
           input.name
             .split(" ")
@@ -155,7 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const primaryEmail =
           input.email?.trim() ||
-          `${input.mobile?.replace(/\D/g, "") || Date.now()}@kisansetu.in`;
+          `${normalizeMobile(input.mobile) || Date.now()}@kissansetu.in`;
 
         const createdUser: StoredUserWithCred = {
           id: `u-${Date.now()}`,
@@ -175,15 +240,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
 
         const currentRegistered = readRegisteredUsers();
-        const updated = [
-          ...currentRegistered.filter(
-            (u) =>
-              (input.email && u.email?.toLowerCase() !== input.email.toLowerCase()) ||
-              (input.mobile &&
-                u.mobile?.replace(/\D/g, "") !== input.mobile.replace(/\D/g, "")),
-          ),
-          createdUser,
-        ];
+        // Append new user safely without overwriting other accounts
+        const updated = [...currentRegistered, createdUser];
         localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(updated));
 
         const safeUser: User = { ...createdUser };
