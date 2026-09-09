@@ -28,6 +28,7 @@ import { FPOPage } from "./pages/FPOPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { AdminPage } from "./pages/AdminPage";
 import { ChatPage } from "./pages/ChatPage";
+import { NotFoundPage } from "./pages/NotFoundPage";
 
 function AdminGate() {
   const { user } = useAuth();
@@ -140,8 +141,8 @@ export default function App() {
                 <Route path="/admin" element={<AdminGate />} />
               </Route>
 
-              {/* Fallback */}
-              <Route path="*" element={<Navigate to="/" replace />} />
+              {/* Branded 404 Fallback for unknown routes */}
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
             <ToastContainer />
           </BrowserRouter>

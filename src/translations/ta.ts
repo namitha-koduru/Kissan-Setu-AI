@@ -335,4 +335,34 @@ export const ta = {
   "decision.sell": "இப்போதே விற்கவும் (SELL NOW)",
   "decision.wait": "காத்திருக்கவும் (WAIT / HOLD)",
   "decision.switch": "சந்தையை மாற்றவும் (SWITCH MARKET)",
+
+  // 404 Page
+  "common.pageNotFound": "பக்கம் கிடைக்கவில்லை",
+  "common.wanderedOffField": "நீங்கள் பண்ணைப் பாதையை விட்டு விலகிவிட்டதாகத் தெரிகிறது. நீங்கள் தேடும் பக்கம் இல்லை அல்லது நகர்த்தப்பட்டுள்ளது.",
+  "common.goToHome": "முகப்புக்குச் செல்லவும்",
+  "common.goBack": "பின்னே செல்லவும்",
+
+  // Onboarding
+  "onboarding.back": "பின்செல்",
+  "onboarding.continue": "தொடரவும்",
+  "onboarding.finish": "அமைப்பை முடிக்கவும்",
+  "onboarding.farmerTagline": "உங்கள் பண்ணையை சிறந்த சந்தைகளுடன் இணைக்கவும்.",
+  "onboarding.fpoTagline": "உங்கள் உறுப்பினர்களை ஒழுங்கமைத்து, பயிர்களை ஒருங்கிணைத்து வாங்குபவர்களுடன் இணையுங்கள்.",
+  "onboarding.buyerTagline": "விவசாயிகள் மற்றும் FPOக்களிடமிருந்து சரிபார்க்கப்பட்ட பயிர்களைக் கொள்முதல் செய்யுங்கள்.",
+  "onboarding.farmerSetup": "விவசாயி அமைப்பு",
+  "onboarding.fpoSetup": "FPO அமைப்பு",
+  "onboarding.buyerSetup": "வாங்குபவர் அமைப்பு",
+  "onboarding.step": "படி",
+  "onboarding.of": "இல்",
+  "onboarding.cropWiseLandAllocation": "பயிர் வாரியான நில ஒதுக்கீடு",
+  "onboarding.allocated": "ஒதுக்கப்பட்டது",
+  "onboarding.remaining": "மீதமுள்ளது",
+  "onboarding.acres": "ஏக்கர்",
+  "onboarding.selectState": "மாநிலத்தைத் தேர்ந்தெடுக்கவும்",
+  "onboarding.selectDistrict": "மாவட்டத்தைத் தேர்ந்தெடுக்கவும்",
+  "onboarding.searchCrop": "பயிரைத் தேடுங்கள் (எ.கா. பருத்தி, தக்காளி)...",
+  "onboarding.completeFarmerSetup": "விவசாயி அமைப்பை முடிக்கவும்",
+  "onboarding.completeFpoSetup": "FPO அமைப்பை முடிக்கவும்",
+  "onboarding.completeBuyerSetup": "வாங்குபவர் அமைப்பை முடிக்கவும்",
 };
+
