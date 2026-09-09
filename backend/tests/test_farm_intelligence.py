@@ -195,3 +195,106 @@ def test_chat_with_farm_intelligence():
     assert "reply" in data
     assert len(data["reply"]) > 20
     assert data["language"] == "en"
+
+
+def test_decision_engine_weather_risk_perishable_tomato():
+    """Test that perishable Tomato facing rain risk produces SELL_NOW to avoid cracking/decay."""
+    from app.services.recommendation_service import recommendation_service
+    from app.schemas.recommendation import RecommendationRequest
+
+    req = RecommendationRequest(
+        crop_name="Tomato",
+        quantity_kg=3000.0,
+        growth_stage="Near maturity (70-80% red)",
+        location="Nashik, Maharashtra"
+    )
+    res = recommendation_service.evaluate_recommendation(req)
+    assert res.decision in ["SELL_NOW", "SELL"]
+    assert res.crop_name == "Tomato"
+    assert res.confidence_score >= 80
+    assert any("precipitation" in r.lower() or "rain" in r.lower() or "shelf life" in r.lower() or "cracking" in r.lower() for r in res.reasons)
+    assert res.expected_net_realization > 0
+    assert len(res.market_comparisons) > 0
+
+
+def test_decision_engine_growth_stage_immature_monitor():
+    """Test that immature/vegetative crops produce MONITOR decision regardless of current spot prices."""
+    from app.services.recommendation_service import recommendation_service
+    from app.schemas.recommendation import RecommendationRequest
+
+    req = RecommendationRequest(
+        crop_name="Potato",
+        quantity_kg=5000.0,
+        growth_stage="Vegetative / Tuber initiation",
+        location="Agra, Uttar Pradesh",
+        expected_harvest_date="2026-10-30"
+    )
+    res = recommendation_service.evaluate_recommendation(req)
+    assert res.decision == "MONITOR"
+    assert any("premature" in r.lower() or "vegetative" in r.lower() or "maturity" in r.lower() for r in res.reasons)
+
+
+def test_decision_engine_storable_crop_rising_trend_hold():
+    """Test that dry commercial Cotton with rising trend and high storability produces HOLD."""
+    from app.services.recommendation_service import recommendation_service
+    from app.schemas.recommendation import RecommendationRequest
+
+    req = RecommendationRequest(
+        crop_name="Cotton",
+        quantity_kg=4000.0,
+        growth_stage="Ready to harvest / Boll opening",
+        location="Adilabad, Telangana"
+    )
+    res = recommendation_service.evaluate_recommendation(req)
+    assert res.decision in ["HOLD", "COMPARE_MARKETS", "SELL_NOW"]
+    assert res.confidence_score >= 75
+    assert res.crop_name == "Cotton"
+    # Cotton holding cost should be low
+    assert res.score_breakdown["perishability_penalty"] <= 30
+
+
+def test_decision_engine_crop_specific_distinctness():
+    """Verify Cotton, Potato, and Tomato yield distinct decision dynamics and tailored explanations."""
+    from app.services.recommendation_service import recommendation_service
+    from app.schemas.recommendation import RecommendationRequest
+
+    req_cotton = RecommendationRequest(crop_name="Cotton", quantity_kg=2000, growth_stage="Ready to harvest", location="Rajkot, Gujarat")
+    req_potato = RecommendationRequest(crop_name="Potato", quantity_kg=2000, growth_stage="Ready to harvest", location="Agra, Uttar Pradesh")
+    req_tomato = RecommendationRequest(crop_name="Tomato", quantity_kg=2000, growth_stage="Ready to harvest", location="Kolar, Karnataka")
+
+    res_cotton = recommendation_service.evaluate_recommendation(req_cotton)
+    res_potato = recommendation_service.evaluate_recommendation(req_potato)
+    res_tomato = recommendation_service.evaluate_recommendation(req_tomato)
+
+    # 1. Net realization prices should reflect true crop price tiers (Cotton ~ ₹60-75/kg, Potato ~ ₹15-25/kg, Tomato ~ ₹20-35/kg)
+    assert res_cotton.expected_net_realization > res_tomato.expected_net_realization
+    assert res_tomato.expected_net_realization > res_potato.expected_net_realization
+
+    # 2. Perishability penalties must differ significantly
+    assert res_tomato.score_breakdown["perishability_penalty"] > res_cotton.score_breakdown["perishability_penalty"]
+
+    # 3. Mandi comparisons must be crop-specific (Cotton mandis vs Potato mandis vs Tomato mandis)
+    cotton_mandis = [m.market_name for m in res_cotton.market_comparisons]
+    potato_mandis = [m.market_name for m in res_potato.market_comparisons]
+    tomato_mandis = [m.market_name for m in res_tomato.market_comparisons]
+    assert cotton_mandis != potato_mandis
+    assert potato_mandis != tomato_mandis
+
+
+def test_recommendations_analyze_api_endpoint():
+    """Test POST /api/recommendations/analyze endpoint."""
+    payload = {
+        "crop_name": "Tomato",
+        "quantity_kg": 2500.0,
+        "growth_stage": "Near maturity (70-80% red)",
+        "location": "Nashik, Maharashtra"
+    }
+    res = client.post("/api/recommendations/analyze", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["decision"] in ["SELL_NOW", "HOLD", "MONITOR", "COMPARE_MARKETS", "SELL", "WAIT", "SWITCH"]
+    assert data["crop_name"] == "Tomato"
+    assert data["expected_net_realization"] > 0
+    assert len(data["market_comparisons"]) > 0
+    assert "score_breakdown" in data
+

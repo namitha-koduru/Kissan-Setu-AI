@@ -22,6 +22,8 @@ class RecommendationRequest(BaseModel):
     growth_stage: str
     location: str
     sowing_date: Optional[str] = None
+    expected_harvest_date: Optional[str] = None
+
 
 
 class RecommendationResponse(BaseModel):
