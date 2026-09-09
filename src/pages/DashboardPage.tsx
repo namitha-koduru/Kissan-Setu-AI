@@ -417,6 +417,40 @@ export function DashboardPage() {
             <div style={{ fontSize: 10.5, color: "var(--ink-soft)" }}>Fulfilled / Offline</div>
           </div>
         </div>
+
+        {/* Crop-Level Stock Breakdown */}
+        {inventory?.items && inventory.items.length > 0 && (
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px dashed var(--line)" }}>
+            <div style={{ fontSize: 11.5, fontWeight: 800, color: "var(--ink-muted)", textTransform: "uppercase", marginBottom: 8 }}>
+              Crop-Level Inventory Breakdown
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 8 }}>
+              {inventory.items.map((item) => (
+                <div
+                  key={item.id || item.crop_name}
+                  style={{
+                    background: "var(--bg-warm)",
+                    borderRadius: 8,
+                    padding: "8px 12px",
+                    border: "1px solid var(--line)",
+                    fontSize: 12,
+                  }}
+                >
+                  <div className="flex flex-between">
+                    <strong style={{ color: "var(--navy)" }}>{item.crop_name}</strong>
+                    <span style={{ fontWeight: 800, color: "var(--green-deep)" }}>
+                      {item.available_quantity} {item.unit} Avail
+                    </span>
+                  </div>
+                  <div className="flex flex-between text-xs" style={{ color: "var(--ink-soft)", marginTop: 2 }}>
+                    <span>Total: {item.total_quantity} {item.unit}</span>
+                    <span>Lots: {item.allocated_quantity} | Sold: {item.sold_quantity}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 4. "TODAY'S AI RECOMMENDATION" & BEST BUYER */}
