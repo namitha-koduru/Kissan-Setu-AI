@@ -74,11 +74,11 @@ export function LocationSelectorModal({ isOpen, onClose }: Props) {
           setState(defaultSt);
           setLat(pos.coords.latitude);
           setLng(pos.coords.longitude);
-          showToast(t("location.detected", `Farm GPS coordinates located (${pos.coords.latitude.toFixed(3)}°, ${pos.coords.longitude.toFixed(3)}°)`));
+          showToast(t("location.detected", `Farm location detected via GPS (${pos.coords.latitude.toFixed(3)}°, ${pos.coords.longitude.toFixed(3)}°)`));
         },
         () => {
           setDetecting(false);
-          showToast(t("location.fallback", "GPS unavailable. Please enter your village/district."));
+          showToast(t("location.fallback", "GPS permission denied or unavailable. Using saved farm location."));
         },
         { timeout: 5000 }
       );

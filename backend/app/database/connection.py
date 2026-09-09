@@ -17,9 +17,25 @@ def init_engine():
             connect_args=connect_args,
             pool_pre_ping=True,
         )
-        # Verify connection
+        # Verify connection and apply safe schema column additions
+        from sqlalchemy import text
         with eng.connect() as conn:
-            pass
+            if not settings.DATABASE_URL.startswith("sqlite"):
+                try:
+                    conn.execute(text("ALTER TABLE crops ADD COLUMN IF NOT EXISTS image_url VARCHAR;"))
+                    conn.execute(text("ALTER TABLE crops ADD COLUMN IF NOT EXISTS ai_observation JSONB;"))
+                    conn.execute(text("ALTER TABLE farmers ADD COLUMN IF NOT EXISTS profile_picture_url VARCHAR;"))
+                    conn.execute(text("ALTER TABLE farmers ADD COLUMN IF NOT EXISTS organization_name VARCHAR;"))
+                    conn.execute(text("ALTER TABLE farmers ADD COLUMN IF NOT EXISTS role VARCHAR;"))
+                    conn.execute(text("ALTER TABLE buyers ADD COLUMN IF NOT EXISTS profile_picture_url VARCHAR;"))
+                    conn.execute(text("ALTER TABLE buyers ADD COLUMN IF NOT EXISTS organization_name VARCHAR;"))
+                    conn.execute(text("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;"))
+                    conn.execute(text("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS language VARCHAR(10) DEFAULT 'en';"))
+                    conn.execute(text("ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS image_url VARCHAR;"))
+                    conn.execute(text("ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS image_id VARCHAR;"))
+                    conn.commit()
+                except Exception as migration_err:
+                    print(f"[Database Schema] Auto-migration notice: {migration_err}")
         print(f"[Database] Successfully connected to configured database: {settings.DATABASE_URL.split('@')[-1] if '@' in settings.DATABASE_URL else settings.DATABASE_URL}")
         return eng
     except Exception as exc:

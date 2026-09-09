@@ -66,10 +66,11 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# Configure CORS for Vite frontend
+# Configure CORS for Vite frontend (supports exact domain & Vercel deployment URLs)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
+    allow_origin_regex=r"^https:\/\/.*\.vercel\.app$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -115,6 +116,16 @@ async def global_exception_handler(request: Request, exc: Exception):
 # Health Check
 @app.get("/api/health", tags=["Health"])
 def health_check():
+    return {
+        "status": "ok",
+        "service": "KissanSetuAI",
+        "database": "connected",
+        "version": "1.0.0",
+    }
+
+
+@app.get("/health", tags=["Health"])
+def root_health_check():
     return {
         "status": "ok",
         "service": "KissanSetuAI",

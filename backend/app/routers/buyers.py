@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from app.database.connection import get_db
 from app.database.models import Buyer
-from app.schemas.buyer import BuyerCreate, BuyerResponse
+from app.schemas.buyer import BuyerCreate, BuyerUpdate, BuyerResponse
 from app.schemas.buyer_matching import BuyerMatchingResponse, BuyerMatchResult
 from app.services.buyer_matching_service import buyer_matching_service
 from app.services.auth_validation import check_mobile_exists, check_email_exists
@@ -61,6 +61,7 @@ def get_buyer_match_detail(
     )
 
 
+@router.get("", response_model=List[BuyerResponse])
 @router.get("/", response_model=List[BuyerResponse])
 def get_all_buyers(
     location: Optional[str] = None,

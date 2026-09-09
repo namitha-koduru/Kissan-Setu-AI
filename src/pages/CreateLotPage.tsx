@@ -94,22 +94,18 @@ export function CreateLotPage() {
         console.warn("Stock summary check skipped:", stockErr);
       }
 
-      // 2. Get or create crop for crop_id
+      // 2. Get crop for crop_id
       let targetCropId = 1;
       try {
         const farmerCrops = await cropApi.getFarmerCrops(1);
         const matched = farmerCrops.find((c) => c.name.toLowerCase() === crop.toLowerCase());
         if (matched) {
           targetCropId = parseInt(matched.id.replace(/\D/g, ""), 10) || 1;
-        } else {
-          const newC = await cropApi.createCrop({
-            farmer_id: 1,
-            crop_name: crop,
-            variety: "Standard Hybrid",
-            quantity: Math.max(qty * 2, 1000),
-            growth_stage: "Ready to harvest",
-          });
-          targetCropId = newC.id;
+        } else if (crops.length > 0) {
+          const stateMatch = crops.find((c) => c.name.toLowerCase() === crop.toLowerCase());
+          if (stateMatch) {
+            targetCropId = parseInt(stateMatch.id.replace(/\D/g, ""), 10) || 1;
+          }
         }
       } catch (cropErr) {
         console.warn("Could not match crop_id:", cropErr);
@@ -135,11 +131,14 @@ export function CreateLotPage() {
     } catch (err: any) {
       console.warn("Backend lot creation error:", err);
       const detailMsg = err?.response?.data?.detail || err?.message;
-      if (detailMsg && detailMsg.includes("available to sell")) {
+      if (detailMsg && (detailMsg.includes("available to sell") || detailMsg.includes("Only "))) {
         setStockError(detailMsg);
         setIsSubmitting(false);
         return;
       }
+      setStockError(detailMsg || "Failed to create lot. Please check stock availability.");
+      setIsSubmitting(false);
+      return;
     }
 
     const newLot: LotRecord = {
