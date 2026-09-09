@@ -6,6 +6,7 @@ import {
   ArrowRight,
   X,
   History,
+  MessageSquare,
 } from "lucide-react";
 import buyerMatchingApi from "../services/buyerMatchingApi";
 import type {
@@ -14,6 +15,7 @@ import type {
 } from "../services/buyerMatchingApi";
 import type { OfferRecord } from "../types";
 import { useLanguage } from "../context/LanguageContext";
+import { NegotiationChatModal } from "./NegotiationChatModal";
 
 interface Props {
   offer: OfferRecord;
@@ -27,6 +29,7 @@ export function OfferIntelligenceCard({ offer, onOfferUpdated }: Props) {
   const [history, setHistory] = useState<OfferHistoryItem[]>([]);
   const [, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showChat, setShowChat] = useState(false);
 
   // Counter State
   const [showCounter, setShowCounter] = useState(false);
@@ -342,6 +345,14 @@ export function OfferIntelligenceCard({ offer, onOfferUpdated }: Props) {
         )}
 
         <button
+          className="btn btn-outline btn-sm"
+          style={{ fontSize: "12px", color: "var(--green-deep)" }}
+          onClick={() => setShowChat(true)}
+        >
+          <MessageSquare size={13} style={{ marginRight: 4 }} /> Bargain / Chat
+        </button>
+
+        <button
           className="btn btn-ghost btn-sm"
           style={{ fontSize: "11.5px", color: "var(--ink-soft)", marginLeft: "auto" }}
           onClick={() => setShowHistoryModal(!showHistoryModal)}
@@ -349,6 +360,16 @@ export function OfferIntelligenceCard({ offer, onOfferUpdated }: Props) {
           <History size={13} style={{ marginRight: 4 }} /> History ({history.length || 1})
         </button>
       </div>
+
+      {showChat && (
+        <NegotiationChatModal
+          lotId={offer.lotId}
+          lotQuantityKg={offer.quantityKg}
+          askingPrice={offer.pricePerKg}
+          offerId={parseInt(offer.id.replace(/\D/g, "")) || undefined}
+          onClose={() => setShowChat(false)}
+        />
+      )}
     </div>
   );
 }

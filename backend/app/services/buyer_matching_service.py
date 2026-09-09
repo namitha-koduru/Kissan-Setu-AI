@@ -1,5 +1,6 @@
+import math
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict, Any
 from sqlalchemy.orm import Session
 from app.database.models import Buyer, MarketPrice, Lot, Farmer
 from app.schemas.buyer_matching import (
@@ -8,6 +9,56 @@ from app.schemas.buyer_matching import (
     BuyerMatchFactor,
     DirectVsMandiComparison,
 )
+
+# Known coordinates for Indian Agricultural districts (latitude, longitude)
+DISTRICT_COORDINATES: Dict[str, Tuple[float, float]] = {
+    "nashik": (19.9975, 73.7898),
+    "pune": (18.5204, 73.8567),
+    "ahmednagar": (19.0952, 74.7496),
+    "aurangabad": (19.8762, 75.3433),
+    "chhatrapati sambhajinagar": (19.8762, 75.3433),
+    "jalgaon": (21.0077, 75.5626),
+    "solapur": (17.6599, 75.9064),
+    "satara": (17.6805, 74.0183),
+    "sangli": (16.8524, 74.5815),
+    "kolhapur": (16.7050, 74.2433),
+    "nagpur": (21.1458, 79.0882),
+    "amravati": (20.9374, 77.7796),
+    "latur": (18.4088, 76.5604),
+    "nanded": (19.1383, 77.3210),
+    "mumbai": (19.0760, 72.8777),
+    "thane": (19.2183, 72.9781),
+    "hyderabad": (17.3850, 78.4867),
+    "bengaluru": (12.9716, 77.5946),
+    "surat": (21.1702, 72.8311),
+    "indore": (22.7196, 75.8577),
+}
+
+
+def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Calculate the great-circle distance between two points on the Earth in kilometers."""
+    R = 6371.0  # Earth's radius in kilometers
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(math.radians(lat1))
+        * math.cos(math.radians(lat2))
+        * math.sin(dlon / 2) ** 2
+    )
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return round(R * c, 1)
+
+
+def get_coords_from_location(location_str: Optional[str]) -> Optional[Tuple[float, float]]:
+    if not location_str:
+        return None
+    loc_lower = location_str.lower()
+    for district, coords in DISTRICT_COORDINATES.items():
+        if district in loc_lower:
+            return coords
+    return None
+
 
 
 class BuyerMatchingService:
@@ -291,5 +342,93 @@ class BuyerMatchingService:
             buyers=results,
         )
 
+    def get_nearby_demand_for_lot(
+        self,
+        db: Session,
+        lot: Lot,
+        max_radius_km: float = 25.0
+    ) -> Dict[str, Any]:
+        """
+        Geospatial/Regional matching: finds FPOs and Buyers within ~25 km of the farmer's lot.
+        Uses real coordinates if available, or district proximity.
+        """
+        farmer = db.query(Farmer).filter(Farmer.id == lot.farmer_id).first()
+        farmer_coords = None
+        if farmer and farmer.latitude and farmer.longitude:
+            farmer_coords = (farmer.latitude, farmer.longitude)
+        else:
+            farmer_coords = get_coords_from_location(lot.location) or (
+                get_coords_from_location(farmer.district) if farmer else (19.9975, 73.7898)
+            )
+
+        all_buyers = db.query(Buyer).all()
+        matched_entries = []
+        buyers_count_25km = 0
+        fpos_count_25km = 0
+
+        for b in all_buyers:
+            is_fpo = "fpo" in (b.business_type or "").lower() or "fpc" in (b.business_type or "").lower() or "fpo" in (b.organization or "").lower()
+            b_coords = get_coords_from_location(b.location)
+            
+            if farmer_coords and b_coords:
+                distance = haversine_distance(farmer_coords[0], farmer_coords[1], b_coords[0], b_coords[1])
+                is_exact = True
+            else:
+                # District fallback
+                if farmer and farmer.district and farmer.district.lower() in b.location.lower():
+                    distance = 12.5
+                else:
+                    distance = 45.0
+                is_exact = False
+
+            # Check crop compatibility
+            crop = lot.crop
+            crop_name = crop.crop_name if crop else ""
+            pref_crops = b.preferred_crops or []
+            crop_match = not pref_crops or any(crop_name.lower() in str(c).lower() for c in pref_crops)
+
+            # Within radius or priority match
+            if distance <= max_radius_km or (distance <= 40.0 and crop_match):
+                if distance <= max_radius_km:
+                    if is_fpo:
+                        fpos_count_25km += 1
+                    else:
+                        buyers_count_25km += 1
+
+                matched_entries.append({
+                    "id": b.id,
+                    "name": b.name,
+                    "organization": b.organization or b.name,
+                    "business_type": b.business_type or ("FPO / Producer Company" if is_fpo else "Institutional Buyer"),
+                    "is_fpo": is_fpo,
+                    "location": b.location,
+                    "phone": b.phone,
+                    "distance_km": distance,
+                    "is_exact_distance": is_exact,
+                    "interested_crops": pref_crops,
+                    "min_quantity_qtl": b.min_quantity_qtl or 1.0,
+                    "max_quantity_qtl": b.max_quantity_qtl or 500.0,
+                    "indicative_price_per_kg": b.indicative_price_per_kg or lot.asking_price,
+                    "verification_status": b.verification_status or ("VERIFIED" if b.verified else "UNVERIFIED"),
+                    "rating": b.rating or 4.5,
+                })
+
+        # Sort by distance
+        matched_entries.sort(key=lambda x: x["distance_km"])
+
+        return {
+            "lot_id": lot.id,
+            "crop_name": lot.crop.crop_name if lot.crop else "Produce",
+            "quantity_kg": lot.quantity,
+            "asking_price": lot.asking_price,
+            "location": lot.location,
+            "radius_km": max_radius_km,
+            "buyers_within_25km": buyers_count_25km,
+            "fpos_within_25km": fpos_count_25km,
+            "total_matches": len(matched_entries),
+            "nearby_demand": matched_entries,
+        }
+
 
 buyer_matching_service = BuyerMatchingService()
+

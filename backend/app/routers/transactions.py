@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from app.database.connection import get_db
 from app.database.models import Transaction, Lot, Buyer, Crop
-from app.schemas.transaction import TransactionCreate, TransactionStatusUpdate, TransactionResponse
+from app.schemas.transaction import TransactionCreate, TransactionStatusUpdate, TransactionResponse, PaymentMethodUpdate
 from app.schemas.buyer_matching import (
     TransactionDetailResponse,
     LogisticsUpdateRequest,
@@ -104,5 +104,18 @@ def resolve_dispute(dispute_id: int, req: DisputeResolveRequest, db: Session = D
 @router.put("/{transaction_id}/status", response_model=TransactionResponse)
 def update_transaction_status(transaction_id: int, status_in: TransactionStatusUpdate, db: Session = Depends(get_db)):
     """Advance transaction status through state machine."""
-    tx = transaction_service.update_transaction_status(db=db, transaction_id=transaction_id, new_status=status_in.status)
+    tx = transaction_service.update_transaction_status(db=db, transaction_id=transaction_id, new_status=status_in.status, note=status_in.note)
     return TransactionResponse.model_validate(tx)
+
+
+@router.post("/{transaction_id}/payment-method", response_model=TransactionResponse)
+def set_transaction_payment_method(transaction_id: int, pm_in: PaymentMethodUpdate, db: Session = Depends(get_db)):
+    """Select payment method (Razorpay or COD with transparent charge if any)."""
+    tx = transaction_service.select_payment_method(
+        db=db,
+        transaction_id=transaction_id,
+        payment_method=pm_in.payment_method,
+        cod_charge=pm_in.cod_charge or 0.0
+    )
+    return TransactionResponse.model_validate(tx)
+

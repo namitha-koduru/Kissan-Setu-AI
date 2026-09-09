@@ -283,6 +283,35 @@ export function TransactionPage() {
     }
   };
 
+  const [paymentMethod, setPaymentMethod] = useState<"RAZORPAY" | "COD">("RAZORPAY");
+
+  const handleSelectCod = async () => {
+    if (!txDetail) return;
+    try {
+      await apiClient.post(`/transactions/${txDetail.id}/payment-method`, {
+        payment_method: "COD",
+        cod_charge: 0.0,
+      });
+      setPaymentMethod("COD");
+      setPaymentStatus("COD Selected (Cash on Delivery)");
+      showToast("Cash on Delivery (COD) selected. Total: ₹" + netInHand.toLocaleString("en-IN"));
+      setTxDetail((prev) =>
+        prev
+          ? {
+              ...prev,
+              payment_status: "COD_PENDING",
+              payment_reference: `COD-TXN-${txDetail.id}`,
+            }
+          : null,
+      );
+    } catch (err) {
+      console.warn("Could not set COD method remotely, updating locally", err);
+      setPaymentMethod("COD");
+      setPaymentStatus("COD Selected (Cash on Delivery)");
+      showToast("Cash on Delivery (COD) selected.");
+    }
+  };
+
   const isComplete = txDetail?.events.every((e) => e.done);
   const totalVal = txDetail?.total_amount || 0;
   const freightCost = txDetail?.transport_cost_actual || 0;
@@ -488,8 +517,21 @@ export function TransactionPage() {
                   <span>
                     {isPaying
                       ? "Opening Razorpay..."
-                      : `Pay Securely ₹${netInHand.toLocaleString("en-IN")}`}
+                      : `Pay Securely Online ₹${netInHand.toLocaleString("en-IN")}`}
                   </span>
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={handleSelectCod}
+                  style={{
+                    fontWeight: 700,
+                    borderColor: "var(--green-leaf)",
+                    color: "var(--green-deep)",
+                    background: "#FAFCF9",
+                  }}
+                >
+                  <span>Cash on Delivery (COD) · ₹{netInHand.toLocaleString("en-IN")}</span>
                 </button>
                 <button
                   type="button"
