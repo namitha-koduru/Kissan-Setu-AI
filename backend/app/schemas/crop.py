@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any, Dict
 from pydantic import BaseModel, ConfigDict
 
 
@@ -12,6 +12,8 @@ class CropBase(BaseModel):
     expected_harvest_date: Optional[str] = None
     growth_stage: Optional[str] = "Near maturity"
     soil_type: Optional[str] = None
+    image_url: Optional[str] = None
+    ai_observation: Optional[Any] = None
 
 
 class CropCreate(CropBase):
@@ -27,6 +29,8 @@ class CropUpdate(BaseModel):
     expected_harvest_date: Optional[str] = None
     growth_stage: Optional[str] = None
     soil_type: Optional[str] = None
+    image_url: Optional[str] = None
+    ai_observation: Optional[Any] = None
 
 
 class CropResponse(CropBase):

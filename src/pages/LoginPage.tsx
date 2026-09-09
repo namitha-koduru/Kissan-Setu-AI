@@ -28,11 +28,50 @@ export function LoginPage() {
     setError(null);
   };
 
+  const handleIdentifierChange = (val: string) => {
+    setError(null);
+    // If input starts with a digit or '+', treat as phone number and strip alphabetic characters
+    if (/^[\d+]/.test(val.trim())) {
+      const sanitized = val.replace(/[^\d+\s-]/g, "");
+      setEmail(sanitized);
+    } else {
+      setEmail(val);
+    }
+  };
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    const clean = email.trim();
+    if (!clean) {
+      setError("Please enter your mobile number or email.");
+      return;
+    }
+
+    // Check if input is a mobile number
+    const isPhoneCandidate = /^[\d+\s-]+$/.test(clean);
+    if (isPhoneCandidate) {
+      const digits = clean.replace(/\D/g, "");
+      let normalized = digits;
+      if (digits.length === 12 && digits.startsWith("91")) {
+        normalized = digits.slice(2);
+      } else if (digits.length === 11 && digits.startsWith("0")) {
+        normalized = digits.slice(1);
+      } else if (digits.length > 10) {
+        normalized = digits.slice(-10);
+      }
+
+      if (normalized.length !== 10 || !/^[6-9]\d{9}$/.test(normalized)) {
+        setError("Please enter a valid 10-digit Indian mobile number (e.g., 9848022338).");
+        return;
+      }
+    } else if (!clean.includes("@") || clean.length < 5) {
+      setError("Please enter a valid email address or 10-digit mobile number.");
+      return;
+    }
+
     setBusy(true);
     setError(null);
-    const msg = await login(email, password, selectedRole);
+    const msg = await login(clean, password, selectedRole);
     setBusy(false);
     if (msg) {
       setError(msg);
@@ -126,7 +165,7 @@ export function LoginPage() {
               <input
                 id="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => handleIdentifierChange(e.target.value)}
                 placeholder="e.g. 9848022338 or user@kisansetu.demo"
                 autoComplete="username"
                 required

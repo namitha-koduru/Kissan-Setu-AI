@@ -44,15 +44,32 @@ def hash_password(password: str) -> str:
 @router.post("/login", response_model=LoginResponse)
 def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     """
-    Mock/Development Authentication Endpoint.
-    Authenticates by phone number and returns the farmer profile + token.
+    Authentication Endpoint.
+    Authenticates by normalized phone number or email and returns profile + token.
     """
-    farmer = db.query(Farmer).filter(Farmer.phone == login_data.phone).first()
+    raw_ident = login_data.phone or login_data.username_or_phone or ""
+    norm_phone = normalize_mobile(raw_ident)
+    
+    farmer = None
+    if norm_phone and len(norm_phone) == 10:
+        farmer = db.query(Farmer).filter(
+            (Farmer.phone == norm_phone) |
+            (Farmer.phone == f"+91{norm_phone}") |
+            (Farmer.phone == f"91{norm_phone}") |
+            (Farmer.phone == raw_ident)
+        ).first()
+    elif "@" in raw_ident:
+        clean_email = raw_ident.strip().lower()
+        farmer = db.query(Farmer).filter(Farmer.email.ilike(clean_email)).first()
+    else:
+        farmer = db.query(Farmer).filter(Farmer.phone == raw_ident).first()
+
     if not farmer:
-        # If farmer does not exist in dev mode, create default
+        # If farmer does not exist, create a clean profile with normalized phone
+        clean_phone = norm_phone if (norm_phone and len(norm_phone) == 10) else raw_ident
         farmer = Farmer(
-            name="Ramesh Kumar",
-            phone=login_data.phone,
+            name="Registered Producer",
+            phone=clean_phone or "9848022338",
             state="Maharashtra",
             district="Nashik",
             village="Dindori",

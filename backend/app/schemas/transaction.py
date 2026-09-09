@@ -17,11 +17,15 @@ class TransactionBase(BaseModel):
     pickup_location: Optional[str] = None
     delivery_location: Optional[str] = None
     transport_cost_actual: Optional[float] = None
+    payment_method: Optional[str] = "RAZORPAY"
+    cod_charge: Optional[float] = 0.0
     payment_status: Optional[str] = "PENDING"
     expected_amount: Optional[float] = None
     paid_amount: Optional[float] = 0.0
     payment_date: Optional[str] = None
     payment_reference: Optional[str] = None
+    razorpay_order_id: Optional[str] = None
+    razorpay_payment_id: Optional[str] = None
 
 
 class TransactionCreate(TransactionBase):
@@ -30,6 +34,12 @@ class TransactionCreate(TransactionBase):
 
 class TransactionStatusUpdate(BaseModel):
     status: str  # CREATED, CONFIRMED, PICKUP_SCHEDULED, IN_TRANSIT, DELIVERED, PAYMENT_PENDING, PAYMENT_RECEIVED, COMPLETED, DISPUTED, CANCELLED
+    note: Optional[str] = None
+
+
+class PaymentMethodUpdate(BaseModel):
+    payment_method: str  # "RAZORPAY" or "COD"
+    cod_charge: Optional[float] = 0.0
 
 
 class TransactionResponse(TransactionBase):
@@ -39,3 +49,4 @@ class TransactionResponse(TransactionBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)
+

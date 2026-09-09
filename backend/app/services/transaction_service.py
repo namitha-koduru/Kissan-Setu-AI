@@ -263,6 +263,44 @@ class TransactionService:
         db.refresh(tx)
         return tx
 
+    def select_payment_method(
+        self,
+        db: Session,
+        transaction_id: int,
+        payment_method: str,  # "RAZORPAY" or "COD"
+        cod_charge: float = 0.0,
+    ) -> Transaction:
+        tx = db.query(Transaction).filter(Transaction.id == transaction_id).first()
+        if not tx:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Transaction with ID {transaction_id} not found"
+            )
+
+        tx.payment_method = payment_method.upper()
+        tx.cod_charge = cod_charge if tx.payment_method == "COD" else 0.0
+        
+        base_amt = (tx.final_price or 0.0) * (tx.quantity_kg or 0.0)
+        tx.total_amount = round(base_amt + tx.cod_charge, 2)
+        tx.expected_amount = tx.total_amount
+
+        if tx.payment_method == "COD":
+            tx.payment_status = "PENDING"
+            desc = f"Payment method selected: Cash on Delivery (COD). Base amount: ₹{base_amt:,.2f}, COD charge: ₹{tx.cod_charge:,.2f}, Total payable: ₹{tx.total_amount:,.2f}."
+        else:
+            desc = f"Payment method selected: Razorpay Online Payment. Total payable: ₹{tx.total_amount:,.2f}."
+
+        ev = TransactionEvent(
+            transaction_id=tx.id,
+            stage_label=f"Payment Method: {tx.payment_method}",
+            description=desc,
+            done=True,
+        )
+        db.add(ev)
+        db.commit()
+        db.refresh(tx)
+        return tx
+
     def create_dispute(
         self,
         db: Session,

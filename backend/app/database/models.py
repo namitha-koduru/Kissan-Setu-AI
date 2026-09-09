@@ -53,6 +53,8 @@ class Crop(Base):
     expected_harvest_date = Column(String(50), nullable=True)
     growth_stage = Column(String(100), default="Near maturity")
     soil_type = Column(String(100), nullable=True)
+    image_url = Column(String(500), nullable=True)
+    ai_observation = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -195,7 +197,9 @@ class Transaction(Base):
     delivery_location = Column(String(255), nullable=True)
     transport_cost_actual = Column(Float, nullable=True)
     
-    # Payment Tracking & Razorpay Fields
+    # Payment Tracking, Razorpay & COD Fields
+    payment_method = Column(String(50), default="RAZORPAY")  # RAZORPAY, COD
+    cod_charge = Column(Float, default=0.0)
     payment_status = Column(String(50), default="PENDING")  # PENDING, INITIATED, PARTIAL, RECEIVED, DISPUTED, PAID
     expected_amount = Column(Float, nullable=True)
     paid_amount = Column(Float, default=0.0)
@@ -236,6 +240,27 @@ class Payment(Base):
 
     # Relationship
     transaction = relationship("Transaction", back_populates="payments")
+
+
+class NegotiationMessage(Base):
+    """Transaction-specific buyer <-> farmer/FPO bargaining communication."""
+    __tablename__ = "negotiation_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    lot_id = Column(Integer, ForeignKey("lots.id", ondelete="CASCADE"), nullable=False, index=True)
+    offer_id = Column(Integer, ForeignKey("offers.id", ondelete="SET NULL"), nullable=True, index=True)
+    sender_id = Column(String(50), nullable=False)
+    sender_name = Column(String(255), nullable=False)
+    sender_role = Column(String(50), default="buyer")  # "farmer", "buyer", "fpo"
+    receiver_id = Column(String(50), nullable=True)
+    message = Column(Text, nullable=False)
+    proposed_price = Column(Float, nullable=True)  # e.g. 29.50
+    proposed_quantity = Column(Float, nullable=True)  # e.g. 425.0
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    lot = relationship("Lot")
+    offer = relationship("Offer")
 
 
 class TransactionEvent(Base):
