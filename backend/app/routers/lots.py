@@ -119,13 +119,67 @@ def update_lot(
             detail=f"Lot with ID {lot_id} not found"
         )
     
+    prev_status = lot.status
     update_data = lot_in.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(lot, field, value)
     
+    # If lot is cancelled or expired, release allocated stock
+    if lot.status in ["Cancelled", "Expired", "Closed"] and prev_status == "Open for Offers":
+        try:
+            from app.services.inventory_service import inventory_service
+            crop_name = lot.crop.crop_name if lot.crop else "Produce"
+            inventory_service.release_from_lot(
+                db=db,
+                farmer_id=lot.farmer_id,
+                crop_name=crop_name,
+                quantity=lot.quantity,
+                lot_id=lot.id,
+            )
+        except Exception as e:
+            print(f"Warning releasing lot stock: {e}")
+
     db.commit()
     db.refresh(lot)
     return lot
+
+
+@router.delete("/lots/{lot_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_lot(
+    lot_id: int,
+    x_user_role: Optional[str] = Header(None, alias="X-User-Role"),
+    db: Session = Depends(get_db)
+):
+    if x_user_role and x_user_role.lower() == "buyer":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Buyers cannot delete harvest lots."
+        )
+
+    lot = db.query(Lot).filter(Lot.id == lot_id).first()
+    if not lot:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Lot with ID {lot_id} not found"
+        )
+
+    if lot.status == "Open for Offers":
+        try:
+            from app.services.inventory_service import inventory_service
+            crop_name = lot.crop.crop_name if lot.crop else "Produce"
+            inventory_service.release_from_lot(
+                db=db,
+                farmer_id=lot.farmer_id,
+                crop_name=crop_name,
+                quantity=lot.quantity,
+                lot_id=lot.id,
+            )
+        except Exception as e:
+            print(f"Warning releasing lot stock on delete: {e}")
+
+    db.delete(lot)
+    db.commit()
+    return None
 
 
 @router.get("/lots/{lot_id}/nearby-demand")

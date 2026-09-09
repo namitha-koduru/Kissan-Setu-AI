@@ -31,7 +31,24 @@ class InventoryService:
             )
             .first()
         )
-        if not item:
+        if item:
+            if initial_quantity > 0:
+                item.total_quantity = round(item.total_quantity + initial_quantity, 2)
+                item.updated_at = datetime.utcnow()
+                adj = StockAdjustment(
+                    inventory_id=item.id,
+                    farmer_id=farmer_id,
+                    crop_name=item.crop_name,
+                    adjustment_type="HARVEST_BATCH",
+                    quantity=initial_quantity,
+                    unit=unit,
+                    notes=f"New harvest registered from crop record ({crop_name}).",
+                    created_at=datetime.utcnow(),
+                )
+                db.add(adj)
+                db.commit()
+                db.refresh(item)
+            return item
             # If not yet tracked, find from Crop table or initialize
             crop = db.query(Crop).filter(Crop.farmer_id == farmer_id, Crop.crop_name.ilike(crop_name.strip())).first()
             qty = initial_quantity or (crop.quantity if crop else 500.0)
@@ -265,6 +282,43 @@ class InventoryService:
                 unit=item.unit,
                 lot_id=lot_id,
                 notes=f"Released {quantity} {item.unit} from cancelled/expired Lot #{lot_id or 'TBD'}.",
+                created_at=datetime.utcnow(),
+            )
+            db.add(adj)
+
+    def release_from_order(
+        self,
+        db: Session,
+        farmer_id: int,
+        crop_name: str,
+        quantity: float,
+        transaction_id: Optional[int] = None
+    ) -> None:
+        """Releases reserved stock from a cancelled order back to available stock."""
+        item = (
+            db.query(InventoryItem)
+            .filter(InventoryItem.farmer_id == farmer_id, InventoryItem.crop_name.ilike(crop_name))
+            .first()
+        )
+        if item:
+            if item.reserved_quantity >= quantity:
+                item.reserved_quantity = max(0.0, round(item.reserved_quantity - quantity, 2))
+            else:
+                remaining = round(quantity - item.reserved_quantity, 2)
+                item.reserved_quantity = 0.0
+                item.allocated_quantity = max(0.0, round(item.allocated_quantity - remaining, 2))
+            
+            item.updated_at = datetime.utcnow()
+
+            adj = StockAdjustment(
+                inventory_id=item.id,
+                farmer_id=farmer_id,
+                crop_name=item.crop_name,
+                adjustment_type="ORDER_CANCELLED",
+                quantity=abs(quantity),
+                unit=item.unit,
+                transaction_id=transaction_id,
+                notes=f"Released {quantity} {item.unit} from cancelled Order #{transaction_id or 'TBD'}.",
                 created_at=datetime.utcnow(),
             )
             db.add(adj)

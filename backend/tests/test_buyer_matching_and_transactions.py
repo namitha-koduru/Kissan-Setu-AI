@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -18,6 +22,7 @@ from app.database.models import (
 from app.services.buyer_matching_service import buyer_matching_service
 from app.services.offer_intelligence_service import offer_intelligence_service
 from app.services.transaction_service import transaction_service
+from app.services.inventory_service import inventory_service
 from app.schemas.buyer_matching import (
     CounterOfferRequest,
     LogisticsUpdateRequest,
@@ -106,6 +111,14 @@ def test_create_lot_and_inspect_offers(db_session: Session):
     farmer = db_session.query(Farmer).first()
     crop = db_session.query(Crop).filter(Crop.farmer_id == farmer.id).first()
     buyer = db_session.query(Buyer).first()
+
+    # Ensure stock is available for lot creation
+    inventory_service.get_or_create_inventory(
+        db=db_session,
+        farmer_id=farmer.id,
+        crop_name=crop.crop_name,
+        initial_quantity=2000.0,
+    )
 
     lot_payload = {
         "farmer_id": farmer.id,

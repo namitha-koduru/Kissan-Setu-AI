@@ -32,9 +32,9 @@ class TransactionService:
 
     VALID_TRANSITIONS = {
         "CREATED": ["CONFIRMED", "CANCELLED", "PICKUP_SCHEDULED"],
-        "CONFIRMED": ["PICKUP_SCHEDULED", "IN_TRANSIT", "CANCELLED"],
-        "PICKUP_SCHEDULED": ["IN_TRANSIT", "DISPUTED", "CANCELLED"],
-        "IN_TRANSIT": ["DELIVERED", "DISPUTED"],
+        "CONFIRMED": ["PICKUP_SCHEDULED", "IN_TRANSIT", "DELIVERED", "COMPLETED", "CANCELLED"],
+        "PICKUP_SCHEDULED": ["IN_TRANSIT", "DELIVERED", "COMPLETED", "DISPUTED", "CANCELLED"],
+        "IN_TRANSIT": ["DELIVERED", "COMPLETED", "DISPUTED"],
         "DELIVERED": ["PAYMENT_PENDING", "PAYMENT_RECEIVED", "DISPUTED", "COMPLETED"],
         "PAYMENT_PENDING": ["PAYMENT_RECEIVED", "DISPUTED", "COMPLETED"],
         "PAYMENT_RECEIVED": ["COMPLETED", "DISPUTED"],
@@ -195,12 +195,12 @@ class TransactionService:
             farmer_id = tx.farmer_id or (lot.farmer_id if lot else 1)
             qty = tx.quantity_kg or (lot.quantity if lot else 0.0)
             if qty > 0:
-                inventory_service.release_from_lot(
+                inventory_service.release_from_order(
                     db=db,
                     farmer_id=farmer_id,
                     crop_name=crop_name,
                     quantity=qty,
-                    lot_id=tx.lot_id,
+                    transaction_id=tx.id,
                 )
 
         tx.status = new_status
