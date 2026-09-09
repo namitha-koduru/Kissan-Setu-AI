@@ -1,17 +1,98 @@
+import { useState, useEffect, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Store, TrendingUp, Sparkles, CheckCircle2, Clock } from "lucide-react";
 import { DecisionBadge } from "../components/DecisionBadge";
 import { HarvestTimeline } from "../components/HarvestTimeline";
 import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
+import cropApi from "../services/cropApi";
+import type { CropRecord, CropStage } from "../types";
 
 export function CropDetailsPage() {
   const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
-  const { crops, setActiveCropId } = useAppState();
+  const { crops, setActiveCropId, addCrop } = useAppState();
   const navigate = useNavigate();
 
-  const crop = crops.find((c) => c.id === id) || crops[0];
+  const [backendCrop, setBackendCrop] = useState<CropRecord | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // Match crop across multiple possible identifier schemes (exact ID, crop-1, 1, or slug)
+  const matchedCrop = useMemo(() => {
+    if (!id) return crops[0] || null;
+    const cleanId = id.toLowerCase().trim();
+    const numericPart = cleanId.replace(/\D/g, "");
+
+    const direct = crops.find(
+      (c) =>
+        c.id.toLowerCase() === cleanId ||
+        c.id.toLowerCase() === `crop-${cleanId}` ||
+        `crop-${c.id.toLowerCase()}` === cleanId ||
+        (numericPart && c.id.replace(/\D/g, "") === numericPart) ||
+        c.name.toLowerCase() === cleanId.replace(/^crop-/, "")
+    );
+    return direct || backendCrop || null;
+  }, [crops, id, backendCrop]);
+
+  useEffect(() => {
+    if (!matchedCrop && id) {
+      const numericId = parseInt(id.replace(/\D/g, ""), 10);
+      if (numericId && !isNaN(numericId)) {
+        setLoading(true);
+        cropApi
+          .getCrop(numericId)
+          .then((res) => {
+            if (res) {
+              const rec: CropRecord = {
+                id: String(res.id),
+                name: res.crop_name,
+                variety: res.variety || "Standard Selection",
+                quantityKg: res.quantity,
+                unit: "kg",
+                acreage: res.acreage || 1.0,
+                acreageUnit: "Acres",
+                sowingDate: res.sowing_date || "2026-06-15",
+                stage: (res.growth_stage as CropStage) || "Near maturity",
+                location: "Farm Location",
+                expectedPrice: res.crop_name.toLowerCase().includes("cotton")
+                  ? 68
+                  : res.crop_name.toLowerCase().includes("tomato")
+                  ? 28
+                  : 32,
+                harvestEst: res.expected_harvest_date || "2026-09-12",
+                harvestWindow: "2–4 days",
+                recommendation: res.growth_stage === "Ready to harvest" ? "SELL" : "WAIT",
+                bestMarket: "Regional APMC Central Mandi",
+                netRealization: 30,
+                confidence: 92,
+                imageUrl: res.image_url,
+                aiObservation: res.ai_observation,
+                trackingStatus: "Crop Tracking Active",
+              };
+              setBackendCrop(rec);
+              addCrop(rec);
+            }
+          })
+          .catch((err) => {
+            console.warn("Could not load crop from backend:", err);
+          })
+          .finally(() => {
+            setLoading(false);
+          });
+      }
+    }
+  }, [id, matchedCrop, addCrop]);
+
+  const crop = matchedCrop || crops[0];
+
+  if (loading) {
+    return (
+      <div className="wrap" style={{ paddingTop: 40, textAlign: "center" }}>
+        <Sparkles size={24} className="animate-spin" color="var(--green-deep)" style={{ marginBottom: 12 }} />
+        <p style={{ color: "var(--ink-soft)", fontWeight: 600 }}>Loading crop details from PostgreSQL...</p>
+      </div>
+    );
+  }
 
   if (!crop) {
     return (

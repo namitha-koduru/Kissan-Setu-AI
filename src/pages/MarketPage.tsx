@@ -309,41 +309,147 @@ export function MarketPage() {
         </div>
       )}
 
-      {/* 4. Best Opportunity Highlight Banner */}
-      <div
-        style={{
-          background: "linear-gradient(90deg, #F5FAF6 0%, #EBF6EF 100%)",
-          border: "1.5px solid #CDE6D6",
-          borderRadius: 14,
-          padding: "16px 20px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 12,
-          marginBottom: 20,
-        }}
-      >
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 800, color: "var(--green-deep)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-            ★ AI Recommended Best Selling Channel
+      {/* SECTION D: AI / Rule-based Selling Decision */}
+      {overview?.decision && (
+        <div
+          style={{
+            background: "linear-gradient(90deg, #F5FAF6 0%, #EBF6EF 100%)",
+            border: "1.5px solid #CDE6D6",
+            borderRadius: 14,
+            padding: "16px 20px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 12,
+            marginBottom: 20,
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "var(--green-deep)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              ★ AI Selling Recommendation · {overview.decision.recommendation === "SELL" ? "SELL NOW" : "HOLD / WAIT"} (Confidence: {overview.decision.confidence_score}%)
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "var(--navy)", marginTop: 2 }}>
+              Best Channel: {overview.decision.recommended_mandi} (Expected Net: ₹{overview.decision.expected_net_per_kg}/kg)
+            </div>
+            <div style={{ fontSize: 12.5, color: "var(--ink-soft)", marginTop: 4 }}>
+              {overview.decision.action_summary}
+            </div>
+            {overview.decision.top_reasons && overview.decision.top_reasons.length > 0 && (
+              <div style={{ fontSize: 11.5, color: "var(--green-deep)", marginTop: 4, fontWeight: 600 }}>
+                • {overview.decision.top_reasons.join(" • ")}
+              </div>
+            )}
           </div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: "var(--navy)", marginTop: 2 }}>
-            Sahyadri / Regional FPC Direct (+₹160/Qtl over local mandi)
+
+          <Link to="/lots/create" className="btn btn-primary btn-sm">
+            <span>{t("lots.create", "Create Harvest Lot")}</span>
+            <ArrowRight size={14} />
+          </Link>
+        </div>
+      )}
+
+      {/* SECTION B: Historical Price Trend & Analytics */}
+      {overview?.analytics && (
+        <div className="card card-pad mb-lg" style={{ background: "#FFFFFF", border: "1px solid var(--line)", borderRadius: 14 }}>
+          <div className="flex flex-between flex-center flex-wrap gap-sm mb-sm">
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "var(--ink-muted)", textTransform: "uppercase" }}>
+                Price Trend Analysis ({selectedCrop})
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "var(--navy)" }}>
+                Modal Rate: ₹{overview.analytics.current_modal_price.toLocaleString("en-IN")}/Qtl (₹{(overview.analytics.current_modal_price / 100).toFixed(1)}/kg)
+              </div>
+            </div>
+            <div className="flex gap-xs flex-wrap">
+              <span className="badge-pill badge-high" style={{ fontSize: 11 }}>
+                Trend: {overview.analytics.trend_direction} ({overview.analytics.trend_percentage_7d > 0 ? "+" : ""}{overview.analytics.trend_percentage_7d}%)
+              </span>
+              <span className="badge-pill badge-medium" style={{ fontSize: 11 }}>
+                Volatility: {overview.analytics.volatility_level}
+              </span>
+            </div>
           </div>
-          <div style={{ fontSize: 12.5, color: "var(--ink-soft)", marginTop: 2 }}>
-            Direct farmgate pickup eliminates mandi cess & reduces transit damage loss.
+
+          {/* Historical price mini chart / bars */}
+          {overview.analytics.history_points && overview.analytics.history_points.length > 0 && (
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${overview.analytics.history_points.length}, 1fr)`, gap: 8, marginTop: 12, background: "var(--bg-warm)", padding: "12px", borderRadius: 10 }}>
+              {overview.analytics.history_points.map((pt, idx) => (
+                <div key={idx} style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 10, color: "var(--ink-soft)" }}>{pt.date}</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "var(--navy)", margin: "2px 0" }}>
+                    ₹{pt.modal_price}
+                  </div>
+                  <div style={{ fontSize: 9.5, color: "var(--ink-muted)" }}>
+                    ₹{pt.min_price}–{pt.max_price}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SECTION A & E: Current Price Comparison & Net Realization */}
+      {overview?.comparison && overview.comparison.markets && overview.comparison.markets.length > 0 && (
+        <div className="card card-pad mb-lg" style={{ background: "#FFFFFF", border: "1px solid var(--line)", borderRadius: 14 }}>
+          <div className="flex flex-between flex-center mb-sm">
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "var(--ink-muted)", textTransform: "uppercase" }}>
+                Multi-Market Price Comparison & Net Realization
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--navy)" }}>
+                Compare APMC Mandis vs Direct Channels for {selectedCrop}
+              </div>
+            </div>
+            <span style={{ fontSize: 11.5, color: "var(--ink-soft)" }}>
+              Based on {quantityQuintals} Quintals lot
+            </span>
+          </div>
+
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+              <thead>
+                <tr style={{ borderBottom: "1.5px solid var(--line)", color: "var(--ink-muted)", textAlign: "left" }}>
+                  <th style={{ padding: "8px 6px" }}>Market Channel</th>
+                  <th style={{ padding: "8px 6px" }}>Distance</th>
+                  <th style={{ padding: "8px 6px" }}>Gross Price</th>
+                  <th style={{ padding: "8px 6px" }}>Est. Transport</th>
+                  <th style={{ padding: "8px 6px" }}>Net In-Hand Rate</th>
+                  <th style={{ padding: "8px 6px" }}>Channel Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                {overview.comparison.markets.map((m, idx) => (
+                  <tr key={idx} style={{ borderBottom: "1px solid var(--line)", background: m.is_best_net ? "rgba(23,107,69,0.04)" : "transparent" }}>
+                    <td style={{ padding: "10px 6px", fontWeight: 700, color: "var(--navy)" }}>
+                      {m.mandi_name}
+                      {m.is_best_net && (
+                        <span style={{ marginLeft: 6, fontSize: 10, background: "var(--green-deep)", color: "#fff", padding: "1px 6px", borderRadius: 4 }}>
+                          Best Net
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding: "10px 6px", color: "var(--ink-soft)" }}>{m.distance_km} km</td>
+                    <td style={{ padding: "10px 6px", fontWeight: 700 }}>₹{m.gross_price_per_quintal}/Qtl (₹{m.gross_price_per_kg}/kg)</td>
+                    <td style={{ padding: "10px 6px", color: "var(--danger)" }}>-₹{(m.transport_cost_per_kg * 100).toFixed(0)}/Qtl</td>
+                    <td style={{ padding: "10px 6px", fontWeight: 800, color: "var(--green-deep)" }}>
+                      ₹{m.net_realization_per_kg}/kg (₹{(m.net_realization_per_kg * 100).toFixed(0)}/Qtl)
+                    </td>
+                    <td style={{ padding: "10px 6px", color: "var(--ink-muted)" }}>{m.demand_level} Demand</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
+      )}
 
-        <Link to="/lots/create" className="btn btn-primary btn-sm">
-          <span>{t("lots.create", "Create Harvest Lot")}</span>
-          <ArrowRight size={14} />
-        </Link>
-      </div>
-
-      {/* 5. Opportunity Cards List */}
+      {/* SECTION C: Crop-specific Market / Buyer Opportunities */}
       <div className="flex-col gap-md">
+        <div style={{ fontSize: 14, fontWeight: 800, color: "var(--navy)", marginTop: 8 }}>
+          Direct Buyer Procurement Opportunities ({selectedCrop})
+        </div>
         {filteredOpportunities.map((op) => (
           <div
             key={op.id}

@@ -134,15 +134,19 @@ export function AddCropPage() {
     runImageAnalysis(file);
   };
 
+  const [analysisErrorMsg, setAnalysisErrorMsg] = useState<string | null>(null);
+
   const runImageAnalysis = async (file: File) => {
     setImageUploadState("UPLOADING");
+    setAnalysisErrorMsg(null);
     try {
-      setTimeout(() => setImageUploadState("ANALYZING"), 600);
+      setTimeout(() => setImageUploadState("ANALYZING"), 500);
       const observation = await imageApi.analyzeCropImage(file, cropName);
       setAiObservation(observation);
       setImageUploadState("SUCCESS");
-    } catch (err) {
+    } catch (err: any) {
       console.warn("Vision observation error:", err);
+      setAnalysisErrorMsg(err?.message || "AI service connection error. Click retry to reconnect.");
       setImageUploadState("FAILED");
     }
   };
@@ -179,95 +183,106 @@ export function AddCropPage() {
           setProcessingStep((prev) => prev + 1);
         }, 750);
       } else {
-        timer = setTimeout(() => {
-          const newCropId = `crop-${cropName.toLowerCase().replace(/\s+/g, "-")}-${Date.now().toString(36).slice(-4)}`;
-          const icon =
-            selectedCropItem?.icon ||
-            (cropName.toLowerCase().includes("cotton")
-              ? "☁️"
-              : cropName.toLowerCase().includes("tomato")
-              ? "🍅"
-              : "🌱");
-          const benchmarkRate = selectedCropItem?.expectedPricePerKg || 30;
-          const netRate = Math.max(1, benchmarkRate - 2.5);
+        const finalizeRegistration = async () => {
+          try {
+            const icon =
+              selectedCropItem?.icon ||
+              (cropName.toLowerCase().includes("cotton")
+                ? "☁️"
+                : cropName.toLowerCase().includes("tomato")
+                ? "🍅"
+                : "🌱");
+            const benchmarkRate = selectedCropItem?.expectedPricePerKg || 30;
+            const netRate = Math.max(1, benchmarkRate - 2.5);
 
-          const newCrop: CropRecord = {
-            id: newCropId,
-            name: cropName,
-            icon,
-            variety: variety || "Standard High-Yield",
-            quantityKg: Number(quantityKg) || 500,
-            unit: "kg",
-            acreage: Number(acreage) || undefined,
-            acreageUnit: acreageUnit || "Acres",
-            sowingDate,
-            stage,
-            location: location || userLocationStr,
-            expectedPrice: benchmarkRate,
-            harvestEst: "08–14 Sep 2026",
-            harvestWindow:
-              stage === "Near maturity" || stage === "Ready to harvest" ? "2–4 days" : "12–18 days",
-            recommendation:
-              stage === "Near maturity" || stage === "Ready to harvest" ? "SELL" : "WAIT",
-            bestMarket: `${userDistrict} APMC Central Yard`,
-            netRealization: netRate,
-            confidence: 92,
-            imageUrl: imagePreviewUrl || undefined,
-            aiObservation: aiObservation || undefined,
-            trackingStatus: "Crop Tracking Active",
-          };
+            // 1. Persist to Neon PostgreSQL database and obtain true persisted ID
+            const farmerId = user?.id ? parseInt(user.id.replace(/\D/g, ""), 10) || 1 : 1;
+            const savedCrop = await cropApi.createCrop({
+              farmer_id: farmerId,
+              crop_name: cropName,
+              variety: variety || "Standard Hybrid",
+              quantity: Number(quantityKg) || 500,
+              acreage: Number(acreage) || 1.0,
+              sowing_date: sowingDate,
+              expected_harvest_date: harvestDate,
+              growth_stage: stage,
+              image_url: imagePreviewUrl || undefined,
+              ai_observation: aiObservation || undefined,
+            });
 
-          addCrop(newCrop);
+            const persistedId = savedCrop?.id ? String(savedCrop.id) : `crop-${Date.now()}`;
 
-          // Persist to Neon PostgreSQL database
-          cropApi.createCrop({
-            farmer_id: 1,
-            crop_name: cropName,
-            variety: variety || "Standard Hybrid",
-            quantity: Number(quantityKg) || 500,
-            acreage: Number(acreage) || 1.0,
-            sowing_date: sowingDate,
-            expected_harvest_date: harvestDate,
-            growth_stage: stage,
-            image_url: imagePreviewUrl || undefined,
-            ai_observation: aiObservation || undefined,
-          }).catch((err) => console.warn("Background crop sync error:", err));
+            const newCrop: CropRecord = {
+              id: persistedId,
+              name: cropName,
+              icon,
+              variety: variety || "Standard High-Yield",
+              quantityKg: Number(quantityKg) || 500,
+              unit: "kg",
+              acreage: Number(acreage) || undefined,
+              acreageUnit: acreageUnit || "Acres",
+              sowingDate,
+              stage,
+              location: location || userLocationStr,
+              expectedPrice: benchmarkRate,
+              harvestEst: harvestDate || "08–14 Sep 2026",
+              harvestWindow:
+                stage === "Near maturity" || stage === "Ready to harvest" ? "2–4 days" : "12–18 days",
+              recommendation:
+                stage === "Near maturity" || stage === "Ready to harvest" ? "SELL" : "WAIT",
+              bestMarket: `${userDistrict} APMC Central Yard`,
+              netRealization: netRate,
+              confidence: 92,
+              imageUrl: imagePreviewUrl || undefined,
+              aiObservation: aiObservation || undefined,
+              trackingStatus: "Crop Tracking Active",
+            };
 
-          if (user) {
-            const currentCrops = user.preferredCrops || [];
-            const updatedCrops = currentCrops.some(
-              (c) => c.toLowerCase() === cropName.toLowerCase()
-            )
-              ? currentCrops
-              : [...currentCrops, cropName];
+            addCrop(newCrop);
 
-            const currentAllocations = Array.isArray(user.cropAllocations)
-              ? [...user.cropAllocations]
-              : [];
-            const allocIndex = currentAllocations.findIndex(
-              (a) => a.crop.toLowerCase() === cropName.toLowerCase()
-            );
-            if (allocIndex >= 0) {
-              currentAllocations[allocIndex] = {
-                crop: cropName,
-                area: Number(acreage) || currentAllocations[allocIndex].area,
-                unit: acreageUnit || currentAllocations[allocIndex].unit,
-              };
-            } else if (Number(acreage) > 0) {
-              currentAllocations.push({
-                crop: cropName,
-                area: Number(acreage),
-                unit: acreageUnit || "Acres",
+            if (user) {
+              const currentCrops = user.preferredCrops || [];
+              const updatedCrops = currentCrops.some(
+                (c) => c.toLowerCase() === cropName.toLowerCase()
+              )
+                ? currentCrops
+                : [...currentCrops, cropName];
+
+              const currentAllocations = Array.isArray(user.cropAllocations)
+                ? [...user.cropAllocations]
+                : [];
+              const allocIndex = currentAllocations.findIndex(
+                (a) => a.crop.toLowerCase() === cropName.toLowerCase()
+              );
+              if (allocIndex >= 0) {
+                currentAllocations[allocIndex] = {
+                  crop: cropName,
+                  area: Number(acreage) || currentAllocations[allocIndex].area,
+                  unit: acreageUnit || currentAllocations[allocIndex].unit,
+                };
+              } else if (Number(acreage) > 0) {
+                currentAllocations.push({
+                  crop: cropName,
+                  area: Number(acreage),
+                  unit: acreageUnit || "Acres",
+                });
+              }
+
+              updateUserProfile({
+                preferredCrops: updatedCrops,
+                cropAllocations: currentAllocations,
               });
             }
 
-            updateUserProfile({
-              preferredCrops: updatedCrops,
-              cropAllocations: currentAllocations,
-            });
+            navigate(`/crops/${persistedId}`);
+          } catch (err: any) {
+            console.error("Failed to register crop in database:", err);
+            setIsProcessing(false);
+            setImageError(err.message || "Failed to persist crop in PostgreSQL database. Please try again.");
           }
-          navigate(`/crops/${newCropId}`);
-        }, 600);
+        };
+
+        finalizeRegistration();
       }
     }
     return () => clearTimeout(timer);
@@ -280,6 +295,7 @@ export function AddCropPage() {
     acreage,
     acreageUnit,
     sowingDate,
+    harvestDate,
     stage,
     location,
     selectedCropItem,
@@ -785,7 +801,10 @@ export function AddCropPage() {
                       >
                         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                           <AlertCircle size={16} />
-                          <strong>Analysis unavailable. You can retry.</strong>
+                          <strong>AI Analysis Notice:</strong>
+                        </div>
+                        <div style={{ marginTop: 4, color: "var(--ink-soft)" }}>
+                          {analysisErrorMsg || "AI vision server connection timeout. You can retry inspection below."}
                         </div>
                         <button
                           type="button"

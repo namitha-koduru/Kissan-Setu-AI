@@ -50,12 +50,18 @@ async def chat_with_assistant(
             lang = detected
 
     # 1. Retrieve or Create Conversation
+    valid_farmer_id = None
+    if request.farmer_id:
+        f_rec = db.query(Farmer).filter(Farmer.id == request.farmer_id).first()
+        if f_rec:
+            valid_farmer_id = f_rec.id
+
     conversation_id = request.conversation_id
     if not conversation_id:
         conversation_id = f"conv_{uuid.uuid4().hex[:12]}"
         conversation = Conversation(
             id=conversation_id,
-            farmer_id=request.farmer_id,
+            farmer_id=valid_farmer_id,
             title=user_text[:40] + ("..." if len(user_text) > 40 else ""),
             language=lang,
             created_at=datetime.utcnow(),
@@ -69,7 +75,7 @@ async def chat_with_assistant(
             # Create if ID not found
             conversation = Conversation(
                 id=conversation_id,
-                farmer_id=request.farmer_id,
+                farmer_id=valid_farmer_id,
                 title=user_text[:40] + ("..." if len(user_text) > 40 else ""),
                 language=lang,
                 created_at=datetime.utcnow(),
@@ -186,11 +192,60 @@ async def analyze_crop_image_chat(
         folder="crop-analysis"
     )
 
-    # 3. Create CropImage DB Record
+    # 3. Setup or retrieve Conversation first so conversation_id FK is valid
+    valid_farmer_id = None
+    if farmer_id:
+        f_rec = db.query(Farmer).filter(Farmer.id == farmer_id).first()
+        if f_rec:
+            valid_farmer_id = f_rec.id
+
+    valid_crop_id = None
+    crop_hint = None
+    if crop_id:
+        crop_obj = db.query(Crop).filter(Crop.id == crop_id).first()
+        if crop_obj:
+            valid_crop_id = crop_obj.id
+            crop_hint = crop_obj.crop_name
+
+    lang = language or "en"
+    user_text = (message or "").strip()
+    if not user_text:
+        user_text = f"Analyzing crop image: {upload_res['original_filename']}"
+
+    if not conversation_id:
+        conv_id = f"conv_{uuid.uuid4().hex[:12]}"
+        conversation = Conversation(
+            id=conv_id,
+            farmer_id=valid_farmer_id,
+            title=f"Crop Inspection ({crop_hint or 'Plant'})",
+            language=lang,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        db.add(conversation)
+        db.commit()
+    else:
+        conversation = db.query(Conversation).filter(Conversation.id == conversation_id).first()
+        if not conversation:
+            conv_id = conversation_id
+            conversation = Conversation(
+                id=conv_id,
+                farmer_id=valid_farmer_id,
+                title=f"Crop Inspection ({crop_hint or 'Plant'})",
+                language=lang,
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow()
+            )
+            db.add(conversation)
+            db.commit()
+        else:
+            conv_id = conversation.id
+
+    # 4. Create CropImage DB Record
     crop_image = CropImage(
-        farmer_id=farmer_id,
-        crop_id=crop_id,
-        conversation_id=conversation_id,
+        farmer_id=valid_farmer_id,
+        crop_id=valid_crop_id,
+        conversation_id=conv_id,
         image_url=upload_res["image_url"],
         cloudinary_public_id=upload_res["cloudinary_public_id"],
         original_filename=upload_res["original_filename"],
@@ -203,13 +258,6 @@ async def analyze_crop_image_chat(
     db.add(crop_image)
     db.commit()
     db.refresh(crop_image)
-
-    # 4. Fetch crop name hint if crop_id is provided
-    crop_hint = None
-    if crop_id:
-        crop_obj = db.query(Crop).filter(Crop.id == crop_id).first()
-        if crop_obj:
-            crop_hint = crop_obj.crop_name
 
     # 5. Run Vision AI Inspection
     vision_result: VisionAnalysisResult = await vision_service.inspect_image(
@@ -234,41 +282,6 @@ async def analyze_crop_image_chat(
     db.add(image_analysis)
     db.commit()
     db.refresh(image_analysis)
-
-    # 7. Setup or retrieve Conversation
-    lang = language or "en"
-    user_text = (message or "").strip()
-    if not user_text:
-        user_text = f"Analyzing crop image: {upload_res['original_filename']}"
-
-    if not conversation_id:
-        conv_id = f"conv_{uuid.uuid4().hex[:12]}"
-        conversation = Conversation(
-            id=conv_id,
-            farmer_id=farmer_id,
-            title=f"Crop Inspection ({vision_result.detected_crop or 'Plant'})",
-            language=lang,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
-        )
-        db.add(conversation)
-        db.commit()
-    else:
-        conversation = db.query(Conversation).filter(Conversation.id == conversation_id).first()
-        if not conversation:
-            conv_id = conversation_id
-            conversation = Conversation(
-                id=conv_id,
-                farmer_id=farmer_id,
-                title=f"Crop Inspection ({vision_result.detected_crop or 'Plant'})",
-                language=lang,
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow()
-            )
-            db.add(conversation)
-            db.commit()
-        else:
-            conv_id = conversation.id
 
     crop_image.conversation_id = conv_id
     db.commit()
