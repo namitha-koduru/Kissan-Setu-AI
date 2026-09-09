@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Store, TrendingUp, Sparkles, CheckCircle2, ShieldCheck, Eye, Clock } from "lucide-react";
+import { ArrowLeft, ArrowRight, Store, TrendingUp, Sparkles, CheckCircle2, Clock } from "lucide-react";
 import { DecisionBadge } from "../components/DecisionBadge";
 import { HarvestTimeline } from "../components/HarvestTimeline";
 import { useAppState } from "../context/AppStateContext";

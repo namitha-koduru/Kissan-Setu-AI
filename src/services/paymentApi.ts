@@ -144,8 +144,8 @@ export const paymentApi = {
         order_id: options.order.order_id,
         prefill: {
           name: options.buyerName,
-          email: options.buyerEmail || "buyer@kissansetu.in",
-          contact: options.buyerPhone || "9876543210",
+          email: options.buyerEmail || "",
+          contact: options.buyerPhone || "",
         },
         theme: {
           color: "#176B45",

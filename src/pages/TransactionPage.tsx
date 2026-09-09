@@ -9,7 +9,6 @@ import {
   AlertTriangle,
   Receipt,
   FileCheck,
-  CheckCircle2,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
@@ -239,9 +238,9 @@ export function TransactionPage() {
       await paymentApi.openCheckout({
         order,
         buyerName: user?.name || txDetail.buyer_name || "Institutional Procurer",
-        buyerEmail: user?.email || "buyer@kissansetu.in",
-        buyerPhone: user?.phone || "9876543210",
-        cropName: txDetail.crop_name,
+        buyerEmail: user?.email || "",
+        buyerPhone: user?.mobile || "",
+        cropName: txDetail.crop_name || localTx.crop || "Produce",
         onSuccess: async (res: RazorpayPaymentResult) => {
           setRazorpayPaymentId(res.razorpay_payment_id);
           showToast("Payment captured! Verifying signature with backend...");
