@@ -94,7 +94,6 @@ export const imageApi = {
       throw new Error("AI analysis is currently unavailable. Please try again.");
     }
   },
-  },
 
   /**
    * Get metadata of a specific uploaded crop image
