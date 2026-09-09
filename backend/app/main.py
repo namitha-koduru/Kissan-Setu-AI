@@ -123,6 +123,16 @@ def health_check():
     }
 
 
+@app.get("/health", tags=["Health"])
+def root_health_check():
+    return {
+        "status": "ok",
+        "service": "KissanSetuAI",
+        "database": "connected",
+        "version": "1.0.0",
+    }
+
+
 
 # Ensure uploads directory exists and mount for local dev storage
 uploads_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")

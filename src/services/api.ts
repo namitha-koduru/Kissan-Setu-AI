@@ -8,6 +8,10 @@ const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   "http://localhost:8000/api";
 
+if (typeof window !== "undefined") {
+  console.info(`[KissanSetu API] Resolved API Base URL: ${API_BASE_URL}`);
+}
+
 export interface ApiResponse<T> {
   data: T | null;
   error?: string;
@@ -72,6 +76,16 @@ class ApiClient {
       return await response.json();
     } catch (err: any) {
       clearTimeout(timeoutId);
+      if (err.name === "AbortError") {
+        throw new Error(`Request to ${url} timed out.`);
+      }
+      if (err.message === "Failed to fetch") {
+        const isProdOnLocal = typeof window !== "undefined" && window.location.hostname !== "localhost" && url.includes("localhost");
+        const extraNote = isProdOnLocal
+          ? " (Frontend is deployed on Vercel but API points to localhost. Set VITE_API_BASE_URL in Vercel to your public FastAPI server URL)."
+          : "";
+        throw new Error(`Unable to connect to backend at ${url}${extraNote}`);
+      }
       throw err;
     }
   }
@@ -129,6 +143,16 @@ class ApiClient {
       return await response.json();
     } catch (err: any) {
       clearTimeout(timeoutId);
+      if (err.name === "AbortError") {
+        throw new Error(`Upload & analysis request timed out.`);
+      }
+      if (err.message === "Failed to fetch") {
+        const isProdOnLocal = typeof window !== "undefined" && window.location.hostname !== "localhost" && url.includes("localhost");
+        const extraNote = isProdOnLocal
+          ? " (Frontend is deployed on Vercel but API points to localhost. Set VITE_API_BASE_URL in Vercel to your public FastAPI server URL)."
+          : "";
+        throw new Error(`Unable to connect to backend at ${url}${extraNote}`);
+      }
       throw err;
     }
   }
