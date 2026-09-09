@@ -92,11 +92,8 @@ class ApiClient {
         throw new Error(`Request to ${url} timed out.`);
       }
       if (err.message === "Failed to fetch") {
-        const isProdOnLocal = typeof window !== "undefined" && window.location.hostname !== "localhost" && url.includes("localhost");
-        const extraNote = isProdOnLocal
-          ? " (Frontend is deployed on Vercel but API points to localhost. Set VITE_API_BASE_URL in Vercel to your public FastAPI server URL)."
-          : "";
-        throw new Error(`Unable to connect to backend at ${url}${extraNote}`);
+        const origin = typeof window !== "undefined" ? window.location.origin : "";
+        throw new Error(`Network/CORS preflight failed connecting to ${url}. Ensure backend allows origin ${origin}.`);
       }
       throw err;
     }
@@ -159,11 +156,8 @@ class ApiClient {
         throw new Error(`Upload & analysis request timed out.`);
       }
       if (err.message === "Failed to fetch") {
-        const isProdOnLocal = typeof window !== "undefined" && window.location.hostname !== "localhost" && url.includes("localhost");
-        const extraNote = isProdOnLocal
-          ? " (Frontend is deployed on Vercel but API points to localhost. Set VITE_API_BASE_URL in Vercel to your public FastAPI server URL)."
-          : "";
-        throw new Error(`Unable to connect to backend at ${url}${extraNote}`);
+        const origin = typeof window !== "undefined" ? window.location.origin : "";
+        throw new Error(`Network/CORS preflight failed connecting to ${url}. Ensure backend allows origin ${origin}.`);
       }
       throw err;
     }
