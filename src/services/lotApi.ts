@@ -65,6 +65,20 @@ export const lotApi = {
     }
   },
 
+  async discoverNearbyLots(buyerLocation?: string, crop?: string): Promise<any[]> {
+    try {
+      const params = new URLSearchParams();
+      if (buyerLocation) params.append("buyer_location", buyerLocation);
+      if (crop && crop !== "All") params.append("crop", crop);
+      const url = `/lots/nearby/discovery?${params.toString()}`;
+      const data = await apiClient.get<any[]>(url);
+      return data || [];
+    } catch (error) {
+      console.warn("[lotApi] Error fetching nearby lots:", error);
+      return [];
+    }
+  },
+
   async createLot(lot: Omit<LotBackendModel, "id" | "created_at">): Promise<LotBackendModel> {
     return apiClient.post<LotBackendModel>("/lots", lot);
   },

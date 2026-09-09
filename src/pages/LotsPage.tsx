@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Plus, MapPin, Handshake, Filter } from "lucide-react";
 import { LotCard } from "../components/LotCard";
 import { EmptyState } from "../components/States";
 import { allMarketplaceLots } from "../data/demo";
+import lotApi from "../services/lotApi";
 import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -18,12 +19,42 @@ export function LotsPage() {
   // State for Buyer Marketplace Lot Browser
   const [selectedCropFilter, setSelectedCropFilter] = useState("All");
   const [selectedGradeFilter, setSelectedGradeFilter] = useState("All");
+  const [liveDiscoveredLots, setLiveDiscoveredLots] = useState<any[]>([]);
   const [offerModalLot, setOfferModalLot] = useState<any | null>(null);
   const [bidPrice, setBidPrice] = useState<number>(30);
   const [bidQty, setBidQty] = useState<number>(500);
 
   // Status Filter Tabs for Farmer/FPO Own Lots
   const [activeTab, setActiveTab] = useState<"Active" | "Sold" | "Expired">("Active");
+
+  useEffect(() => {
+    if (isBuyer) {
+      const fetchNearby = async () => {
+        try {
+          const res = await lotApi.discoverNearbyLots(user?.location || "Nashik, Maharashtra", selectedCropFilter);
+          if (res && res.length > 0) {
+            setLiveDiscoveredLots(res.map((l: any) => ({
+              id: `KS-LOT-${l.id}`,
+              crop: l.crop_name,
+              quality: l.quality || "Grade A",
+              sellerName: l.farmer_name,
+              sellerRole: "Farmer",
+              quantityKg: l.quantity_kg,
+              expectedPrice: l.asking_price,
+              location: l.location,
+              harvestDate: l.harvest_date || "2026-09-08",
+              status: l.status || "Open for Offers",
+              distanceKm: Math.round(l.distance_km || 12),
+              imageUrl: l.image_url,
+            })));
+          }
+        } catch (err) {
+          console.warn("Failed to fetch nearby lots from backend", err);
+        }
+      };
+      fetchNearby();
+    }
+  }, [isBuyer, user?.location, selectedCropFilter]);
 
   const filteredOwnLots = lots.filter((l) => {
     if (activeTab === "Active")
@@ -33,7 +64,8 @@ export function LotsPage() {
   });
 
   const availableSellerLots = useMemo(() => {
-    return allMarketplaceLots.filter((l) => {
+    const combined = [...liveDiscoveredLots, ...allMarketplaceLots];
+    return combined.filter((l) => {
       const matchCrop =
         selectedCropFilter === "All" ||
         l.crop.toLowerCase() === selectedCropFilter.toLowerCase();
@@ -42,7 +74,7 @@ export function LotsPage() {
         l.quality.toLowerCase().includes(selectedGradeFilter.toLowerCase());
       return matchCrop && matchGrade;
     });
-  }, [selectedCropFilter, selectedGradeFilter]);
+  }, [liveDiscoveredLots, selectedCropFilter, selectedGradeFilter]);
 
   const handleSendOffer = (e: React.FormEvent) => {
     e.preventDefault();
