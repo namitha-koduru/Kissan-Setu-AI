@@ -835,7 +835,7 @@ export function AddCropPage() {
                               <strong style={{ fontSize: "13.5px" }}>Crop Image Mismatch</strong>
                             </div>
                             <div style={{ fontSize: "12.5px", color: "#92400E", lineHeight: 1.4 }}>
-                              {aiObservation.mismatch_message || `You selected ${cropName}, but the uploaded image appears to show ${aiObservation.detected_crop}.`}
+                              You selected <strong>{cropName}</strong>, but this image appears to show <strong>{aiObservation.detected_crop}</strong>.
                             </div>
                             <div style={{ fontSize: "12px", color: "#78350F", marginTop: 4 }}>
                               Please upload a {cropName} image to continue.
@@ -854,7 +854,34 @@ export function AddCropPage() {
                                   fontWeight: 700,
                                 }}
                               >
-                                <Upload size={12} /> Replace with {cropName} Photo
+                                <Upload size={12} /> Replace Photo
+                              </button>
+                            </div>
+                          </div>
+                        ) : aiObservation.crop_match === null ? (
+                          <div
+                            style={{
+                              background: "#F8FAFC",
+                              border: "1px solid #CBD5E1",
+                              borderRadius: 10,
+                              padding: "12px 14px",
+                            }}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#475569", marginBottom: 6 }}>
+                              <AlertCircle size={16} />
+                              <strong style={{ fontSize: "13px" }}>Crop Identification Notice</strong>
+                            </div>
+                            <div style={{ fontSize: "12px", color: "#334155", lineHeight: 1.4 }}>
+                              Crop could not be identified confidently. Please upload a clearer crop image or continue without image analysis.
+                            </div>
+                            <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+                              <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="btn btn-outline btn-sm"
+                                style={{ borderRadius: 6, fontSize: "11.5px", padding: "4px 8px" }}
+                              >
+                                <Upload size={12} /> Replace with Clearer Photo
                               </button>
                             </div>
                           </div>
