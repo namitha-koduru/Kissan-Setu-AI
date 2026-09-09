@@ -319,24 +319,47 @@ export function FPOPage() {
       {activeTab === "aggregation" && (
         <div className="flex-col gap-md">
           <div className="card card-pad" style={{ background: "#FFFFFF" }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>
-              {t("fpo.collectionCenters", "Regional Collection & Aggregation Centers")}
-            </h3>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12 }}>
-              <div style={{ padding: "12px", background: "var(--bg-warm)", borderRadius: 10, border: "1px solid var(--line)" }}>
-                <div style={{ fontWeight: 800, fontSize: 14 }}>Dindori Primary Collection Hub</div>
-                <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 2 }}>Capacity: 20,000 kg · Active Intake</div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--green-deep)", marginTop: 4 }}>
-                  Current Pool: 8,400 kg (Grapes, Tomato)
+            <div className="flex flex-between flex-center mb-sm">
+              <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>
+                {t("fpo.collectionCenters", "Regional Collection & Aggregation Centers")}
+              </h3>
+              <Link to="/lots/create" className="btn btn-primary btn-sm">
+                <Plus size={14} /> Create Aggregated Bulk Lot
+              </Link>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12 }}>
+              <div style={{ padding: "14px", background: "var(--bg-warm)", borderRadius: 10, border: "1px solid var(--line)", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 14 }}>Dindori Primary Collection Hub</div>
+                  <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 2 }}>Capacity: 20,000 kg · Active Intake</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "var(--green-deep)", marginTop: 4 }}>
+                    Current Pool: 8,400 kg (Grapes, Tomato)
+                  </div>
                 </div>
+                <Link
+                  to="/lots/create?crop=Grapes&qty=8400&price=65"
+                  className="btn btn-outline btn-sm"
+                  style={{ marginTop: 12, width: "100%", justifyContent: "center" }}
+                >
+                  <Package size={14} /> Convert Pool to Bulk Lot
+                </Link>
               </div>
 
-              <div style={{ padding: "12px", background: "var(--bg-warm)", borderRadius: 10, border: "1px solid var(--line)" }}>
-                <div style={{ fontWeight: 800, fontSize: 14 }}>Niphad Aggregation Point</div>
-                <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 2 }}>Capacity: 15,000 kg · Cold Storage Link</div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--green-deep)", marginTop: 4 }}>
-                  Current Pool: 5,200 kg (Onion, Grapes)
+              <div style={{ padding: "14px", background: "var(--bg-warm)", borderRadius: 10, border: "1px solid var(--line)", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 14 }}>Niphad Aggregation Point</div>
+                  <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 2 }}>Capacity: 15,000 kg · Cold Storage Link</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "var(--green-deep)", marginTop: 4 }}>
+                    Current Pool: 5,200 kg (Onion, Grapes)
+                  </div>
                 </div>
+                <Link
+                  to="/lots/create?crop=Onion&qty=5200&price=22"
+                  className="btn btn-outline btn-sm"
+                  style={{ marginTop: 12, width: "100%", justifyContent: "center" }}
+                >
+                  <Package size={14} /> Convert Pool to Bulk Lot
+                </Link>
               </div>
             </div>
           </div>
