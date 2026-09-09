@@ -69,7 +69,8 @@ export function CreateLotPage() {
 
     const prefix = isFpo ? "LOT-FPO" : "LOT-F";
     const generatedId = `${prefix}-${Date.now().toString().slice(-4)}`;
-    const qty = Number(quantityKg) || 500;
+    const parsedQty = parseFloat(String(quantityKg));
+    const qty = isNaN(parsedQty) || parsedQty <= 0 ? 1 : parsedQty;
     const price = Number(expectedPrice) || 30;
 
     try {
@@ -277,11 +278,11 @@ export function CreateLotPage() {
               </label>
               <input
                 type="number"
-                min={50}
-                step={50}
+                min={0.01}
+                step={0.01}
                 value={quantityKg}
                 onChange={(e) => setQuantityKg(e.target.value)}
-                placeholder={isFpo ? "e.g. 5000" : "e.g. 500"}
+                placeholder={isFpo ? "e.g. 5000" : "e.g. 425"}
                 className="form-control"
                 required
               />

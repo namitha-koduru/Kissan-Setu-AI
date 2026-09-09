@@ -195,12 +195,15 @@ class Transaction(Base):
     delivery_location = Column(String(255), nullable=True)
     transport_cost_actual = Column(Float, nullable=True)
     
-    # Payment Tracking (Tracking Only)
-    payment_status = Column(String(50), default="PENDING")  # PENDING, INITIATED, PARTIAL, RECEIVED, DISPUTED
+    # Payment Tracking & Razorpay Fields
+    payment_status = Column(String(50), default="PENDING")  # PENDING, INITIATED, PARTIAL, RECEIVED, DISPUTED, PAID
     expected_amount = Column(Float, nullable=True)
     paid_amount = Column(Float, default=0.0)
     payment_date = Column(String(100), nullable=True)
     payment_reference = Column(String(100), nullable=True)
+    razorpay_order_id = Column(String(100), nullable=True, index=True)
+    razorpay_payment_id = Column(String(100), nullable=True, index=True)
+    razorpay_signature = Column(String(255), nullable=True)
     
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -212,6 +215,27 @@ class Transaction(Base):
     offer = relationship("Offer", foreign_keys=[offer_id])
     events = relationship("TransactionEvent", back_populates="transaction", cascade="all, delete-orphan", order_by="TransactionEvent.created_at")
     disputes = relationship("Dispute", back_populates="transaction", cascade="all, delete-orphan", order_by="Dispute.created_at.desc()")
+    payments = relationship("Payment", back_populates="transaction", cascade="all, delete-orphan", order_by="Payment.created_at.desc()")
+
+
+class Payment(Base):
+    __tablename__ = "payments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    transaction_id = Column(Integer, ForeignKey("transactions.id", ondelete="CASCADE"), nullable=False, index=True)
+    razorpay_order_id = Column(String(100), unique=True, index=True, nullable=False)
+    razorpay_payment_id = Column(String(100), index=True, nullable=True)
+    payment_status = Column(String(50), default="Payment Pending")  # Payment Pending, Payment Processing, Payment Successful, Payment Failed, Payment Refunded
+    amount = Column(Float, nullable=False)
+    currency = Column(String(10), default="INR")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    paid_at = Column(DateTime, nullable=True)
+    failure_reason = Column(Text, nullable=True)
+    signature_verified = Column(Boolean, default=False)
+    webhook_status = Column(String(50), default="PENDING")  # PENDING, DELIVERED, VERIFIED, FAILED
+
+    # Relationship
+    transaction = relationship("Transaction", back_populates="payments")
 
 
 class TransactionEvent(Base):

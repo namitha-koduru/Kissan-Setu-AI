@@ -15,6 +15,7 @@ from .farm_intelligence import router as farm_intelligence_router
 from .market_intelligence import router as market_intelligence_router
 from .voice import router as voice_router
 from .knowledge import router as knowledge_router
+from .payments import router as payments_router
 
 __all__ = [
     "auth_router",
@@ -34,6 +35,7 @@ __all__ = [
     "market_intelligence_router",
     "voice_router",
     "knowledge_router",
+    "payments_router",
 ]
 
 

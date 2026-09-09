@@ -47,6 +47,20 @@ export interface User {
   onboarded?: boolean;
 }
 
+export interface CropAiObservation {
+  image_url?: string;
+  detected_crop?: string;
+  image_quality?: string;
+  observed_symptoms: string[];
+  crop_health?: string;
+  confidence: number;
+  possible_issues: { name: string; confidence: number }[];
+  recommendations: string[];
+  when_to_recheck?: string;
+  disclaimer?: string;
+  analyzed_at?: string;
+}
+
 export interface CropRecord {
   id: string;
   name: string;
@@ -66,6 +80,9 @@ export interface CropRecord {
   bestMarket?: string;
   netRealization?: number | null;
   confidence?: number;
+  imageUrl?: string;
+  aiObservation?: CropAiObservation;
+  trackingStatus?: string;
 }
 
 export interface WeatherDay {
@@ -175,6 +192,9 @@ export interface TransactionRecord {
   paymentStatus?: string;
   paymentDate?: string;
   paymentReference?: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  razorpaySignature?: string;
   timestamp?: string;
   stages: TransactionStage[];
 }

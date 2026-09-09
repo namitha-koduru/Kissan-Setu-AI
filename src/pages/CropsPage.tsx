@@ -83,7 +83,7 @@ export function CropsPage() {
                     className="btn btn-outline btn-sm"
                     style={{ borderRadius: 8 }}
                   >
-                    <Plus size={14} /> Add Tracking Details
+                    <Plus size={14} /> Add Crop Details
                   </Link>
                 </div>
               );
