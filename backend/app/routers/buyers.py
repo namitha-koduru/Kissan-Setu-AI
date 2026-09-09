@@ -6,6 +6,7 @@ from app.database.models import Buyer
 from app.schemas.buyer import BuyerCreate, BuyerResponse
 from app.schemas.buyer_matching import BuyerMatchingResponse, BuyerMatchResult
 from app.services.buyer_matching_service import buyer_matching_service
+from app.services.auth_validation import check_mobile_exists, check_email_exists
 
 router = APIRouter(prefix="/buyers", tags=["Buyers"])
 
@@ -97,8 +98,21 @@ def get_buyer(buyer_id: int, db: Session = Depends(get_db)):
     return buyer
 
 
+@router.post("", response_model=BuyerResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=BuyerResponse, status_code=status.HTTP_201_CREATED)
 def create_buyer(buyer_in: BuyerCreate, db: Session = Depends(get_db)):
+    if buyer_in.phone and check_mobile_exists(db, buyer_in.phone):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This mobile number is already registered. Please log in or use a different number."
+        )
+
+    if buyer_in.email and check_email_exists(db, buyer_in.email):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This email is already registered. Please log in or use a different email."
+        )
+
     buyer = Buyer(**buyer_in.model_dump())
     db.add(buyer)
     db.commit()

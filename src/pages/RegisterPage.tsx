@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { Sprout, Building2, Store, ArrowRight, ShieldCheck, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { Logo } from "../components/Logo";
-import { useAuth } from "../context/AuthContext";
+import { useAuth, checkAccountAvailability } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import type { UserRole } from "../types";
 
@@ -141,6 +141,13 @@ export function RegisterPage() {
 
     // Auto-generate placeholder email if farmer leaves it blank
     const finalEmail = email || `farmer_${mobile}@kissansetu.in`;
+
+    // Pre-submission client-side validation check
+    const availability = checkAccountAvailability(mobile, email);
+    if (!availability.available && availability.error) {
+      setError(availability.error);
+      return;
+    }
 
     setBusy(true);
     const regError = await register({
@@ -424,8 +431,46 @@ export function RegisterPage() {
             )}
 
             {error && (
-              <div className="form-error-alert">
-                {error}
+              <div
+                className="form-error-alert"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px",
+                  padding: "12px 14px",
+                  borderRadius: "8px",
+                  marginBottom: "16px",
+                  background: "#FEE2E2",
+                  border: "1px solid #FCA5A5",
+                  color: "#991B1B",
+                  fontSize: "13.5px",
+                }}
+              >
+                <div>{error}</div>
+                {error.includes("already registered") && (
+                  <div>
+                    <Link
+                      to="/login"
+                      className="btn btn-outline btn-sm"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        marginTop: "4px",
+                        fontSize: "12.5px",
+                        fontWeight: 700,
+                        padding: "5px 12px",
+                        borderColor: "#991B1B",
+                        color: "#991B1B",
+                        background: "#FFFFFF",
+                        borderRadius: "6px",
+                        textDecoration: "none",
+                      }}
+                    >
+                      {t("auth.loginButton", "Go to Login")} <ArrowRight size={13} />
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
 

@@ -1,12 +1,40 @@
+from typing import Optional
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database.connection import get_db
 from app.database.models import Farmer
 from app.schemas.auth import LoginRequest, LoginResponse, Token
 from app.schemas.farmer import FarmerResponse
+from app.services.auth_validation import check_mobile_exists, check_email_exists
 import hashlib
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+
+class CheckUniqueRequest(BaseModel):
+    mobile: Optional[str] = None
+    email: Optional[str] = None
+
+
+@router.post("/check-unique")
+def check_unique(payload: CheckUniqueRequest, db: Session = Depends(get_db)):
+    """
+    Pre-registration endpoint to verify mobile number and email uniqueness across all roles.
+    """
+    if payload.mobile and check_mobile_exists(db, payload.mobile):
+        return {
+            "available": False,
+            "field": "mobile",
+            "message": "This mobile number is already registered. Please log in or use a different number."
+        }
+    if payload.email and check_email_exists(db, payload.email):
+        return {
+            "available": False,
+            "field": "email",
+            "message": "This email is already registered. Please log in or use a different email."
+        }
+    return {"available": True}
 
 
 def hash_password(password: str) -> str:

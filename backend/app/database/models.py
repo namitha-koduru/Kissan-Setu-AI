@@ -102,8 +102,8 @@ class Buyer(Base):
     name = Column(String(255), nullable=False, index=True)
     organization = Column(String(255), nullable=True)
     location = Column(String(255), nullable=False)
-    phone = Column(String(50), nullable=True)
-    email = Column(String(255), nullable=True)
+    phone = Column(String(50), unique=True, index=True, nullable=True)
+    email = Column(String(255), unique=True, index=True, nullable=True)
     verified = Column(Boolean, default=False)
     verification_status = Column(String(50), default="UNVERIFIED")  # "VERIFIED", "PENDING", "UNVERIFIED"
     rating = Column(Float, default=4.5)
