@@ -24,6 +24,7 @@ def get_market_intelligence_overview(
     farmer_id: int = Query(1, description="Farmer ID"),
     quantity: Optional[float] = Query(None, description="Harvest Quantity in kg"),
     quantity_quintals: Optional[float] = Query(None, description="Harvest Quantity in quintals"),
+    location: Optional[str] = Query(None, description="Farmer origin location/district"),
     db: Session = Depends(get_db)
 ):
     """
@@ -38,8 +39,10 @@ def get_market_intelligence_overview(
         db=db,
         crop_name=target_crop,
         farmer_id=farmer_id,
-        quantity_kg=qty_kg
+        quantity_kg=qty_kg,
+        farmer_location=location
     )
+
 
 
 @router.get("/trends", response_model=PriceHistorySummary)
@@ -133,6 +136,7 @@ def get_buyer_opportunities(
     crop_name: Optional[str] = Query(None, description="Target Crop Name alias"),
     quantity: Optional[float] = Query(None, description="Harvest Quantity in kg"),
     min_quantity: Optional[float] = Query(None, description="Minimum quantity in quintals"),
+    location: Optional[str] = Query(None, description="Farmer origin location/district"),
     db: Session = Depends(get_db)
 ):
     """
@@ -140,13 +144,16 @@ def get_buyer_opportunities(
     """
     target_crop = (crop_name or crop or "Tomato").strip()
     qty_kg = (min_quantity * 100.0) if min_quantity is not None else (quantity or 2000.0)
-    history = market_intelligence_service.get_historical_prices(db=db, crop_name=target_crop, market_name="Lasalgaon APMC", days=7)
+    meta = market_intelligence_service._get_crop_meta(target_crop)
+    history = market_intelligence_service.get_historical_prices(db=db, crop_name=target_crop, market_name=meta["primary_mandi"], days=7)
     return market_intelligence_service.get_buyer_opportunities(
         db=db,
         crop_name=target_crop,
         quantity_kg=qty_kg,
-        mandi_benchmark_qtl=history.current_modal_price
+        mandi_benchmark_qtl=history.current_modal_price,
+        farmer_location=location or "Nashik"
     )
+
 
 
 @router.post("/net-realization", response_model=NetRealizationCalculationResponse)

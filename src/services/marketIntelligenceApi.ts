@@ -167,13 +167,18 @@ export interface NetRealizationRequest {
 }
 
 class MarketIntelligenceApi {
-  async getOverview(cropName: string = "Tomato", quantityQuintals: number = 30): Promise<MarketIntelligenceOverview> {
+  async getOverview(
+    cropName: string = "Tomato",
+    quantityQuintals: number = 30,
+    location?: string
+  ): Promise<MarketIntelligenceOverview> {
     let raw: any = null;
     let isLive = false;
 
     try {
+      const locParam = location ? `&location=${encodeURIComponent(location)}` : "";
       raw = await apiClient.get<any>(
-        `/market-intelligence/overview?crop_name=${encodeURIComponent(cropName)}&quantity_quintals=${quantityQuintals}`
+        `/market-intelligence/overview?crop_name=${encodeURIComponent(cropName)}&quantity_quintals=${quantityQuintals}${locParam}`
       );
       isLive = true;
     } catch (err) {
@@ -181,6 +186,7 @@ class MarketIntelligenceApi {
       raw = {};
       isLive = false;
     }
+
 
     const cn = cropName.toLowerCase();
     const defaultModalPrice = cn.includes("cotton")
@@ -367,33 +373,34 @@ class MarketIntelligenceApi {
   async compareMarkets(
     cropName: string = "Tomato",
     quantityQuintals: number = 30,
-    targetDistanceKm: number = 40,
-    includeStorageDays: number = 0
+    location?: string
   ): Promise<MultiMarketComparisonResponse> {
+    const loc = location ? `&location=${encodeURIComponent(location)}` : "";
     return apiClient.get<MultiMarketComparisonResponse>(
-      `/market-intelligence/compare?crop_name=${encodeURIComponent(cropName)}&quantity_quintals=${quantityQuintals}&target_distance_km=${targetDistanceKm}&include_storage_days=${includeStorageDays}`
+      `/market-intelligence/compare?crop_name=${encodeURIComponent(cropName)}&quantity_quintals=${quantityQuintals}${loc}`
     );
   }
 
   async getSellingDecision(
     cropName: string = "Tomato",
-    quantityQuintals: number = 30,
-    targetDistanceKm: number = 40,
-    qualityGrade: string = "Grade A"
+    quantityQuintals: number = 30
   ): Promise<SellingDecisionResponse> {
     return apiClient.get<SellingDecisionResponse>(
-      `/market-intelligence/decision?crop_name=${encodeURIComponent(cropName)}&quantity_quintals=${quantityQuintals}&target_distance_km=${targetDistanceKm}&quality_grade=${encodeURIComponent(qualityGrade)}`
+      `/market-intelligence/decision?crop_name=${encodeURIComponent(cropName)}&quantity_quintals=${quantityQuintals}`
     );
   }
 
   async getBuyerOpportunities(
     cropName: string = "Tomato",
-    minQuantity: number = 10
+    minQuantity: number = 10,
+    location?: string
   ): Promise<BuyerOpportunitiesResponse> {
+    const loc = location ? `&location=${encodeURIComponent(location)}` : "";
     return apiClient.get<BuyerOpportunitiesResponse>(
-      `/market-intelligence/buyer-opportunities?crop_name=${encodeURIComponent(cropName)}&min_quantity=${minQuantity}`
+      `/market-intelligence/buyer-opportunities?crop_name=${encodeURIComponent(cropName)}&min_quantity=${minQuantity}${loc}`
     );
   }
+
 
   async calculateNetRealization(calcRequest: NetRealizationRequest): Promise<NetRealizationBreakdown> {
     return apiClient.post<NetRealizationBreakdown>("/market-intelligence/calculate-net", calcRequest);

@@ -23,40 +23,42 @@ export interface MarketModel {
 }
 
 export const marketApi = {
-  async getMarkets(district?: string): Promise<MarketQuote[]> {
+  async getMarkets(district?: string, cropName: string = "Tomato"): Promise<MarketQuote[]> {
     try {
       const url = district ? `/markets?district=${encodeURIComponent(district)}` : "/markets";
       const data = await apiClient.get<MarketModel[]>(url);
       if (data && data.length > 0) {
         return data.map((m, idx) => {
-          const tomatoPrice = m.prices?.find((p) => p.crop_name.toLowerCase() === "tomato")?.price || (26.0 - idx * 1.5);
+          const matchedPriceObj = m.prices?.find((p) => p.crop_name.toLowerCase().includes(cropName.toLowerCase()));
+          const cropPrice = matchedPriceObj ? matchedPriceObj.price : (cropName.toLowerCase().includes("cotton") ? 72.0 : cropName.toLowerCase().includes("potato") ? 19.5 : 26.0 - idx * 1.5);
           const distance = 15.0 + idx * 10.0;
           const transport = Math.round(distance * 15.0);
           const handling = Math.round(distance * 0.8);
-          const net = Math.round((tomatoPrice - (transport + handling) / 2400) * 10) / 10;
+          const net = Math.round((cropPrice - (transport + handling) / 2400) * 10) / 10;
 
           return {
             id: `market-${m.id}`,
             name: m.name,
-            crop: "Tomato",
-            pricePerKg: tomatoPrice,
+            crop: cropName,
+            pricePerKg: cropPrice,
             demand: idx === 0 ? "High" : idx === 1 ? "High" : "Medium",
             distanceKm: distance,
             transportCost: transport,
             storageCost: 0,
             handlingLossKg: handling,
-            netPerKg: net > 0 ? net : tomatoPrice - 2.0,
+            netPerKg: net > 0 ? net : cropPrice - 2.0,
             recommended: idx === 0,
-            trend: [tomatoPrice - 1.2, tomatoPrice - 0.5, tomatoPrice, tomatoPrice + 0.5],
+            trend: [cropPrice - 1.2, cropPrice - 0.5, cropPrice, cropPrice + 0.5],
           };
         });
       }
-      return marketsByCrop.Tomato;
+      return (marketsByCrop as any)[cropName] || marketsByCrop.Tomato;
     } catch (error) {
       console.warn("[marketApi] Backend unavailable, using demo markets fallback:", error);
-      return marketsByCrop.Tomato;
+      return (marketsByCrop as any)[cropName] || marketsByCrop.Tomato;
     }
   },
+
 
   async getMarket(id: number): Promise<MarketModel> {
     return apiClient.get<MarketModel>(`/markets/${id}`);

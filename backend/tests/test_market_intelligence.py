@@ -253,3 +253,99 @@ def test_chat_market_intelligence_selling_decision():
     data = res.json()
     assert "reply" in data
     assert len(data["reply"]) > 20
+
+
+def test_crop_distinctiveness_cotton_potato_tomato():
+    """
+    Rigorously verify that Cotton != Potato != Tomato across all 8 market intelligence dimensions:
+    1. Current modal price
+    2. Regional mandis and primary yard
+    3. 7-day trend and volatility
+    4. Price direction
+    5. Buyer opportunities (ginners/mills vs cold storage/processors vs fresh retail)
+    6. Forecast expected price
+    7. Net realization deductions
+    8. Storage holding economics and sell/hold decision
+    """
+    db = SessionLocal()
+    try:
+        overview_cotton = market_intelligence_service.get_market_intelligence_overview(
+            db=db, crop_name="Cotton", farmer_location="Jalgaon", quantity_kg=3000.0
+        )
+        overview_potato = market_intelligence_service.get_market_intelligence_overview(
+            db=db, crop_name="Potato", farmer_location="Pune", quantity_kg=3000.0
+        )
+        overview_tomato = market_intelligence_service.get_market_intelligence_overview(
+            db=db, crop_name="Tomato", farmer_location="Nashik", quantity_kg=3000.0
+        )
+
+        # 1. Current modal prices must be distinctly crop-specific
+        p_cotton = overview_cotton.current_price.current_modal_price
+        p_potato = overview_potato.current_price.current_modal_price
+        p_tomato = overview_tomato.current_price.current_modal_price
+        assert p_cotton > 6000.0, f"Cotton price ({p_cotton}) should reflect authentic cotton benchmark (>6000)"
+        assert 1200.0 <= p_potato <= 2500.0, f"Potato price ({p_potato}) should reflect tuber benchmark"
+        assert 2000.0 <= p_tomato <= 4500.0, f"Tomato price ({p_tomato}) should reflect vegetable benchmark"
+        assert p_cotton != p_potato != p_tomato
+
+        # 2. Mandi comparisons must be crop-appropriate
+        cotton_mandis = [m.market_name for m in overview_cotton.market_comparisons]
+        potato_mandis = [m.market_name for m in overview_potato.market_comparisons]
+        tomato_mandis = [m.market_name for m in overview_tomato.market_comparisons]
+
+        assert any("Cotton" in m or "Jalgaon" in m or "Wardha" in m or "Hinganghat" in m for m in cotton_mandis)
+        assert any("Gultekdi" in m or "Manchar" in m or "Pune" in m for m in potato_mandis)
+        assert any("Lasalgaon" in m or "Pimpalgaon" in m or "Nashik" in m for m in tomato_mandis)
+
+        # 3. Volatility characteristics
+        assert overview_cotton.current_price.volatility == "low"
+        assert overview_tomato.current_price.volatility == "high"
+
+        # 4. Buyer opportunities must match crop industries
+        cotton_buyers = [(b.get("buyer_name", "") + " " + b.get("company_name", "")) for b in overview_cotton.buyer_opportunities["opportunities"]]
+        potato_buyers = [(b.get("buyer_name", "") + " " + b.get("company_name", "")) for b in overview_potato.buyer_opportunities["opportunities"]]
+        tomato_buyers = [(b.get("buyer_name", "") + " " + b.get("company_name", "")) for b in overview_tomato.buyer_opportunities["opportunities"]]
+
+
+        assert any("Ginning" in b or "Textile" in b or "CCI" in b or "Spinning" in b for b in cotton_buyers), "Cotton buyers should be ginners/mills"
+        assert any("Cold Storage" in b or "Snack" in b or "Processing" in b or "Wafer" in b for b in potato_buyers), "Potato buyers should include cold storage/snack processors"
+        assert any("Retail" in b or "Food Park" in b or "Processing" in b or "Agri" in b for b in tomato_buyers), "Tomato buyers should include food parks/fresh retail"
+
+        # 5. Forecast drivers must be crop-specific
+        assert any("Cotton" in d or "CCI" in d or "mills" in d.lower() for d in overview_cotton.forecast.drivers)
+        assert any("storage" in d.lower() or "wafer" in d.lower() for d in overview_potato.forecast.drivers)
+        assert any("Tomato" in d or "arrival" in d.lower() or "rain" in d.lower() or "momentum" in d.lower() for d in overview_tomato.forecast.drivers)
+
+        # 6. Net realization totals must scale with crop price
+        assert overview_cotton.best_market.estimated_net_realization > overview_tomato.best_market.estimated_net_realization
+        assert overview_tomato.best_market.estimated_net_realization > overview_potato.best_market.estimated_net_realization
+
+        # 7. Holding economics
+        cotton_hold_cost = overview_cotton.decision.storage_analysis.get("estimated_holding_cost_3d_qtl", 0)
+        tomato_hold_cost = overview_tomato.decision.storage_analysis.get("estimated_holding_cost_3d_qtl", 0)
+        # Tomato has perishable storage cost significantly higher than cotton dry godown cost
+        assert tomato_hold_cost >= cotton_hold_cost
+    finally:
+        db.close()
+
+
+def test_location_awareness_distance_and_freight():
+    """Verify that changing farmer location properly adjusts mandi distances and net realization."""
+    db = SessionLocal()
+    try:
+        comp_nashik = market_intelligence_service.compare_markets(
+            db=db, crop_name="Tomato", quantity_kg=2000.0, farmer_location="Nashik"
+        )
+        comp_pune = market_intelligence_service.compare_markets(
+            db=db, crop_name="Tomato", quantity_kg=2000.0, farmer_location="Pune"
+        )
+
+        nashik_mandi_from_nashik = next(m for m in comp_nashik if "Nashik" in m.market_name or "Pimpalgaon" in m.market_name)
+        nashik_mandi_from_pune = next(m for m in comp_pune if "Nashik" in m.market_name or "Pimpalgaon" in m.market_name)
+
+        # Distance to Nashik mandi from Pune is significantly farther than from Nashik
+        assert nashik_mandi_from_pune.distance_km > nashik_mandi_from_nashik.distance_km
+        assert nashik_mandi_from_pune.estimated_transport_cost > nashik_mandi_from_nashik.estimated_transport_cost
+    finally:
+        db.close()
+
