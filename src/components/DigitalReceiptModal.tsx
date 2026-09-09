@@ -228,6 +228,37 @@ export function DigitalReceiptModal({ isOpen, onClose, transaction }: Props) {
             </div>
           </div>
 
+          {/* Razorpay & Settlement Information */}
+          {(transaction.razorpayPaymentId || transaction.razorpayOrderId) && (
+            <div
+              style={{
+                background: "#EBF3EE",
+                borderRadius: 8,
+                padding: "8px 12px",
+                border: "1px solid #C2DCB8",
+                marginBottom: 10,
+                fontSize: 11.5,
+              }}
+            >
+              <div className="flex flex-between mb-xs">
+                <span style={{ color: "var(--ink-soft)" }}>Razorpay Payment ID:</span>
+                <strong style={{ color: "var(--navy)" }}>{transaction.razorpayPaymentId || "Pending"}</strong>
+              </div>
+              {transaction.razorpayOrderId && (
+                <div className="flex flex-between mb-xs">
+                  <span style={{ color: "var(--ink-soft)" }}>Razorpay Order ID:</span>
+                  <span style={{ color: "var(--ink)" }}>{transaction.razorpayOrderId}</span>
+                </div>
+              )}
+              {transaction.paymentDate && (
+                <div className="flex flex-between">
+                  <span style={{ color: "var(--ink-soft)" }}>Payment Verified At:</span>
+                  <span style={{ color: "var(--ink)" }}>{transaction.paymentDate}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           <div
             style={{
               fontSize: 10,
@@ -242,7 +273,7 @@ export function DigitalReceiptModal({ isOpen, onClose, transaction }: Props) {
             <ShieldCheck size={14} color="var(--green-deep)" />
             <span>
               Digital Verification Reference:{" "}
-              {transaction.paymentReference || `SETU-NEFT-2026-${transaction.id}`}
+              {transaction.razorpayPaymentId || transaction.paymentReference || `SETU-NEFT-2026-${transaction.id}`}
             </span>
           </div>
         </div>

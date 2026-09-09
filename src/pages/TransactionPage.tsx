@@ -19,6 +19,8 @@ import buyerMatchingApi, {
 } from "../services/buyerMatchingApi";
 import { DisputeModal } from "../components/DisputeModal";
 import { DigitalReceiptModal } from "../components/DigitalReceiptModal";
+import paymentApi, { type RazorpayPaymentResult } from "../services/paymentApi";
+import { downloadTradeReceiptPdf } from "../utils/pdfGenerator";
 
 export function TransactionPage() {
   const { user } = useAuth();
@@ -33,6 +35,12 @@ export function TransactionPage() {
 
   const [, setLoading] = useState(false);
   const [txDetail, setTxDetail] = useState<TransactionDetailResponse | null>(null);
+
+  // Razorpay Payment States
+  const [isPaying, setIsPaying] = useState(false);
+  const [razorpayOrderId, setRazorpayOrderId] = useState<string>("");
+  const [razorpayPaymentId, setRazorpayPaymentId] = useState<string>("");
+  const [isTestMode, setIsTestMode] = useState<boolean>(true);
 
   // Modals state
   const [isDisputeOpen, setIsDisputeOpen] = useState(false);
@@ -216,6 +224,66 @@ export function TransactionPage() {
     showToast(`Advanced to next step: ${nextUnfinished.stage_label}`);
   };
 
+  const handlePaySecurely = async () => {
+    if (!txDetail) return;
+    try {
+      setIsPaying(true);
+      showToast("Creating secure Razorpay payment order...");
+      const order = await paymentApi.createOrder(
+        txDetail.id,
+        user?.id ? Number(user.id) : undefined,
+      );
+      setRazorpayOrderId(order.order_id);
+      setIsTestMode(order.is_test_mode);
+
+      await paymentApi.openCheckout({
+        order,
+        buyerName: user?.name || txDetail.buyer_name || "Institutional Procurer",
+        buyerEmail: user?.email || "buyer@kissansetu.in",
+        buyerPhone: user?.phone || "9876543210",
+        cropName: txDetail.crop_name,
+        onSuccess: async (res: RazorpayPaymentResult) => {
+          setRazorpayPaymentId(res.razorpay_payment_id);
+          showToast("Payment captured! Verifying signature with backend...");
+
+          await paymentApi.verifyPayment({
+            transaction_id: txDetail.id,
+            razorpay_order_id: res.razorpay_order_id,
+            razorpay_payment_id: res.razorpay_payment_id,
+            razorpay_signature: res.razorpay_signature,
+          });
+
+          setPaymentStatus("Payment Successful");
+          setPaidAmount(order.amount);
+          setTxDetail((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  payment_status: "PAID",
+                  paid_amount: order.amount,
+                  payment_reference: res.razorpay_payment_id,
+                  events: prev.events.map((ev) =>
+                    ev.stage_label.toLowerCase().includes("payment")
+                      ? { ...ev, done: true, created_at: "Just now" }
+                      : ev,
+                  ),
+                }
+              : null,
+          );
+          showToast("Payment verified successfully via Razorpay!");
+        },
+        onDismiss: () => {
+          showToast("Payment checkout closed.");
+        },
+      });
+    } catch (err: any) {
+      console.error("Razorpay initiation failure:", err);
+      showToast("Payment initiation error. Please try again.");
+    } finally {
+      setIsPaying(false);
+    }
+  };
+
   const isComplete = txDetail?.events.every((e) => e.done);
   const totalVal = txDetail?.total_amount || 0;
   const freightCost = txDetail?.transport_cost_actual || 0;
@@ -320,18 +388,121 @@ export function TransactionPage() {
           </div>
         </div>
 
-        <div className="pf-row">
-          <span className="l">{t("transactions.payment", "Payment Settlement Status")}</span>
-          <span className="v" style={{ fontWeight: 800, color: txDetail?.payment_status === "PAID" ? "var(--green-deep)" : "#B06000", display: "flex", alignItems: "center", gap: 6 }}>
-            {txDetail?.payment_status === "PAID" ? (
-              <>
-                <CheckCircle2 size={15} color="var(--green-deep)" />
-                PAID via Direct Bank Transfer (UTR: {txDetail.payment_reference || "UTR-HDFC-98234190"})
-              </>
-            ) : (
-              "PENDING (Direct settlement initiated upon Hub delivery & weighing)"
-            )}
-          </span>
+        {/* Razorpay Procurement Payment Card */}
+        <div
+          style={{
+            background: txDetail?.payment_status === "PAID" ? "#F4FAF5" : "#FFFBF2",
+            borderRadius: 12,
+            padding: "16px",
+            border: txDetail?.payment_status === "PAID" ? "1.5px solid #176B45" : "1.5px solid #E88922",
+            margin: "14px 0",
+          }}
+        >
+          <div className="flex flex-between flex-center flex-wrap gap-xs mb-xs">
+            <div className="flex flex-center gap-xs">
+              <CreditCard size={18} color={txDetail?.payment_status === "PAID" ? "var(--green-deep)" : "#B06000"} />
+              <strong style={{ fontSize: 14, color: "var(--navy)" }}>
+                {txDetail?.payment_status === "PAID"
+                  ? "Procurement Payment Completed"
+                  : "Razorpay Secure Procurement Settlement"}
+              </strong>
+            </div>
+            <div className="flex flex-center gap-xs">
+              {isTestMode && (
+                <span
+                  style={{
+                    fontSize: 10.5,
+                    fontWeight: 800,
+                    background: "#FFE8D6",
+                    color: "#A04000",
+                    padding: "2px 8px",
+                    borderRadius: 10,
+                  }}
+                >
+                  Test Payment Mode
+                </span>
+              )}
+              <span
+                className="badge-pill"
+                style={{
+                  fontSize: 11,
+                  background: txDetail?.payment_status === "PAID" ? "#E6F4EA" : "#FFF4E5",
+                  color: txDetail?.payment_status === "PAID" ? "#137333" : "#B06000",
+                }}
+              >
+                {txDetail?.payment_status === "PAID" ? "Payment Successful" : "Payment Pending"}
+              </span>
+            </div>
+          </div>
+
+          {txDetail?.payment_status === "PAID" ? (
+            <div>
+              <div style={{ fontSize: 12.5, color: "var(--ink)", marginTop: 6 }}>
+                ✓ Authorized payment of <strong>₹{netInHand.toLocaleString("en-IN")}</strong> confirmed via Razorpay.
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 8,
+                  fontSize: 11.5,
+                  color: "var(--ink-soft)",
+                  marginTop: 8,
+                  background: "#FFFFFF",
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                  border: "1px solid #D1E7DD",
+                }}
+              >
+                <div>
+                  Payment Reference:{" "}
+                  <strong style={{ color: "var(--navy)" }}>
+                    {razorpayPaymentId || txDetail.payment_reference || "pay_rzp_verified"}
+                  </strong>
+                </div>
+                <div>
+                  Transaction Reference:{" "}
+                  <strong style={{ color: "var(--navy)" }}>Deal #{txDetail.id}</strong>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div style={{ fontSize: 12.5, color: "var(--ink-soft)", margin: "4px 0 12px" }}>
+                Buyer authorizes payment of <strong>₹{netInHand.toLocaleString("en-IN")}</strong> via standard Razorpay Checkout gateway to lock contract.
+              </div>
+
+              <div className="flex gap-sm flex-wrap">
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handlePaySecurely}
+                  disabled={isPaying}
+                  style={{
+                    background: "var(--green-deep)",
+                    borderColor: "var(--green-deep)",
+                    fontWeight: 800,
+                    padding: "10px 20px",
+                  }}
+                >
+                  <CreditCard size={16} />
+                  <span>
+                    {isPaying
+                      ? "Opening Razorpay..."
+                      : `Pay Securely ₹${netInHand.toLocaleString("en-IN")}`}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => setIsPaymentOpen(true)}
+                  style={{ fontSize: 12 }}
+                >
+                  <span>Manual Settlement Reference</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Action buttons for logistics, payment, and receipt */}
@@ -346,16 +517,37 @@ export function TransactionPage() {
           <button
             className="btn btn-outline"
             style={{ flex: 1, justifyContent: "center", fontSize: "13px" }}
-            onClick={() => setIsPaymentOpen(true)}
+            onClick={() => downloadTradeReceiptPdf({
+              id: `TX-2026-${String(txDetail?.id || 1).padStart(4, "0")}`,
+              lotId: `KS-LOT-${String(txDetail?.lot_id || 1).padStart(3, "0")}`,
+              farmerName: user?.name || "Registered Farmer",
+              farmerLocation: user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : user?.district || "Farm Origin"),
+              buyerName: txDetail?.buyer_name || localTx.buyerName || "Sahyadri Farmers Producer Co.",
+              buyerLocation: txDetail?.delivery_location || "Regional Procurement Division",
+              crop: txDetail?.crop_name || localTx.crop || "Tomato",
+              quantityKg: txDetail?.quantity_kg || localTx.quantityKg || 500,
+              pricePerKg: txDetail?.final_price || localTx.pricePerKg || 32,
+              grossAmount: totalVal,
+              transportCharges: freightCost,
+              otherCharges: 0,
+              netRealization: netInHand,
+              paymentStatus: txDetail?.payment_status === "PAID" ? "Payment Successful" : "Payment Pending",
+              paymentReference: razorpayPaymentId || txDetail?.payment_reference || `TXN-SETU-${txDetail?.id || 1}`,
+              razorpayOrderId: razorpayOrderId || undefined,
+              razorpayPaymentId: razorpayPaymentId || undefined,
+              paymentDate: txDetail?.payment_date || new Date().toLocaleString(),
+              timestamp: txDetail?.created_at ? new Date(txDetail.created_at).toLocaleString() : new Date().toLocaleString(),
+              stages: [],
+            })}
           >
-            <CreditCard size={15} /> {t("transactions.payment", "Record Payment Milestone")}
+            <Receipt size={15} /> <span>Download PDF Receipt</span>
           </button>
           <button
             className="btn btn-primary"
             style={{ flex: 1, justifyContent: "center", fontSize: "13px" }}
             onClick={() => setIsReceiptOpen(true)}
           >
-            <Receipt size={15} /> {t("transactions.viewReceipt", "Digital Receipt")}
+            <Receipt size={15} /> {t("transactions.viewReceipt", "View Digital Receipt")}
           </button>
         </div>
       </div>
@@ -570,8 +762,11 @@ export function TransactionPage() {
           transportCharges: freightCost,
           otherCharges: 0,
           netRealization: netInHand,
-          paymentStatus: txDetail?.payment_status === "PAID" ? "Settled (Direct Bank Transfer)" : "Settlement Status: Pending Delivery",
-          paymentReference: txDetail?.payment_reference || `TXN-SETU-${txDetail?.id || 1}`,
+          paymentStatus: txDetail?.payment_status === "PAID" ? "Payment Successful" : "Payment Pending",
+          paymentReference: razorpayPaymentId || txDetail?.payment_reference || `TXN-SETU-${txDetail?.id || 1}`,
+          razorpayOrderId: razorpayOrderId || undefined,
+          razorpayPaymentId: razorpayPaymentId || undefined,
+          paymentDate: txDetail?.payment_date || new Date().toLocaleString(),
           timestamp: txDetail?.created_at ? new Date(txDetail.created_at).toLocaleString() : new Date().toLocaleString(),
           stages: (txDetail?.events || []).map((e) => ({
             label: e.stage_label,

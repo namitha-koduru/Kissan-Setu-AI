@@ -422,11 +422,11 @@ export function FPOPage() {
                 <label>{t("fpo.contributedVolume", "Committed Quantity (kg)")}</label>
                 <input
                   type="number"
-                  min={50}
-                  step={50}
+                  min={1}
+                  step={0.01}
                   className="form-control"
                   value={newMemberQty}
-                  onChange={(e) => setNewMemberQty(Number(e.target.value))}
+                  onChange={(e) => setNewMemberQty(parseFloat(e.target.value) || 0)}
                   required
                 />
               </div>

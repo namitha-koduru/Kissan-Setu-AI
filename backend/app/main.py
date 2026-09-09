@@ -31,6 +31,7 @@ from app.routers import (
     market_intelligence_router,
     voice_router,
     knowledge_router,
+    payments_router,
 )
 
 
@@ -145,6 +146,7 @@ app.include_router(farm_intelligence_router, prefix="/api")
 app.include_router(market_intelligence_router, prefix="/api")
 app.include_router(voice_router, prefix="/api")
 app.include_router(knowledge_router, prefix="/api")
+app.include_router(payments_router, prefix="/api")
 
 
 
