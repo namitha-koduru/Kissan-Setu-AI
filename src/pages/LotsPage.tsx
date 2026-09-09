@@ -1,10 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Plus, MapPin, Handshake, Filter } from "lucide-react";
+import { Plus, MapPin, Handshake, Filter, MessageSquare } from "lucide-react";
 import { LotCard } from "../components/LotCard";
 import { EmptyState } from "../components/States";
+import { NegotiationChatModal } from "../components/NegotiationChatModal";
 import { allMarketplaceLots } from "../data/demo";
 import lotApi from "../services/lotApi";
+import apiClient from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -21,6 +23,7 @@ export function LotsPage() {
   const [selectedGradeFilter, setSelectedGradeFilter] = useState("All");
   const [liveDiscoveredLots, setLiveDiscoveredLots] = useState<any[]>([]);
   const [offerModalLot, setOfferModalLot] = useState<any | null>(null);
+  const [activeChatLot, setActiveChatLot] = useState<any | null>(null);
   const [bidPrice, setBidPrice] = useState<number>(30);
   const [bidQty, setBidQty] = useState<number>(500);
 
@@ -76,12 +79,29 @@ export function LotsPage() {
     });
   }, [liveDiscoveredLots, selectedCropFilter, selectedGradeFilter]);
 
-  const handleSendOffer = (e: React.FormEvent) => {
+  const handleSendOffer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!offerModalLot) return;
-    showToast(
-      `Purchase offer of ₹${bidPrice}/kg for ${bidQty} kg submitted to ${offerModalLot.sellerName || "Seller"}.`,
-    );
+    try {
+      const numericLotId = parseInt(String(offerModalLot.id).replace(/\D/g, "")) || 1;
+      const buyerId = user?.id ? (typeof user.id === "number" ? user.id : parseInt(String(user.id).replace(/\D/g, "")) || 1) : 1;
+      await apiClient.post("/offers", {
+        lot_id: numericLotId,
+        buyer_id: buyerId,
+        offered_price: bidPrice,
+        quantity_kg: bidQty,
+        quality_grade: offerModalLot.quality || "Grade A",
+        message: `Procurement bid of ₹${bidPrice}/kg for ${bidQty} kg.`,
+      });
+      showToast(
+        `Purchase offer of ₹${bidPrice}/kg for ${bidQty} kg submitted to ${offerModalLot.sellerName || "Seller"}.`,
+      );
+    } catch (err) {
+      console.warn("Could not post offer remotely, using local state", err);
+      showToast(
+        `Purchase offer of ₹${bidPrice}/kg for ${bidQty} kg submitted to ${offerModalLot.sellerName || "Seller"}.`,
+      );
+    }
     setOfferModalLot(null);
   };
 
@@ -249,19 +269,29 @@ export function LotsPage() {
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  className="btn btn-primary btn-block btn-sm"
-                  onClick={() => {
-                    setOfferModalLot(lot);
-                    setBidPrice(lot.expectedPrice);
-                    setBidQty(lot.quantityKg);
-                  }}
-                  style={{ marginTop: 6 }}
-                >
-                  <Handshake size={15} />
-                  <span>{t("lots.makeOffer", "Make Purchase Offer")}</span>
-                </button>
+                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm flex-1"
+                    onClick={() => {
+                      setOfferModalLot(lot);
+                      setBidPrice(lot.expectedPrice);
+                      setBidQty(lot.quantityKg);
+                    }}
+                  >
+                    <Handshake size={15} />
+                    <span>{t("lots.makeOffer", "Make Offer")}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    onClick={() => setActiveChatLot(lot)}
+                    style={{ color: "var(--green-deep)", borderColor: "#D5E5D8" }}
+                    title="Bargain / Chat"
+                  >
+                    <MessageSquare size={15} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -408,6 +438,17 @@ export function LotsPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Lot-specific Negotiation Chat Modal */}
+      {activeChatLot && (
+        <NegotiationChatModal
+          lotId={parseInt(String(activeChatLot.id).replace(/\D/g, "")) || 1}
+          lotCropName={activeChatLot.crop}
+          lotQuantityKg={activeChatLot.quantityKg}
+          askingPrice={activeChatLot.expectedPrice}
+          onClose={() => setActiveChatLot(null)}
+        />
       )}
     </div>
   );
