@@ -22,7 +22,7 @@ class InventoryService:
         unit: str = "kg",
         location: Optional[str] = None
     ) -> InventoryItem:
-        """Finds existing inventory item for farmer and crop, or creates one initialized from crop records."""
+        """Finds existing inventory item for farmer/FPO and crop, or creates one initialized from crop records."""
         item = (
             db.query(InventoryItem)
             .filter(
@@ -32,57 +32,47 @@ class InventoryService:
             .first()
         )
         if item:
-            if initial_quantity > 0:
-                item.total_quantity = round(item.total_quantity + initial_quantity, 2)
-                item.updated_at = datetime.utcnow()
-                adj = StockAdjustment(
-                    inventory_id=item.id,
-                    farmer_id=farmer_id,
-                    crop_name=item.crop_name,
-                    adjustment_type="HARVEST_BATCH",
-                    quantity=initial_quantity,
-                    unit=unit,
-                    notes=f"New harvest registered from crop record ({crop_name}).",
-                    created_at=datetime.utcnow(),
-                )
-                db.add(adj)
-                db.commit()
-                db.refresh(item)
             return item
-            # If not yet tracked, find from Crop table or initialize
-            crop = db.query(Crop).filter(Crop.farmer_id == farmer_id, Crop.crop_name.ilike(crop_name.strip())).first()
-            qty = initial_quantity or (crop.quantity if crop else 500.0)
-            item = InventoryItem(
-                farmer_id=farmer_id,
-                crop_name=crop_name.strip(),
-                variety=variety or (crop.variety if crop else "Standard Grade"),
-                total_quantity=qty,
-                allocated_quantity=0.0,
-                reserved_quantity=0.0,
-                sold_quantity=0.0,
-                unit=unit,
-                location=location or (crop.farmer.district if crop and crop.farmer else "Nashik, Maharashtra"),
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow(),
-            )
-            db.add(item)
-            db.flush()
 
-            # Record initial baseline adjustment
-            if qty > 0:
-                adj = StockAdjustment(
-                    inventory_id=item.id,
-                    farmer_id=farmer_id,
-                    crop_name=item.crop_name,
-                    adjustment_type="INITIAL_BASELINE",
-                    quantity=qty,
-                    unit=unit,
-                    notes=f"Initial harvest baseline registered from {item.crop_name}.",
-                    created_at=datetime.utcnow(),
-                )
-                db.add(adj)
-            db.commit()
-            db.refresh(item)
+        # If not yet tracked, find from Crop table or initialize
+        crop = db.query(Crop).filter(Crop.farmer_id == farmer_id, Crop.crop_name.ilike(crop_name.strip())).first()
+        qty = initial_quantity if initial_quantity > 0 else (crop.quantity if crop else 0.0)
+        
+        # Get farmer/FPO location fallback
+        farmer = db.query(Farmer).filter(Farmer.id == farmer_id).first()
+        loc = location or (crop.farmer.district if crop and crop.farmer else (farmer.district if farmer else "Nashik, Maharashtra"))
+
+        item = InventoryItem(
+            farmer_id=farmer_id,
+            crop_name=crop_name.strip(),
+            variety=variety or (crop.variety if crop else "Standard Grade"),
+            total_quantity=qty,
+            allocated_quantity=0.0,
+            reserved_quantity=0.0,
+            sold_quantity=0.0,
+            unit=unit,
+            location=loc,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
+        )
+        db.add(item)
+        db.flush()
+
+        # Record initial baseline adjustment
+        if qty > 0:
+            adj = StockAdjustment(
+                inventory_id=item.id,
+                farmer_id=farmer_id,
+                crop_name=item.crop_name,
+                adjustment_type="INITIAL_BASELINE",
+                quantity=qty,
+                unit=unit,
+                notes=f"Initial harvest baseline registered for {item.crop_name}.",
+                created_at=datetime.utcnow(),
+            )
+            db.add(adj)
+        db.commit()
+        db.refresh(item)
         return item
 
     def get_farmer_inventory_summary(self, db: Session, farmer_id: int) -> Dict[str, Any]:
