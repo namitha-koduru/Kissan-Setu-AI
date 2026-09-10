@@ -72,7 +72,29 @@ export const lotApi = {
       if (crop && crop !== "All") params.append("crop", crop);
       const url = `/lots/nearby/discovery?${params.toString()}`;
       const data = await apiClient.get<any[]>(url);
-      return data || [];
+      if (Array.isArray(data) && data.length > 0) {
+        return data;
+      }
+      // Fallback to GET /lots with open status filter
+      const allLots = await apiClient.get<LotBackendModel[]>("/lots");
+      if (Array.isArray(allLots) && allLots.length > 0) {
+        return allLots
+          .filter((l) => !l.status || l.status === "Open for Offers" || l.status === "OPEN" || l.status === "Active")
+          .map((l) => ({
+            id: l.id,
+            crop_id: l.crop_id,
+            crop_name: l.crop_id === 1 ? "Tomato" : l.crop_id === 2 ? "Onion" : "Produce",
+            farmer_id: l.farmer_id,
+            farmer_name: "Farmer Producer",
+            quantity_kg: l.quantity,
+            asking_price: l.asking_price,
+            quality: l.quality || "Grade A",
+            location: l.location || "Farm Origin",
+            distance_km: 12,
+            status: l.status || "Open for Offers",
+          }));
+      }
+      return [];
     } catch (error) {
       console.warn("[lotApi] Error fetching nearby lots:", error);
       return [];

@@ -125,6 +125,23 @@ def create_lot(
     db.add(lot)
     db.commit()
     db.refresh(lot)
+
+    try:
+        from app.services.websocket_manager import websocket_manager
+        import asyncio
+        asyncio.create_task(websocket_manager.broadcast_to_room("marketplace", {
+            "type": "LOT_CREATED",
+            "lot_id": lot.id,
+            "crop_name": crop.crop_name,
+            "quantity_kg": lot.quantity,
+            "asking_price": lot.asking_price,
+            "farmer_name": farmer.name,
+            "location": lot.location,
+            "quality": lot.quality,
+        }))
+    except Exception:
+        pass
+
     return lot
 
 
