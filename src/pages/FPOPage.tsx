@@ -4,7 +4,6 @@ import {
   Plus,
   ShieldCheck,
   Users,
-  Layers,
   ShoppingBag,
   ArrowRight,
   Handshake,
@@ -19,6 +18,7 @@ import { useAuth } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
 import { inventoryApi, type InventorySummaryResponse, type StockAuditAdjustment } from "../services/inventoryApi";
+import apiClient from "../services/api";
 
 export function FPOPage() {
   const { user } = useAuth();
@@ -32,11 +32,15 @@ export function FPOPage() {
   );
 
   const isDemoFpo = user?.email === "sahyadri.fpo@kissansetu.in" || user?.id === "demo-fpo" || user?.id === "fpo-1";
-  const [membersList, setMembersList] = useState(isDemoFpo ? fpoFarmers : []);
+  const [membersList, setMembersList] = useState<{ name: string; quantityKg: number; crop: string; grade: string }[]>(isDemoFpo ? fpoFarmers : []);
   const [newMemberModal, setNewMemberModal] = useState(false);
   const [newMemberName, setNewMemberName] = useState("");
   const [newMemberCrop, setNewMemberCrop] = useState("Grapes");
   const [newMemberQty, setNewMemberQty] = useState(500);
+
+  // Dynamic offers & transactions for FPO
+  const [fpoOffers, setFpoOffers] = useState<any[]>([]);
+  const [fpoOrders, setFpoOrders] = useState<any[]>([]);
 
   // Stock / Inventory state
   const [inventorySummary, setInventorySummary] = useState<InventorySummaryResponse | null>(null);
@@ -70,11 +74,33 @@ export function FPOPage() {
     }
   };
 
+  const fetchFpoDeals = async () => {
+    try {
+      const [offRes, txRes] = await Promise.allSettled([
+        apiClient.get<any[]>("/offers"),
+        apiClient.get<any[]>("/transactions"),
+      ]);
+      if (offRes.status === "fulfilled" && Array.isArray(offRes.value)) {
+        setFpoOffers(offRes.value);
+      }
+      if (txRes.status === "fulfilled" && Array.isArray(txRes.value)) {
+        setFpoOrders(txRes.value);
+      }
+    } catch (err) {
+      console.warn("Could not fetch FPO deals:", err);
+    }
+  };
+
   useEffect(() => {
     fetchStockData();
+    fetchFpoDeals();
   }, [user?.id]);
 
   const memberCount = user?.memberFarmerCount ?? (isDemoFpo ? 850 : membersList.length);
+  const activeProducers = Math.max(membersList.length, isDemoFpo ? 120 : (membersList.length > 0 ? membersList.length : 0));
+  const pendingOffersCount = fpoOffers.filter((o) => o.status === "PENDING" || o.status === "COUNTERED").length;
+  const activeOrdersCount = fpoOrders.filter((t) => t.status !== "COMPLETED" && t.status !== "RECEIVED" && t.status !== "CANCELLED").length;
+  const completedOrdersCount = fpoOrders.filter((t) => t.status === "COMPLETED" || t.status === "RECEIVED").length;
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,19 +222,37 @@ export function FPOPage() {
         </div>
       </div>
 
-      {/* Stock / Available Inventory 5-Card Grid */}
+      {/* FPO Organization 8-Card Dashboard Grid */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
           gap: 12,
           marginBottom: 20,
         }}
       >
         <div className="metric-card" style={{ borderLeft: "4px solid var(--navy)" }}>
           <div className="metric-label flex flex-between">
-            <span>{t("fpo.totalStock", "Total Stock")}</span>
-            <Layers size={16} color="var(--navy)" />
+            <span>Total Members</span>
+            <Users size={16} color="var(--navy)" />
+          </div>
+          <div className="metric-value">{memberCount}</div>
+          <div className="metric-hint">Registered farmers</div>
+        </div>
+
+        <div className="metric-card" style={{ borderLeft: "4px solid #0284C7" }}>
+          <div className="metric-label flex flex-between">
+            <span>Active Producers</span>
+            <CheckCircle2 size={16} color="#0284C7" />
+          </div>
+          <div className="metric-value" style={{ color: "#0284C7" }}>{activeProducers}</div>
+          <div className="metric-hint">Contributing harvest</div>
+        </div>
+
+        <div className="metric-card" style={{ borderLeft: "4px solid var(--navy)" }}>
+          <div className="metric-label flex flex-between">
+            <span>Total Stock</span>
+            <Package size={16} color="var(--navy)" />
           </div>
           <div className="metric-value">{totalStockKg.toLocaleString("en-IN")} kg</div>
           <div className="metric-hint">Aggregated harvest pool</div>
@@ -216,35 +260,35 @@ export function FPOPage() {
 
         <div className="metric-card" style={{ borderLeft: "4px solid var(--green-deep)", background: "rgba(23,107,69,0.04)" }}>
           <div className="metric-label flex flex-between">
-            <span style={{ fontWeight: 800, color: "var(--green-deep)" }}>Available to Sell</span>
+            <span style={{ fontWeight: 800, color: "var(--green-deep)" }}>Available Stock</span>
             <CheckCircle2 size={16} color="var(--green-deep)" />
           </div>
           <div className="metric-value" style={{ color: "var(--green-deep)" }}>
             {availableStockKg.toLocaleString("en-IN")} kg
           </div>
-          <div className="metric-hint">Genuine uncommitted stock</div>
-        </div>
-
-        <div className="metric-card" style={{ borderLeft: "4px solid #D97706" }}>
-          <div className="metric-label flex flex-between">
-            <span>In Active Lots</span>
-            <Package size={16} color="#D97706" />
-          </div>
-          <div className="metric-value" style={{ color: "#D97706" }}>
-            {activeLotsKg.toLocaleString("en-IN")} kg
-          </div>
-          <div className="metric-hint">Listed for open offers</div>
+          <div className="metric-hint">Ready for bulk lots</div>
         </div>
 
         <div className="metric-card" style={{ borderLeft: "4px solid #4F46E5" }}>
           <div className="metric-label flex flex-between">
-            <span>Reserved</span>
+            <span>Reserved Stock</span>
             <Handshake size={16} color="#4F46E5" />
           </div>
           <div className="metric-value" style={{ color: "#4F46E5" }}>
             {reservedKg.toLocaleString("en-IN")} kg
           </div>
-          <div className="metric-hint">Committed to accepted trades</div>
+          <div className="metric-hint">Committed to deals</div>
+        </div>
+
+        <div className="metric-card" style={{ borderLeft: "4px solid #D97706" }}>
+          <div className="metric-label flex flex-between">
+            <span>Active Lots</span>
+            <Package size={16} color="#D97706" />
+          </div>
+          <div className="metric-value" style={{ color: "#D97706" }}>
+            {activeLotsKg.toLocaleString("en-IN")} kg
+          </div>
+          <div className="metric-hint">Listed in market</div>
         </div>
 
         <div className="metric-card" style={{ borderLeft: "4px solid #64748B" }}>
@@ -256,6 +300,17 @@ export function FPOPage() {
             {soldKg.toLocaleString("en-IN")} kg
           </div>
           <div className="metric-hint">Completed & offline sales</div>
+        </div>
+
+        <div className="metric-card" style={{ borderLeft: "4px solid #EA580C" }}>
+          <div className="metric-label flex flex-between">
+            <span>Pending Offers</span>
+            <Handshake size={16} color="#EA580C" />
+          </div>
+          <div className="metric-value" style={{ color: "#EA580C" }}>
+            {pendingOffersCount}
+          </div>
+          <div className="metric-hint">Bids ({activeOrdersCount} in-flight, {completedOrdersCount} closed)</div>
         </div>
       </div>
 
@@ -489,13 +544,9 @@ export function FPOPage() {
                   ))
                 ) : (
                   <tr>
-                    <td><strong>Grapes (Export Grade)</strong></td>
-                    <td>1,200 kg</td>
-                    <td style={{ color: "#D97706" }}>400 kg</td>
-                    <td style={{ color: "#4F46E5" }}>200 kg</td>
-                    <td>250 kg</td>
-                    <td><span className="badge-pill badge-high">350 kg</span></td>
-                    <td><Link to="/lots/create?crop=Grapes" className="btn btn-outline btn-sm">List Lot</Link></td>
+                    <td colSpan={7} style={{ textAlign: "center", color: "var(--ink-soft)", padding: 24 }}>
+                      No commodity stock aggregated yet. Pool member produce to initialize inventory ledger.
+                    </td>
                   </tr>
                 )}
               </tbody>

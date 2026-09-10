@@ -319,7 +319,30 @@ export function TransactionPage() {
     }
   };
 
-  const isComplete = txDetail?.events.every((e) => e.done);
+  const handleMarkReceived = async () => {
+    if (!txDetail) return;
+    try {
+      await apiClient.put(`/transactions/${txDetail.id}/status`, {
+        status: "RECEIVED",
+        note: "Produce received, weighed, and accepted by buyer.",
+      });
+      showToast("Delivery confirmed! Produce marked as received and order completed.");
+      setTxDetail((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: "RECEIVED",
+              logistics_status: "DELIVERED",
+              events: prev.events.map((ev) => ({ ...ev, done: true, created_at: "Just now" })),
+            }
+          : null
+      );
+    } catch (err: any) {
+      showToast("Error updating delivery status: " + (err?.response?.data?.detail || err.message));
+    }
+  };
+
+  const isComplete = txDetail?.events.every((e) => e.done) || txDetail?.status === "RECEIVED" || txDetail?.status === "COMPLETED";
   const totalVal = txDetail?.total_amount || 0;
   const freightCost = txDetail?.transport_cost_actual || 0;
   const handlingDeduction = 0; // Direct trade no middleman fee
@@ -597,17 +620,26 @@ export function TransactionPage() {
         </div>
 
         {/* Action buttons for logistics, payment, and receipt */}
-        <div className="action-bar" style={{ marginTop: 16, borderTop: "1px solid #EDF2EB", paddingTop: 14 }}>
+        <div className="action-bar" style={{ marginTop: 16, borderTop: "1px solid #EDF2EB", paddingTop: 14, flexWrap: "wrap", gap: 8 }}>
+          {user?.role === "buyer" && txDetail?.status !== "RECEIVED" && txDetail?.status !== "COMPLETED" && (
+            <button
+              className="btn btn-primary"
+              style={{ flex: 1, minWidth: 200, justifyContent: "center", fontSize: "13px", background: "var(--green-deep)", borderColor: "var(--green-deep)" }}
+              onClick={handleMarkReceived}
+            >
+              <FileCheck size={15} /> <span>Mark as Received (Confirm Delivery)</span>
+            </button>
+          )}
           <button
             className="btn btn-outline"
-            style={{ flex: 1, justifyContent: "center", fontSize: "13px" }}
+            style={{ flex: 1, minWidth: 160, justifyContent: "center", fontSize: "13px" }}
             onClick={() => setIsLogisticsOpen(true)}
           >
             <Truck size={15} /> {t("transactions.logistics", "Update Logistics & Pickup")}
           </button>
           <button
             className="btn btn-outline"
-            style={{ flex: 1, justifyContent: "center", fontSize: "13px" }}
+            style={{ flex: 1, minWidth: 160, justifyContent: "center", fontSize: "13px" }}
             onClick={() => downloadTradeReceiptPdf({
               id: `TX-2026-${String(txDetail?.id || 1).padStart(4, "0")}`,
               lotId: `KS-LOT-${String(txDetail?.lot_id || 1).padStart(3, "0")}`,
@@ -635,7 +667,7 @@ export function TransactionPage() {
           </button>
           <button
             className="btn btn-primary"
-            style={{ flex: 1, justifyContent: "center", fontSize: "13px" }}
+            style={{ flex: 1, minWidth: 140, justifyContent: "center", fontSize: "13px" }}
             onClick={() => setIsReceiptOpen(true)}
           >
             <Receipt size={15} /> {t("transactions.viewReceipt", "View Digital Receipt")}
