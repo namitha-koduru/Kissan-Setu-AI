@@ -87,38 +87,35 @@ class RazorpayPaymentService:
         receipt_ref = f"rcpt_tx_{tx.id}_{int(datetime.utcnow().timestamp())}"
 
         order_id = ""
-        is_test_mode = not self.is_configured
 
-        # 3. Attempt real Razorpay API order creation if configured
-        if self.is_configured:
-            auth = (self.key_id, self.key_secret)
-            payload = {
-                "amount": amount_paise,
-                "currency": "INR",
-                "receipt": receipt_ref,
-                "notes": {
-                    "transaction_id": str(tx.id),
-                    "lot_id": str(tx.lot_id),
-                    "buyer_id": str(tx.buyer_id or buyer_id or ""),
-                },
-            }
-            try:
-                async with httpx.AsyncClient(timeout=self.timeout) as client:
-                    resp = await client.post(f"{self.base_url}/orders", json=payload, auth=auth)
-                    if resp.status_code in [200, 201]:
-                        order_data = resp.json()
-                        order_id = order_data["id"]
-                    else:
-                        err_text = resp.text
-                        logger.error(f"[Razorpay API Error] {resp.status_code}: {err_text}")
-                        raise ValueError(f"Razorpay order creation rejected by gateway ({resp.status_code}): {err_text}")
-            except httpx.RequestError as req_err:
-                logger.error(f"[Razorpay Network Error] {req_err}")
-                raise ValueError(f"Failed to connect to Razorpay payment gateway: {str(req_err)}")
-        else:
-            # Local/Demo test mode fallback
-            order_id = f"order_demo_{uuid.uuid4().hex[:14]}"
-            is_test_mode = True
+        # 3. Create real Razorpay API order
+        if not self.is_configured:
+            raise ValueError("Razorpay payment gateway is not configured on the server. Please set valid RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET.")
+
+        auth = (self.key_id, self.key_secret)
+        payload = {
+            "amount": amount_paise,
+            "currency": "INR",
+            "receipt": receipt_ref,
+            "notes": {
+                "transaction_id": str(tx.id),
+                "lot_id": str(tx.lot_id),
+                "buyer_id": str(tx.buyer_id or buyer_id or ""),
+            },
+        }
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                resp = await client.post(f"{self.base_url}/orders", json=payload, auth=auth)
+                if resp.status_code in [200, 201]:
+                    order_data = resp.json()
+                    order_id = order_data["id"]
+                else:
+                    err_text = resp.text
+                    logger.error(f"[Razorpay API Error] {resp.status_code}: {err_text}")
+                    raise ValueError(f"Razorpay order creation rejected by gateway ({resp.status_code}): {err_text}")
+        except httpx.RequestError as req_err:
+            logger.error(f"[Razorpay Network Error] {req_err}")
+            raise ValueError(f"Failed to connect to Razorpay payment gateway: {str(req_err)}")
 
         # 4. Persist Payment Record in Database
         payment = Payment(
@@ -140,12 +137,12 @@ class RazorpayPaymentService:
 
         return {
             "order_id": order_id,
-            "key_id": self.key_id if self.is_configured else "rzp_test_demo_mode",
+            "key_id": self.key_id,
             "amount": payable_amount,
             "amount_paise": amount_paise,
             "currency": "INR",
             "transaction_id": tx.id,
-            "is_test_mode": is_test_mode,
+            "is_test_mode": self.key_id.startswith("rzp_test_"),
             "receipt": receipt_ref,
         }
 
@@ -170,7 +167,7 @@ class RazorpayPaymentService:
 
         is_valid = False
 
-        if self.is_configured:
+        if self.key_secret:
             # Genuine cryptographic signature verification
             try:
                 msg = f"{order_id}|{payment_id}".encode("utf-8")
@@ -184,8 +181,7 @@ class RazorpayPaymentService:
                 logger.error(f"[Razorpay] Signature verification exception: {e}")
                 is_valid = False
         else:
-            # Demo / Test Mode Verification
-            is_valid = bool(payment_id and signature and order_id)
+            is_valid = False
 
         if not is_valid:
             payment.payment_status = "Payment Failed"

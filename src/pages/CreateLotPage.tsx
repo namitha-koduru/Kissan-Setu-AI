@@ -80,10 +80,14 @@ export function CreateLotPage() {
 
     let backendLotId = generatedId;
 
+    const activeUserId = user?.id
+      ? (typeof user.id === "number" ? user.id : parseInt(String(user.id).replace(/\D/g, ""), 10) || 1)
+      : 1;
+
     try {
       // 1. Verify stock availability
       try {
-        const summary = await inventoryApi.getSummary(1);
+        const summary = await inventoryApi.getSummary(activeUserId);
         const item = summary.items?.find((i) => i.crop_name.toLowerCase() === crop.toLowerCase());
         if (item && item.available_quantity < qty) {
           setStockError(`Only ${item.available_quantity} ${item.unit} is currently available to sell.`);
@@ -97,7 +101,7 @@ export function CreateLotPage() {
       // 2. Get crop for crop_id
       let targetCropId = 1;
       try {
-        const farmerCrops = await cropApi.getFarmerCrops(1);
+        const farmerCrops = await cropApi.getFarmerCrops(activeUserId);
         const matched = farmerCrops.find((c) => c.name.toLowerCase() === crop.toLowerCase());
         if (matched) {
           targetCropId = parseInt(matched.id.replace(/\D/g, ""), 10) || 1;

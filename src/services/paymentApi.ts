@@ -68,11 +68,22 @@ export const paymentApi = {
   /**
    * Request server-authoritative Razorpay Order creation.
    */
-  async createOrder(transactionId: number, buyerId?: number): Promise<CreateOrderResponse> {
-    return await apiClient.post<CreateOrderResponse>("/payments/create-order", {
-      transaction_id: transactionId,
-      buyer_id: buyerId,
-    });
+  async createOrder(transactionId: number, buyerId?: number, userRole?: string): Promise<CreateOrderResponse> {
+    const headers: Record<string, string> = {};
+    if (userRole) {
+      headers["X-User-Role"] = userRole;
+    }
+    if (buyerId) {
+      headers["X-User-Id"] = String(buyerId);
+    }
+    return await apiClient.post<CreateOrderResponse>(
+      "/payments/create-order",
+      {
+        transaction_id: transactionId,
+        buyer_id: buyerId,
+      },
+      headers
+    );
   },
 
   /**
@@ -107,68 +118,53 @@ export const paymentApi = {
     onError?: (err: any) => void;
     onDismiss?: () => void;
   }): Promise<void> {
-    const isRealRazorpayKey = Boolean(
-      options.order.key_id &&
-      (options.order.key_id.startsWith("rzp_test_") || options.order.key_id.startsWith("rzp_live_")) &&
-      !options.order.key_id.includes("placeholder") &&
-      !options.order.key_id.includes("demo") &&
-      !options.order.is_test_mode
-    );
+    const isLoaded = await loadRazorpayScript();
+    if (isLoaded && (window as any).Razorpay && options.order.key_id) {
+      const rzpOptions = {
+        key: options.order.key_id,
+        amount: options.order.amount_paise,
+        currency: options.order.currency || "INR",
+        name: "KissanSetuAI",
+        description: `Procurement Payment for ${options.cropName}`,
+        image: "https://kissan-setu-ai.vercel.app/logo.png",
+        order_id: options.order.order_id,
+        prefill: {
+          name: options.buyerName,
+          email: options.buyerEmail || "",
+          contact: options.buyerPhone || "",
+        },
+        theme: {
+          color: "#176B45",
+        },
+        notes: {
+          transaction_id: String(options.order.transaction_id),
+          environment: options.order.is_test_mode ? "Test Mode" : "Production",
+        },
+        handler: (response: RazorpayPaymentResult) => {
+          options.onSuccess(response);
+        },
+        modal: {
+          ondismiss: () => {
+            if (options.onDismiss) options.onDismiss();
+          },
+        },
+      };
 
-    if (isRealRazorpayKey) {
-      const isLoaded = await loadRazorpayScript();
-      if (isLoaded && (window as any).Razorpay) {
-        const rzpOptions = {
-          key: options.order.key_id,
-          amount: options.order.amount_paise,
-          currency: options.order.currency || "INR",
-          name: "KissanSetuAI",
-          description: `Procurement Payment for ${options.cropName}`,
-          image: "https://kissan-setu-ai.vercel.app/logo.png",
-          order_id: options.order.order_id,
-          prefill: {
-            name: options.buyerName,
-            email: options.buyerEmail || "",
-            contact: options.buyerPhone || "",
-          },
-          theme: {
-            color: "#176B45",
-          },
-          notes: {
-            transaction_id: String(options.order.transaction_id),
-            environment: options.order.is_test_mode ? "Test Mode" : "Production",
-          },
-          handler: (response: RazorpayPaymentResult) => {
-            options.onSuccess(response);
-          },
-          modal: {
-            ondismiss: () => {
-              if (options.onDismiss) options.onDismiss();
-            },
-          },
-        };
-
-        const rzp = new (window as any).Razorpay(rzpOptions);
-        if (options.onError) {
-          rzp.on("payment.failed", (response: any) => {
-            options.onError?.(response.error || response);
-          });
-        }
-        rzp.open();
-        return;
+      const rzp = new (window as any).Razorpay(rzpOptions);
+      if (options.onError) {
+        rzp.on("payment.failed", (response: any) => {
+          options.onError?.(response.error || response);
+        });
       }
+      rzp.open();
+      return;
     }
 
-    // Demo / Offline Simulation Mode
-    const simulatedPaymentId = `pay_demo_${Date.now()}`;
-    const simulatedSignature = `sig_demo_${Date.now()}`;
-    setTimeout(() => {
-      options.onSuccess({
-        razorpay_order_id: options.order.order_id,
-        razorpay_payment_id: simulatedPaymentId,
-        razorpay_signature: simulatedSignature,
+    if (options.onError) {
+      options.onError({
+        description: "Razorpay Checkout SDK failed to load. Please check your internet connection.",
       });
-    }, 400);
+    }
   },
 };
 

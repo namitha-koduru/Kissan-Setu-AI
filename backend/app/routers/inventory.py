@@ -29,6 +29,7 @@ class AggregationRequest(BaseModel):
 
 @router.get("/summary")
 @router.get("/farmer/{farmer_id}")
+@router.get("/{farmer_id}/summary")
 def get_inventory_summary(farmer_id: int = 1, db: Session = Depends(get_db)):
     """
     Fetches real stock breakdown: Total Stock, Available to Sell, In Active Lots, Reserved, and Sold.
@@ -71,6 +72,7 @@ def record_fpo_aggregation(req: AggregationRequest, db: Session = Depends(get_db
 
 @router.get("/audit-history")
 @router.get("/farmer/{farmer_id}/audit")
+@router.get("/{farmer_id}/audit")
 def get_inventory_audit(farmer_id: int = 1, limit: int = 50, db: Session = Depends(get_db)):
     """
     Retrieves complete chronological audit history of stock adjustments.

@@ -37,6 +37,10 @@ def check_unique(payload: CheckUniqueRequest, db: Session = Depends(get_db)):
     return {"available": True}
 
 
+from app.database.models import Farmer, Buyer
+from app.schemas.buyer import BuyerResponse
+
+
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode("utf-8")).hexdigest()
 
@@ -45,11 +49,37 @@ def hash_password(password: str) -> str:
 def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     """
     Authentication Endpoint.
-    Authenticates by normalized phone number or email and returns profile + token.
+    Authenticates by normalized phone number or email and returns profile + token with authoritative role.
     """
     raw_ident = login_data.phone or login_data.username_or_phone or ""
     norm_phone = normalize_mobile(raw_ident)
-    
+    req_role = (login_data.role or "").lower()
+
+    # 1. If buyer role is explicitly requested, search Buyer table first
+    if req_role == "buyer":
+        buyer = None
+        if norm_phone and len(norm_phone) == 10:
+            buyer = db.query(Buyer).filter(
+                (Buyer.phone == norm_phone) |
+                (Buyer.phone == f"+91{norm_phone}") |
+                (Buyer.phone == f"91{norm_phone}") |
+                (Buyer.phone == raw_ident)
+            ).first()
+        elif "@" in raw_ident:
+            buyer = db.query(Buyer).filter(Buyer.email.ilike(raw_ident.strip().lower())).first()
+        else:
+            buyer = db.query(Buyer).filter(Buyer.phone == raw_ident).first()
+
+        if buyer:
+            return LoginResponse(
+                access_token=f"kissan_buyer_token_{buyer.id}",
+                token_type="bearer",
+                role="buyer",
+                user_id=buyer.id,
+                buyer=BuyerResponse.model_validate(buyer),
+            )
+
+    # 2. Search Farmer table (covers farmer and fpo roles)
     farmer = None
     if norm_phone and len(norm_phone) == 10:
         farmer = db.query(Farmer).filter(
@@ -64,24 +94,82 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     else:
         farmer = db.query(Farmer).filter(Farmer.phone == raw_ident).first()
 
-    if not farmer:
-        # If farmer does not exist, create a clean profile with normalized phone
-        clean_phone = norm_phone if (norm_phone and len(norm_phone) == 10) else raw_ident
-        farmer = Farmer(
-            name="Registered Producer",
-            phone=clean_phone or "9848022338",
-            state="Maharashtra",
-            district="Nashik",
-            village="Dindori",
-            preferred_language="en",
+    if farmer:
+        user_role = farmer.role or "farmer"
+        return LoginResponse(
+            access_token=f"kissan_dev_token_{farmer.id}",
+            token_type="bearer",
+            role=user_role,
+            user_id=farmer.id,
+            farmer=FarmerResponse.model_validate(farmer),
         )
-        db.add(farmer)
+
+    # 3. Check Buyer table if not already checked
+    if req_role != "buyer":
+        buyer = None
+        if norm_phone and len(norm_phone) == 10:
+            buyer = db.query(Buyer).filter(
+                (Buyer.phone == norm_phone) |
+                (Buyer.phone == f"+91{norm_phone}") |
+                (Buyer.phone == f"91{norm_phone}") |
+                (Buyer.phone == raw_ident)
+            ).first()
+        elif "@" in raw_ident:
+            buyer = db.query(Buyer).filter(Buyer.email.ilike(raw_ident.strip().lower())).first()
+        else:
+            buyer = db.query(Buyer).filter(Buyer.phone == raw_ident).first()
+
+        if buyer:
+            return LoginResponse(
+                access_token=f"kissan_buyer_token_{buyer.id}",
+                token_type="bearer",
+                role="buyer",
+                user_id=buyer.id,
+                buyer=BuyerResponse.model_validate(buyer),
+            )
+
+    # 4. If neither exists, create according to requested role
+    clean_phone = norm_phone if (norm_phone and len(norm_phone) == 10) else raw_ident
+    if req_role == "buyer":
+        new_buyer = Buyer(
+            name="Registered Institutional Buyer",
+            phone=clean_phone or "9848022338",
+            location="Nashik, Maharashtra",
+            business_type="Enterprise Buyer",
+            verification_status="UNVERIFIED",
+            verified=False,
+        )
+        db.add(new_buyer)
         db.commit()
-        db.refresh(farmer)
+        db.refresh(new_buyer)
+        return LoginResponse(
+            access_token=f"kissan_buyer_token_{new_buyer.id}",
+            token_type="bearer",
+            role="buyer",
+            user_id=new_buyer.id,
+            buyer=BuyerResponse.model_validate(new_buyer),
+        )
+
+    # Default to Farmer or FPO
+    assigned_role = "fpo" if req_role == "fpo" else "farmer"
+    farmer = Farmer(
+        name="Registered Producer" if assigned_role == "farmer" else "Registered FPO",
+        phone=clean_phone or "9848022338",
+        state="Maharashtra",
+        district="Nashik",
+        village="Dindori",
+        preferred_language="en",
+        role=assigned_role,
+    )
+    db.add(farmer)
+    db.commit()
+    db.refresh(farmer)
 
     return LoginResponse(
         access_token=f"kissan_dev_token_{farmer.id}",
         token_type="bearer",
+        role=assigned_role,
+        user_id=farmer.id,
         farmer=FarmerResponse.model_validate(farmer),
     )
 

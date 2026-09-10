@@ -1,6 +1,7 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { demoUsersWithCred } from "../data/demo";
 import type { User, UserRole } from "../types";
+import apiClient from "../services/api";
 
 export interface RegisterInput {
   name: string;
@@ -201,6 +202,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return null;
         }
 
+        // 3. Fallback to remote database authentication
+        try {
+          const authRes = await apiClient.post<any>("/auth/login", {
+            username_or_phone: emailOrMobile,
+            password: password,
+            role: requestedRole,
+          });
+          if (authRes && authRes.user_id) {
+            const profile = authRes.buyer || authRes.farmer || {};
+            const resolvedRole: UserRole = (authRes.role || requestedRole || "farmer") as UserRole;
+            const remoteUser: User = {
+              id: authRes.user_id,
+              name: profile.name || (resolvedRole === "buyer" ? "Registered Buyer" : "Registered User"),
+              email: profile.email || cleanEmail || "",
+              mobile: profile.phone || cleanMobile || "",
+              role: resolvedRole,
+              location: profile.location || (profile.district && profile.state ? `${profile.district}, ${profile.state}` : "Nashik, Maharashtra"),
+              district: profile.district || "Nashik",
+              state: profile.state || "Maharashtra",
+              initials: ((profile.name || "KS").slice(0, 2)).toUpperCase(),
+              organizationName: profile.organization || profile.organization_name,
+              onboarded: true,
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteUser));
+            setUser(remoteUser);
+            return null;
+          }
+        } catch (remoteErr) {
+          console.warn("Backend auth verification failed:", remoteErr);
+        }
+
         return "Invalid credentials. Please verify your email/mobile and password.";
       },
       async register(input) {
@@ -222,8 +254,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           input.email?.trim() ||
           `${normalizeMobile(input.mobile) || Date.now()}@kissansetu.in`;
 
+        let backendUserId: string = `u-${Date.now()}`;
+        try {
+          if (input.role === "buyer") {
+            const buyerRes = await apiClient.post<any>("/buyers", {
+              name: input.organizationName || input.name.trim(),
+              organization: input.organizationName || input.name.trim(),
+              location: input.location || input.district || "Nashik, Maharashtra",
+              phone: input.mobile?.trim(),
+              email: primaryEmail,
+              business_type: "Enterprise Buyer",
+            });
+            if (buyerRes && buyerRes.id) {
+              backendUserId = String(buyerRes.id);
+            }
+          } else {
+            const farmerRes = await apiClient.post<any>("/farmers", {
+              name: input.name.trim(),
+              phone: input.mobile?.trim(),
+              email: primaryEmail,
+              role: input.role,
+              organization_name: input.organizationName?.trim(),
+              state: input.state || "Maharashtra",
+              district: input.district || "Nashik",
+            });
+            if (farmerRes && farmerRes.id) {
+              backendUserId = String(farmerRes.id);
+            }
+          }
+        } catch (apiErr) {
+          console.warn("Could not sync registration to remote DB immediately:", apiErr);
+        }
+
         const createdUser: StoredUserWithCred = {
-          id: `u-${Date.now()}`,
+          id: backendUserId,
           name: input.name.trim(),
           email: primaryEmail,
           role: input.role,
