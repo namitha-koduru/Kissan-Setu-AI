@@ -13,12 +13,14 @@ import { DecisionBadge } from "../components/DecisionBadge";
 import { HarvestTimeline } from "../components/HarvestTimeline";
 import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
+import { useAuth, resolveFarmerId } from "../context/AuthContext";
 import cropApi from "../services/cropApi";
 import { inventoryApi, type InventorySummaryResponse } from "../services/inventoryApi";
 import { weatherByLocation } from "../data/demo";
 import type { CropRecord, CropStage } from "../types";
 
 export function CropDetailsPage() {
+  const { user } = useAuth();
   const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const { crops, setActiveCropId, addCrop } = useAppState();
@@ -96,10 +98,11 @@ export function CropDetailsPage() {
   }, [id, matchedCrop, addCrop]);
 
   useEffect(() => {
-    inventoryApi.getSummary(1)
+    const activeFarmerId = resolveFarmerId(user) || 1;
+    inventoryApi.getSummary(activeFarmerId)
       .then((res) => setInventory(res))
       .catch((err) => console.warn("Could not fetch inventory:", err));
-  }, []);
+  }, [user]);
 
   const crop = matchedCrop || crops[0];
 

@@ -359,7 +359,18 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const addCrop = useCallback(
     (crop: CropRecord) => {
-      setCrops((prev) => [crop, ...prev]);
+      setCrops((prev) => {
+        const cleanName = crop.name.trim().toLowerCase();
+        const existingIdx = prev.findIndex(
+          (c) => c.id === crop.id || c.name.trim().toLowerCase() === cleanName
+        );
+        if (existingIdx >= 0) {
+          const updated = [...prev];
+          updated[existingIdx] = { ...updated[existingIdx], ...crop };
+          return updated;
+        }
+        return [crop, ...prev];
+      });
       setActiveCropId(crop.id);
       showToast(`Crop "${crop.name}" registered and AI analysis completed.`);
     },

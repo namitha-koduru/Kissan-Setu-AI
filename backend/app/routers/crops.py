@@ -81,7 +81,7 @@ def create_crop(
     db.commit()
     db.refresh(crop)
 
-    # Initialize / sync inventory for this farmer and crop
+    # Initialize inventory for this farmer and crop if not yet tracked
     try:
         from app.services.inventory_service import inventory_service
         inv_item = (
@@ -92,15 +92,12 @@ def create_crop(
             )
             .first()
         )
-        if inv_item:
-            inv_item.total_quantity = round(inv_item.total_quantity + (crop.quantity or 0.0), 2)
-            db.commit()
-        else:
+        if not inv_item:
             inventory_service.get_or_create_inventory(
                 db=db,
                 farmer_id=crop.farmer_id,
                 crop_name=crop.crop_name,
-                initial_quantity=crop.quantity,
+                initial_quantity=crop.quantity or 0.0,
                 variety=crop.variety,
             )
     except Exception as e:

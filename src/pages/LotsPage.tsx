@@ -35,21 +35,24 @@ export function LotsPage() {
       const fetchNearby = async () => {
         try {
           const res = await lotApi.discoverNearbyLots(user?.location || "Nashik, Maharashtra", selectedCropFilter);
-          if (res && res.length > 0) {
-            setLiveDiscoveredLots(res.map((l: any) => ({
-              id: `KS-LOT-${l.id}`,
-              crop: l.crop_name,
-              quality: l.quality || "Grade A",
-              sellerName: l.farmer_name,
-              sellerRole: "Farmer",
-              quantityKg: l.quantity_kg,
-              expectedPrice: l.asking_price,
-              location: l.location,
-              harvestDate: l.harvest_date || "2026-09-08",
-              status: l.status || "Open for Offers",
-              distanceKm: Math.round(l.distance_km || 12),
-              imageUrl: l.image_url,
-            })));
+          if (Array.isArray(res) && res.length > 0) {
+            setLiveDiscoveredLots(
+              res.map((l: any) => ({
+                id: `KS-LOT-${l.id}`,
+                numericId: l.id,
+                crop: l.crop_name || l.crop || "Produce",
+                quality: l.quality || "Grade A",
+                sellerName: l.farmer_name || l.sellerName || "Registered Farmer",
+                sellerRole: l.farmer_count && l.farmer_count > 1 ? "FPO" : "Farmer",
+                quantityKg: l.quantity_kg || l.quantity || 500,
+                expectedPrice: l.asking_price || l.expectedPrice || 30,
+                location: l.location || "Farm Gate",
+                harvestDate: l.harvest_date || l.harvestDate || "2026-09-08",
+                status: l.status || "Open for Offers",
+                distanceKm: Math.round(l.distance_km || 12),
+                imageUrl: l.image_url || l.imageUrl,
+              }))
+            );
           }
         } catch (err) {
           console.warn("Failed to fetch nearby lots from backend", err);
@@ -67,11 +70,13 @@ export function LotsPage() {
   });
 
   const availableSellerLots = useMemo(() => {
-    const combined = [...liveDiscoveredLots, ...allMarketplaceLots];
+    // If live lots exist from database, show them prominently
+    const combined = liveDiscoveredLots.length > 0 ? liveDiscoveredLots : allMarketplaceLots;
     return combined.filter((l) => {
       const matchCrop =
         selectedCropFilter === "All" ||
-        l.crop.toLowerCase() === selectedCropFilter.toLowerCase();
+        l.crop.toLowerCase().includes(selectedCropFilter.toLowerCase()) ||
+        selectedCropFilter.toLowerCase().includes(l.crop.toLowerCase());
       const matchGrade =
         selectedGradeFilter === "All" ||
         l.quality.toLowerCase().includes(selectedGradeFilter.toLowerCase());
