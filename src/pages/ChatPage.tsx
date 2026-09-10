@@ -223,34 +223,32 @@ export const ChatPage: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "16px" }}>
+    <div style={{ maxWidth: "1080px", margin: "0 auto", padding: "16px" }}>
       {/* Top Header */}
-      <div className="chat-header">
+      <div className="chat-header" style={{ marginBottom: 16 }}>
         <div>
-          <div className="flex flex-center gap-md">
-            <span style={{ fontSize: "24px" }}>🌾</span>
-            <h1 style={{ fontSize: "24px", fontWeight: 800, color: "var(--ink)", margin: 0 }}>
+          <div className="flex flex-center gap-sm">
+            <span style={{ fontSize: "22px" }}>🌾</span>
+            <h1 style={{ fontSize: "22px", fontWeight: 800, color: "var(--navy)", margin: 0 }}>
               {t("chat.title", "Ask KissanSetu AI")}
             </h1>
-            <span className="page-tag">
-              Qwen 3 • Ollama AI
-            </span>
           </div>
-          <p style={{ fontSize: "13px", color: "var(--ink-soft)", marginTop: "2px", margin: 0 }}>
+          <p style={{ fontSize: "13px", color: "var(--ink-soft)", marginTop: "3px", margin: 0 }}>
             {cropNameParam
-              ? `${t("crops.cropName", "Crop")}: ${cropNameParam} • ${t("chat.subtitle", "Multilingual AI farming companion")}`
-              : t("chat.subtitle", "Multilingual AI farming companion powered by Qwen & real-time farm intelligence")}
+              ? `${t("crops.cropName", "Crop")}: ${cropNameParam} • ${t("chat.subtitle", "Your multilingual farming assistant")}`
+              : t("chat.subtitle", "Your multilingual farming assistant")}
           </p>
         </div>
 
-        <div className="flex flex-center gap-md">
+        <div className="flex flex-center gap-sm flex-wrap">
           <button
             type="button"
             onClick={() => setVoiceModeActive(!voiceModeActive)}
             className={`voice-mode-btn ${voiceModeActive ? "active" : ""}`}
+            style={{ padding: "6px 12px", fontSize: 12 }}
           >
             <Mic size={14} />
-            <span>{voiceModeActive ? t("chat.voiceActive", "Voice Mode Active") : t("chat.enableVoice", "Enable Voice Mode")}</span>
+            <span>{voiceModeActive ? t("chat.voiceActive", "Voice Active") : t("chat.enableVoice", "Voice Mode")}</span>
           </button>
 
           <LanguageSelector
