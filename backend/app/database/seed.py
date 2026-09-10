@@ -6,7 +6,7 @@ Populates realistic Indian agricultural demo data (Farmer, Crops, Markets, Price
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from app.database.connection import SessionLocal, engine, Base
-from app.database.models import Farmer, Crop, Market, MarketPrice, Buyer, Lot, Offer, Transaction, SoilProfile
+from app.database.models import Farmer, Crop, Market, MarketPrice, Buyer, Lot, Offer, Transaction, TransactionEvent, SoilProfile
 
 
 def seed_database(db: Session):

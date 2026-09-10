@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Header, status
 from sqlalchemy.orm import Session
 from app.database.connection import get_db
 from app.database.models import Transaction, Lot, Buyer, Crop
@@ -102,9 +102,20 @@ def resolve_dispute(dispute_id: int, req: DisputeResolveRequest, db: Session = D
 
 
 @router.put("/{transaction_id}/status", response_model=TransactionResponse)
-def update_transaction_status(transaction_id: int, status_in: TransactionStatusUpdate, db: Session = Depends(get_db)):
+def update_transaction_status(
+    transaction_id: int,
+    status_in: TransactionStatusUpdate,
+    x_user_role: Optional[str] = Header(None, alias="X-User-Role"),
+    db: Session = Depends(get_db)
+):
     """Advance transaction status through state machine."""
-    tx = transaction_service.update_transaction_status(db=db, transaction_id=transaction_id, new_status=status_in.status, note=status_in.note)
+    tx = transaction_service.update_transaction_status(
+        db=db,
+        transaction_id=transaction_id,
+        new_status=status_in.status,
+        note=status_in.note,
+        user_role=x_user_role
+    )
     return TransactionResponse.model_validate(tx)
 
 

@@ -21,6 +21,7 @@ def get_farmer_lots(farmer_id: int, db: Session = Depends(get_db)):
 
 @router.get("/lots", response_model=List[LotResponse])
 def get_all_lots(
+    farmer_id: Optional[int] = None,
     status_filter: Optional[str] = None,
     crop_id: Optional[int] = None,
     skip: int = 0,
@@ -28,6 +29,8 @@ def get_all_lots(
     db: Session = Depends(get_db)
 ):
     query = db.query(Lot)
+    if farmer_id:
+        query = query.filter(Lot.farmer_id == farmer_id)
     if status_filter:
         query = query.filter(Lot.status == status_filter)
     if crop_id:
@@ -69,12 +72,17 @@ def create_lot(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Farmer with ID {lot_in.farmer_id} not found"
         )
-    # Verify crop exists
+    # Verify crop exists and belongs to this farmer
     crop = db.query(Crop).filter(Crop.id == lot_in.crop_id).first()
     if not crop:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Crop with ID {lot_in.crop_id} not found"
+        )
+    if crop.farmer_id != lot_in.farmer_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot create lot: This crop does not belong to the authenticated farmer."
         )
 
     # If image_id is provided, verify it exists

@@ -158,12 +158,20 @@ class TransactionService:
         transaction_id: int,
         new_status: str,
         note: Optional[str] = None,
+        user_role: Optional[str] = None,
     ) -> Transaction:
         tx = db.query(Transaction).filter(Transaction.id == transaction_id).first()
         if not tx:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Transaction with ID {transaction_id} not found"
+            )
+
+        # Enforce role safety: Seller (Farmer) cannot falsely mark their own sale as received
+        if user_role and user_role.lower() == "farmer" and new_status in ["RECEIVED", "DELIVERED", "COMPLETED"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Farmers (sellers) cannot mark orders as received. Delivery confirmation and acceptance is reserved for the receiving Buyer."
             )
 
         current = tx.status
@@ -208,6 +216,8 @@ class TransactionService:
                 )
 
         tx.status = new_status
+        if new_status in ["DELIVERED", "RECEIVED"]:
+            tx.logistics_status = "DELIVERED"
         tx.updated_at = datetime.utcnow()
 
         # Append audit event

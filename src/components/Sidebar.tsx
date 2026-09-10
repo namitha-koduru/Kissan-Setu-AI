@@ -135,7 +135,7 @@ export function MobileNav() {
   const [moreOpen, setMoreOpen] = useState(false);
   const role = user?.role ?? "farmer";
 
-  // Role-Specific Mobile Primary Links (Part 14)
+  // Role-Specific Mobile Primary Links (Part 3)
   const farmerPrimary = [
     { to: "/dashboard", label: t("nav.home", "Home"), icon: LayoutDashboard },
     { to: "/market", label: t("nav.market", "Markets"), icon: Store },
@@ -144,33 +144,33 @@ export function MobileNav() {
   ];
 
   const fpoPrimary = [
-    { to: "/fpo", label: t("nav.overview", "Overview"), icon: Building2 },
-    { to: "/fpo?tab=members", label: t("nav.members", "Members"), icon: Users },
-    { to: "/market", label: t("nav.market", "Markets"), icon: Store },
+    { to: "/fpo", label: t("nav.overview", "Home"), icon: Building2 },
+    { to: "/fpo?tab=aggregation", label: t("nav.aggregation", "Aggregation"), icon: Layers },
+    { to: "/buyers", label: t("nav.buyers", "Demand"), icon: ShoppingBag },
     { to: "/offers", label: t("nav.offers", "Deals"), icon: Handshake },
   ];
 
   const buyerPrimary = [
-    { to: "/buyers", label: t("nav.procurement", "Procure"), icon: ShoppingBag },
-    { to: "/lots", label: t("nav.lots", "Lots"), icon: Package },
+    { to: "/buyers", label: t("nav.procurement", "Home"), icon: ShoppingBag },
+    { to: "/lots", label: t("nav.lots", "Market"), icon: Package },
     { to: "/offers", label: t("nav.offers", "Offers"), icon: Handshake },
     { to: "/transactions", label: t("nav.deals", "Deals"), icon: Truck },
   ];
 
-  // Role-Specific Mobile Secondary Drawer Links
+  // Role-Specific Mobile Secondary Drawer Links (More)
   const farmerSecondary = [
     { to: "/weather", label: t("nav.weather", "Weather"), icon: CloudSun },
     { to: "/recommendation", label: t("nav.recommendations", "Decision Center"), icon: Lightbulb },
     { to: "/chat", label: t("nav.askAi", "AI Assistant"), icon: Sparkles },
-    { to: "/lots", label: t("nav.lots", "My Lots"), icon: Package },
+    { to: "/lots", label: t("nav.lots", "Lots"), icon: Package },
     { to: "/transactions", label: t("nav.transactions", "Transactions"), icon: Truck },
     { to: "/profile", label: t("nav.profile", "Profile"), icon: UserCheck },
   ];
 
   const fpoSecondary = [
-    { to: "/fpo?tab=aggregation", label: t("nav.aggregation", "Aggregation"), icon: Layers },
-    { to: "/buyers", label: t("nav.buyers", "Buyers"), icon: ShoppingBag },
+    { to: "/fpo?tab=members", label: t("nav.members", "Members"), icon: Users },
     { to: "/lots", label: t("nav.bulkLots", "Bulk Lots"), icon: Package },
+    { to: "/market", label: t("nav.market", "Markets"), icon: Store },
     { to: "/transactions", label: t("nav.transactions", "Transactions"), icon: Truck },
     { to: "/analytics", label: t("nav.analytics", "Analytics"), icon: BarChart3 },
     { to: "/profile", label: t("nav.profile", "Profile"), icon: UserCheck },
@@ -178,7 +178,6 @@ export function MobileNav() {
 
   const buyerSecondary = [
     { to: "/market", label: t("nav.marketPrices", "Market Prices"), icon: Store },
-    { to: "/transactions", label: t("nav.transactions", "Transactions"), icon: Truck },
     { to: "/analytics", label: t("nav.analytics", "Analytics"), icon: BarChart3 },
     { to: "/profile", label: t("nav.profile", "Profile"), icon: UserCheck },
   ];

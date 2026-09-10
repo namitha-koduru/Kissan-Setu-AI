@@ -122,13 +122,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       } catch {}
       if (user.role === "buyer") return [];
       if (initialCropsByUserId[user.id]) return initialCropsByUserId[user.id];
-      if (user.preferredCrops && user.preferredCrops.length > 0) {
-        return buildUserCropRecords(
-          user.preferredCrops,
-          user.location || user.district || "",
-          user.cropAllocations,
-        );
-      }
     }
     return [];
   });
@@ -151,7 +144,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         const stored = localStorage.getItem(getStorageKey(user.id, "offers"));
         if (stored) return JSON.parse(stored);
       } catch {}
-      if (user.id === "farmer-1" || user.id === "u-farmer") return initialOffers;
+      if (user.id === "farmer-1") return initialOffers;
     }
     return [];
   });
@@ -162,28 +155,22 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         const stored = localStorage.getItem(getStorageKey(user.id, "tx"));
         if (stored) return JSON.parse(stored);
       } catch {}
-      if (user.id === "farmer-1" || user.id === "u-farmer" || user.role === "farmer") {
+      if (user.id === "farmer-1") {
         return initialTransaction;
       }
     }
     return {
-      id: "TX-2026-9848",
-      lotId: "LOT-F1-001",
-      buyerName: "Bharat Agro Processing",
-      farmerName: "Ramesh Naidu",
-      crop: "Cotton (Grade A)",
-      quantityKg: 500,
-      pricePerKg: 70,
-      grossAmount: 35000,
-      transportCharges: 800,
-      netRealization: 34200,
-      stages: [
-        { label: "Contract Confirmed", done: true, date: "05 Sep, 10:20 AM" },
-        { label: "Pickup Scheduled", done: true, date: "08 Sep, 8:00 AM" },
-        { label: "Transit to Hub", done: false, date: "Pending" },
-        { label: "Quality Acceptance", done: false, date: "Pending" },
-        { label: "Payment Settlement", done: false, date: "Pending" },
-      ],
+      id: "",
+      lotId: "",
+      buyerName: "",
+      farmerName: "",
+      crop: "",
+      quantityKg: 0,
+      pricePerKg: 0,
+      grossAmount: 0,
+      transportCharges: 0,
+      netRealization: 0,
+      stages: [],
     };
   });
 
@@ -260,7 +247,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         try {
           setOffers(JSON.parse(storedOffers));
         } catch {}
-      } else if (user.id === "farmer-1" || user.id === "u-farmer") {
+      } else if (user.id === "farmer-1") {
         setOffers(initialOffers);
       } else {
         setOffers([]);
@@ -271,8 +258,22 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         try {
           setTransaction(JSON.parse(storedTx));
         } catch {}
-      } else {
+      } else if (user.id === "farmer-1") {
         setTransaction(initialTransaction);
+      } else {
+        setTransaction({
+          id: "",
+          lotId: "",
+          buyerName: "",
+          farmerName: "",
+          crop: "",
+          quantityKg: 0,
+          pricePerKg: 0,
+          grossAmount: 0,
+          transportCharges: 0,
+          netRealization: 0,
+          stages: [],
+        });
       }
 
       setOnboardData((prev) => ({
