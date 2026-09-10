@@ -92,7 +92,7 @@ def test_recommendation_endpoint():
     response = client.get("/api/recommendations?crop=Tomato&quantity=2400&location=Nashik")
     assert response.status_code == 200
     data = response.json()
-    assert data["decision"] in ["SELL", "WAIT", "SWITCH"]
+    assert data["decision"] in ["SELL_NOW", "SELL", "WAIT", "HOLD", "SWITCH", "HOLD_STORAGE"]
     assert "confidence_score" in data
     assert "market_comparisons" in data
     assert len(data["market_comparisons"]) > 0

@@ -63,6 +63,11 @@ def test_new_fpo_starts_with_zero_inventory(db: Session, client: TestClient):
     db.commit()
     db.refresh(fpo)
 
+    # Ensure clean inventory state for fresh FPO in shared test DB
+    db.query(StockAdjustment).filter(StockAdjustment.farmer_id == fpo.id).delete()
+    db.query(InventoryItem).filter(InventoryItem.farmer_id == fpo.id).delete()
+    db.commit()
+
     # Fetch inventory summary for this new FPO
     summary = inventory_service.get_farmer_inventory_summary(db, fpo.id)
     assert summary["farmer_id"] == fpo.id

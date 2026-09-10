@@ -76,6 +76,8 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
                 token_type="bearer",
                 role="buyer",
                 user_id=buyer.id,
+                entity_id=buyer.id,
+                buyer_id=buyer.id,
                 buyer=BuyerResponse.model_validate(buyer),
             )
 
@@ -95,12 +97,15 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
         farmer = db.query(Farmer).filter(Farmer.phone == raw_ident).first()
 
     if farmer:
-        user_role = farmer.role or "farmer"
+        user_role = (farmer.role or "farmer").lower()
         return LoginResponse(
             access_token=f"kissan_dev_token_{farmer.id}",
             token_type="bearer",
             role=user_role,
             user_id=farmer.id,
+            entity_id=farmer.id,
+            farmer_id=farmer.id if user_role == "farmer" else None,
+            fpo_id=farmer.id if user_role == "fpo" else None,
             farmer=FarmerResponse.model_validate(farmer),
         )
 
@@ -125,6 +130,8 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
                 token_type="bearer",
                 role="buyer",
                 user_id=buyer.id,
+                entity_id=buyer.id,
+                buyer_id=buyer.id,
                 buyer=BuyerResponse.model_validate(buyer),
             )
 
@@ -147,6 +154,8 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
             token_type="bearer",
             role="buyer",
             user_id=new_buyer.id,
+            entity_id=new_buyer.id,
+            buyer_id=new_buyer.id,
             buyer=BuyerResponse.model_validate(new_buyer),
         )
 
@@ -170,16 +179,67 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
         token_type="bearer",
         role=assigned_role,
         user_id=farmer.id,
+        entity_id=farmer.id,
+        farmer_id=farmer.id if assigned_role == "farmer" else None,
+        fpo_id=farmer.id if assigned_role == "fpo" else None,
         farmer=FarmerResponse.model_validate(farmer),
     )
 
 
-@router.get("/me", response_model=FarmerResponse)
-def get_current_farmer(farmer_id: int = 1, db: Session = Depends(get_db)):
+@router.get("/me")
+def get_current_user_profile(
+    farmer_id: Optional[int] = None,
+    buyer_id: Optional[int] = None,
+    fpo_id: Optional[int] = None,
+    user_id: Optional[int] = None,
+    role: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
     """
-    Returns the currently active farmer profile (defaults to demo farmer ID 1).
+    Authoritative account profile endpoint for session restoration.
+    Resolves Farmer, FPO, or Buyer profiles based on entity ID or role.
     """
-    farmer = db.query(Farmer).filter(Farmer.id == farmer_id).first()
+    # 1. Direct Buyer Resolution
+    if buyer_id or role == "buyer":
+        target_id = buyer_id or user_id or 1
+        buyer = db.query(Buyer).filter(Buyer.id == target_id).first()
+        if not buyer:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Buyer profile not found.")
+        return {
+            "id": buyer.id,
+            "user_id": buyer.id,
+            "role": "buyer",
+            "entity_id": buyer.id,
+            "buyer_id": buyer.id,
+            "name": buyer.name,
+            "phone": buyer.phone,
+            "email": buyer.email,
+            "district": "Nashik",
+            "state": "Maharashtra",
+            "organization_name": buyer.organization_name or buyer.name,
+            "buyer": BuyerResponse.model_validate(buyer),
+        }
+
+    # 2. Farmer or FPO Resolution
+    target_id = farmer_id or fpo_id or user_id or 1
+    farmer = db.query(Farmer).filter(Farmer.id == target_id).first()
     if not farmer:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Farmer not found")
-    return farmer
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account profile not found.")
+
+    resolved_role = (farmer.role or "farmer").lower()
+    return {
+        "id": farmer.id,
+        "user_id": farmer.id,
+        "role": resolved_role,
+        "entity_id": farmer.id,
+        "farmer_id": farmer.id if resolved_role == "farmer" else None,
+        "fpo_id": farmer.id if resolved_role == "fpo" else None,
+        "name": farmer.name,
+        "phone": farmer.phone,
+        "email": farmer.email,
+        "district": farmer.district,
+        "state": farmer.state,
+        "organization_name": farmer.organization_name,
+        "farmer": FarmerResponse.model_validate(farmer),
+    }
+

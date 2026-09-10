@@ -164,7 +164,10 @@ export function CreateLotPage() {
           location: userLocStr,
           status: "Open for Offers",
         },
-        { "X-User-Role": user?.role || "farmer" }
+        {
+          "X-User-Role": user?.role || "farmer",
+          "X-User-Id": String(activeUserId),
+        }
       );
       if (created?.id) {
         backendLotId = `LOT-${created.id}`;

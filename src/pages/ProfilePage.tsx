@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { LogOut, Check, Camera, Trash2, Edit3, ShieldCheck, RefreshCw } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth, resolveFarmerId, resolveBuyerId } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useAppState } from "../context/AppStateContext";
 import { imageApi } from "../services/imageApi";
@@ -67,11 +67,13 @@ export function ProfilePage() {
       }
 
       // 2. Persist to PostgreSQL database
-      const numericId = 1;
-      if (user?.role === "buyer") {
-        await apiClient.put(`/buyers/${numericId}`, { profile_picture_url: photoUrl });
-      } else {
-        await apiClient.put(`/farmers/${numericId}`, { profile_picture_url: photoUrl });
+      const entityId = user?.role === "buyer" ? resolveBuyerId(user) : resolveFarmerId(user);
+      if (entityId) {
+        if (user?.role === "buyer") {
+          await apiClient.put(`/buyers/${entityId}`, { profile_picture_url: photoUrl });
+        } else {
+          await apiClient.put(`/farmers/${entityId}`, { profile_picture_url: photoUrl });
+        }
       }
 
       // 3. Update Auth context state
@@ -89,11 +91,13 @@ export function ProfilePage() {
   const handleRemovePhoto = async () => {
     setUploadingPhoto(true);
     try {
-      const numericId = 1;
-      if (user?.role === "buyer") {
-        await apiClient.put(`/buyers/${numericId}`, { profile_picture_url: null });
-      } else {
-        await apiClient.put(`/farmers/${numericId}`, { profile_picture_url: null });
+      const entityId = user?.role === "buyer" ? resolveBuyerId(user) : resolveFarmerId(user);
+      if (entityId) {
+        if (user?.role === "buyer") {
+          await apiClient.put(`/buyers/${entityId}`, { profile_picture_url: null });
+        } else {
+          await apiClient.put(`/farmers/${entityId}`, { profile_picture_url: null });
+        }
       }
       updateUserProfile({ profilePictureUrl: undefined });
       showToast("Profile picture removed.");
@@ -123,25 +127,27 @@ export function ProfilePage() {
     };
 
     try {
-      const numericId = 1;
-      if (user?.role === "buyer") {
-        await apiClient.put(`/buyers/${numericId}`, {
-          name: updates.name,
-          phone: updates.mobile,
-          email: updates.email,
-          location: updates.location,
-          organization: updates.organizationName,
-        });
-      } else {
-        await apiClient.put(`/farmers/${numericId}`, {
-          name: updates.name,
-          phone: updates.mobile,
-          email: updates.email,
-          state: updates.state,
-          district: updates.district,
-          village: updates.village,
-          organization_name: updates.organizationName,
-        });
+      const entityId = user?.role === "buyer" ? resolveBuyerId(user) : resolveFarmerId(user);
+      if (entityId) {
+        if (user?.role === "buyer") {
+          await apiClient.put(`/buyers/${entityId}`, {
+            name: updates.name,
+            phone: updates.mobile,
+            email: updates.email,
+            location: updates.location,
+            organization: updates.organizationName,
+          });
+        } else {
+          await apiClient.put(`/farmers/${entityId}`, {
+            name: updates.name,
+            phone: updates.mobile,
+            email: updates.email,
+            state: updates.state,
+            district: updates.district,
+            village: updates.village,
+            organization_name: updates.organizationName,
+          });
+        }
       }
 
       updateUserProfile(updates);

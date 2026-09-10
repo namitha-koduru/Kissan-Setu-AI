@@ -418,7 +418,7 @@ export function TransactionPage() {
             You do not currently have an active trade fulfillment order. Create a lot or accept buyer offers to initiate fulfillment tracking.
           </p>
           <div className="flex flex-center gap-sm">
-            <Link to="/lots/new" className="btn btn-primary">
+            <Link to="/lots/create" className="btn btn-primary">
               Create Produce Lot
             </Link>
             <Link to="/buyers" className="btn btn-outline">
