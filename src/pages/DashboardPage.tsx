@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import {
   MapPin,
   Plus,
@@ -22,6 +22,13 @@ import { inventoryApi, type InventorySummaryResponse } from "../services/invento
 
 export function DashboardPage() {
   const { user } = useAuth();
+  if (user?.role === "buyer") {
+    return <Navigate to="/buyers" replace />;
+  }
+  if (user?.role === "fpo") {
+    return <Navigate to="/fpo" replace />;
+  }
+
   const { crops, lots, transaction } = useAppState();
   const { t } = useLanguage();
 

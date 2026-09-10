@@ -116,19 +116,23 @@ export function CreateLotPage() {
       }
 
       // 3. Post to backend /lots
-      const created = await apiClient.post<any>("/lots", {
-        farmer_id: 1,
-        crop_id: targetCropId,
-        quantity: qty,
-        unit: "kg",
-        asking_price: price,
-        quality,
-        quality_description: `${quality} ${isFpo ? "aggregated bulk pool" : "harvest"} from ${userDistrict}`,
-        harvest_date: harvestDate,
-        harvest_window: "2–4 days",
-        location: userLocStr,
-        status: "Open for Offers",
-      });
+      const created = await apiClient.post<any>(
+        "/lots",
+        {
+          farmer_id: activeUserId,
+          crop_id: targetCropId,
+          quantity: qty,
+          unit: "kg",
+          asking_price: price,
+          quality,
+          quality_description: `${quality} ${isFpo ? "aggregated bulk pool" : "harvest"} from ${userDistrict}`,
+          harvest_date: harvestDate,
+          harvest_window: "2–4 days",
+          location: userLocStr,
+          status: "Open for Offers",
+        },
+        { "X-User-Role": user?.role || "farmer" }
+      );
       if (created?.id) {
         backendLotId = `LOT-${created.id}`;
       }

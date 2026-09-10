@@ -534,14 +534,25 @@ export function MarketPage() {
                 <strong>Procurement Demand:</strong> {op.demand} · <strong>Quality:</strong> {op.quality}
               </div>
 
-              <Link
-                to="/lots/create"
-                className={`btn ${op.isBest ? "btn-primary" : "btn-outline"} btn-sm`}
-                style={{ padding: "8px 18px" }}
-              >
-                <span>Sell Lot to this Buyer</span>
-                <ArrowRight size={14} />
-              </Link>
+              {user?.role === "buyer" ? (
+                <Link
+                  to="/lots"
+                  className={`btn ${op.isBest ? "btn-primary" : "btn-outline"} btn-sm`}
+                  style={{ padding: "8px 18px" }}
+                >
+                  <span>Browse Available Lots</span>
+                  <ArrowRight size={14} />
+                </Link>
+              ) : (
+                <Link
+                  to="/lots/create"
+                  className={`btn ${op.isBest ? "btn-primary" : "btn-outline"} btn-sm`}
+                  style={{ padding: "8px 18px" }}
+                >
+                  <span>Sell Lot to this Buyer</span>
+                  <ArrowRight size={14} />
+                </Link>
+              )}
             </div>
           </div>
         ))}

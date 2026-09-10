@@ -24,14 +24,21 @@ def init_engine():
     if db_url.startswith("sqlite"):
         connect_args = {"check_same_thread": False}
     else:
-        connect_args = {}
+        connect_args = {
+            "keepalives": 1,
+            "keepalives_idle": 30,
+            "keepalives_interval": 10,
+            "keepalives_count": 5,
+        }
     
     try:
         eng = create_engine(
             db_url,
             connect_args=connect_args,
             pool_pre_ping=True,
-            pool_recycle=60,
+            pool_recycle=30,
+            pool_size=10,
+            max_overflow=20,
         )
         
         # Test connection immediately
