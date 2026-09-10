@@ -1,5 +1,5 @@
 from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Header, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.database.connection import get_db
@@ -54,10 +54,20 @@ def record_offline_sale(req: OfflineSaleRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/aggregation")
-def record_fpo_aggregation(req: AggregationRequest, db: Session = Depends(get_db)):
+def record_fpo_aggregation(
+    req: AggregationRequest,
+    x_user_role: Optional[str] = Header(None, alias="X-User-Role"),
+    db: Session = Depends(get_db)
+):
     """
     FPO pools produce from member farmers, increasing available aggregated inventory in PostgreSQL.
     """
+    if x_user_role and x_user_role.lower() in ["buyer", "farmer"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only FPO accounts can aggregate member produce into pooled stock."
+        )
+
     return inventory_service.record_member_aggregation(
         db=db,
         farmer_id=req.fpo_id or 1,

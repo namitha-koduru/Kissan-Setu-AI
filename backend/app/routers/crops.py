@@ -1,5 +1,5 @@
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Header, status
 from sqlalchemy.orm import Session
 from app.database.connection import get_db
 from app.database.models import Crop, Farmer
@@ -38,7 +38,16 @@ def get_crop(crop_id: int, db: Session = Depends(get_db)):
 
 @router.post("/crops", response_model=CropResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/crops/", response_model=CropResponse, status_code=status.HTTP_201_CREATED)
-def create_crop(crop_in: CropCreate, db: Session = Depends(get_db)):
+def create_crop(
+    crop_in: CropCreate,
+    x_user_role: Optional[str] = Header(None, alias="X-User-Role"),
+    db: Session = Depends(get_db)
+):
+    if x_user_role and x_user_role.lower() == "buyer":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Buyers cannot register crops. Crop creation is reserved for Farmers and agricultural producers."
+        )
 
     farmer = db.query(Farmer).filter(Farmer.id == crop_in.farmer_id).first()
     if not farmer:

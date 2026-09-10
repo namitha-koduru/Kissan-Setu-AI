@@ -32,12 +32,13 @@ class TransactionService:
 
     VALID_TRANSITIONS = {
         "CREATED": ["CONFIRMED", "CANCELLED", "PICKUP_SCHEDULED"],
-        "CONFIRMED": ["PICKUP_SCHEDULED", "IN_TRANSIT", "DELIVERED", "COMPLETED", "CANCELLED"],
-        "PICKUP_SCHEDULED": ["IN_TRANSIT", "DELIVERED", "COMPLETED", "DISPUTED", "CANCELLED"],
-        "IN_TRANSIT": ["DELIVERED", "COMPLETED", "DISPUTED"],
-        "DELIVERED": ["PAYMENT_PENDING", "PAYMENT_RECEIVED", "DISPUTED", "COMPLETED"],
-        "PAYMENT_PENDING": ["PAYMENT_RECEIVED", "DISPUTED", "COMPLETED"],
-        "PAYMENT_RECEIVED": ["COMPLETED", "DISPUTED"],
+        "CONFIRMED": ["PICKUP_SCHEDULED", "IN_TRANSIT", "DELIVERED", "RECEIVED", "COMPLETED", "CANCELLED"],
+        "PICKUP_SCHEDULED": ["IN_TRANSIT", "DELIVERED", "RECEIVED", "COMPLETED", "DISPUTED", "CANCELLED"],
+        "IN_TRANSIT": ["DELIVERED", "RECEIVED", "COMPLETED", "DISPUTED"],
+        "DELIVERED": ["PAYMENT_PENDING", "PAYMENT_RECEIVED", "RECEIVED", "DISPUTED", "COMPLETED"],
+        "RECEIVED": ["PAYMENT_PENDING", "PAYMENT_RECEIVED", "DELIVERED", "COMPLETED", "DISPUTED"],
+        "PAYMENT_PENDING": ["PAYMENT_RECEIVED", "DISPUTED", "COMPLETED", "DELIVERED", "RECEIVED"],
+        "PAYMENT_RECEIVED": ["COMPLETED", "DELIVERED", "RECEIVED", "DISPUTED"],
         "COMPLETED": ["DISPUTED"],
         "DISPUTED": ["RESOLVED", "CANCELLED", "COMPLETED", "UNDER_REVIEW"],
         "CANCELLED": [],
@@ -174,7 +175,8 @@ class TransactionService:
             )
 
         # Handle inventory state transitions
-        if new_status in ["COMPLETED", "DELIVERED"] and current not in ["COMPLETED", "DELIVERED"]:
+        terminal_success_states = ["COMPLETED", "DELIVERED", "RECEIVED"]
+        if new_status in terminal_success_states and current not in terminal_success_states:
             from app.services.inventory_service import inventory_service
             lot = tx.lot
             crop_name = lot.crop.crop_name if lot and lot.crop else "Produce"
@@ -188,6 +190,8 @@ class TransactionService:
                     quantity=qty,
                     transaction_id=tx.id,
                 )
+            if lot:
+                lot.status = "SOLD"
         elif new_status == "CANCELLED" and current != "CANCELLED":
             from app.services.inventory_service import inventory_service
             lot = tx.lot
