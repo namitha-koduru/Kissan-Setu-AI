@@ -20,7 +20,7 @@ export const lotApi = {
   async getFarmerLots(farmerId: number = 1): Promise<LotRecord[]> {
     try {
       const data = await apiClient.get<LotBackendModel[]>(`/farmers/${farmerId}/lots`);
-      if (data && data.length > 0) {
+      if (Array.isArray(data)) {
         return data.map((l) => ({
           id: `KS-2026-${String(l.id).padStart(3, "0")}`,
           crop: l.crop_id === 1 ? "Tomato" : l.crop_id === 2 ? "Onion" : "Grapes",
@@ -34,10 +34,10 @@ export const lotApi = {
           createdDate: l.created_at.slice(0, 10),
         }));
       }
-      return initialLots;
+      return farmerId === 1 ? initialLots : [];
     } catch (error) {
-      console.warn("[lotApi] Backend unavailable, using demo lots fallback:", error);
-      return initialLots;
+      console.warn("[lotApi] Backend error fetching farmer lots:", error);
+      return farmerId === 1 ? initialLots : [];
     }
   },
 

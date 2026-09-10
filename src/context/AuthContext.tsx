@@ -63,6 +63,31 @@ export function normalizeEmail(email?: string): string {
   return email.trim().toLowerCase();
 }
 
+export function resolveFarmerId(user: User | null): number | null {
+  if (!user || !user.id) return null;
+  const rawId = String(user.id).trim();
+
+  // If it's a direct positive integer
+  const num = Number(rawId);
+  if (!isNaN(num) && num > 0 && Number.isInteger(num)) {
+    // If ID is a massive timestamp (> 1 billion), it is an invalid client timestamp ID
+    if (num > 1000000000) return null;
+    return num;
+  }
+
+  // Support demo fixtures "farmer-1", "farmer-2", etc.
+  if (rawId.startsWith("farmer-")) {
+    const parsed = parseInt(rawId.replace("farmer-", ""), 10);
+    return !isNaN(parsed) && parsed > 0 ? parsed : 1;
+  }
+  if (rawId.startsWith("fpo-")) {
+    const parsed = parseInt(rawId.replace("fpo-", ""), 10);
+    return !isNaN(parsed) && parsed > 0 ? parsed : 1;
+  }
+
+  return null;
+}
+
 export function readRegisteredUsers(): StoredUserWithCred[] {
   try {
     const raw = localStorage.getItem(REGISTERED_USERS_KEY);
@@ -252,9 +277,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const primaryEmail =
           input.email?.trim() ||
-          `${normalizeMobile(input.mobile) || Date.now()}@kissansetu.in`;
+          `${normalizeMobile(input.mobile) || "farmer"}@kissansetu.in`;
 
-        let backendUserId: string = `u-${Date.now()}`;
+        let backendUserId: string = "";
         try {
           if (input.role === "buyer") {
             const buyerRes = await apiClient.post<any>("/buyers", {
@@ -267,6 +292,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
             if (buyerRes && buyerRes.id) {
               backendUserId = String(buyerRes.id);
+            } else {
+              return "Failed to establish buyer profile with database. Please try again.";
             }
           } else {
             const farmerRes = await apiClient.post<any>("/farmers", {
@@ -280,10 +307,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
             if (farmerRes && farmerRes.id) {
               backendUserId = String(farmerRes.id);
+            } else {
+              return "Failed to establish farmer profile with database. Please try again.";
             }
           }
-        } catch (apiErr) {
-          console.warn("Could not sync registration to remote DB immediately:", apiErr);
+        } catch (apiErr: any) {
+          const detailMsg =
+            apiErr?.response?.data?.detail ||
+            apiErr?.message ||
+            "Could not connect to database to register profile. Please try again.";
+          return detailMsg;
+        }
+
+        if (!backendUserId) {
+          return "Your profile could not be registered in the database. Please try again.";
         }
 
         const createdUser: StoredUserWithCred = {

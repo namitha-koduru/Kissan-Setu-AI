@@ -22,7 +22,7 @@ export const cropApi = {
   async getFarmerCrops(farmerId: number = 1): Promise<CropRecord[]> {
     try {
       const data = await apiClient.get<CropBackendModel[]>(`/farmers/${farmerId}/crops`);
-      if (data && data.length > 0) {
+      if (Array.isArray(data)) {
         return data.map((c) => ({
           id: `crop-${c.id}`,
           name: c.crop_name,
@@ -40,10 +40,10 @@ export const cropApi = {
           confidence: 94,
         }));
       }
-      return initialCrops;
+      return farmerId === 1 ? initialCrops : [];
     } catch (error) {
-      console.warn("[cropApi] Backend unavailable, using demo crops fallback:", error);
-      return initialCrops;
+      console.warn("[cropApi] Backend error fetching farmer crops:", error);
+      return farmerId === 1 ? initialCrops : [];
     }
   },
 

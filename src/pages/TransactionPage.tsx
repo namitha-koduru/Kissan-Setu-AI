@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import {
   ShieldCheck,
   ArrowLeft,
@@ -9,8 +9,10 @@ import {
   AlertTriangle,
   Receipt,
   FileCheck,
+  PackageCheck,
+  ChevronRight,
 } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth, resolveFarmerId } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
 import apiClient from "../services/api";
@@ -23,18 +25,21 @@ import paymentApi, { type RazorpayPaymentResult } from "../services/paymentApi";
 import { downloadTradeReceiptPdf } from "../utils/pdfGenerator";
 
 export function TransactionPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [params] = useSearchParams();
-  const { transaction: localTx, lots, crops, showToast } = useAppState();
+  const { transaction: localTx, lots, showToast } = useAppState();
   const { t } = useLanguage();
 
   const userDistrict = user?.district || (user?.location ? user.location.split(",")[0].trim() : "Farm Location");
   const userLocStr = user?.location || (user?.district && user?.state ? `${user.district}, ${user.state}` : userDistrict || "Farm Gate");
 
-  const txIdParam = params.get("id") || "1";
+  const txIdParam = params.get("id");
+  const lotParam = params.get("lot");
 
-  const [, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [txDetail, setTxDetail] = useState<TransactionDetailResponse | null>(null);
+  const [previousOrders, setPreviousOrders] = useState<any[]>([]);
 
   // Razorpay Payment States
   const [isPaying, setIsPaying] = useState(false);
@@ -56,38 +61,80 @@ export function TransactionPage() {
 
   const [paidAmount, setPaidAmount] = useState(0);
   const [paymentStatus, setPaymentStatus] = useState("PENDING");
-  const [paymentRef, setPaymentRef] = useState(`TXN-SETU-${txIdParam}`);
+  const [paymentRef, setPaymentRef] = useState(`TXN-SETU-${txIdParam || "1"}`);
 
   const loadTransaction = async () => {
     try {
       setLoading(true);
-      const activeLot = lots.find((l) => l.id === localTx.lotId) || lots[0];
-      const activeCrop = crops.find((c) => c.name.toLowerCase() === (localTx.crop || activeLot?.crop || "").toLowerCase()) || crops[0];
-      const finalQty = (localTx.quantityKg && localTx.quantityKg > 0)
-        ? localTx.quantityKg
-        : (activeLot?.quantityKg || activeCrop?.quantityKg || 500);
-      const finalRate = (localTx.pricePerKg && localTx.pricePerKg > 0)
-        ? localTx.pricePerKg
-        : (activeLot?.expectedPrice || activeCrop?.expectedPrice || 32);
-      const finalCrop = localTx.crop || activeLot?.crop || activeCrop?.name || "Tomato";
-      const finalBuyer = localTx.buyerName || "Sahyadri Farmers Producer Co.";
-      const total = finalRate * finalQty;
+      const activeFarmerId = resolveFarmerId(user);
 
-      // Try fetching backend detail
-      let backendData: TransactionDetailResponse | null = null;
-      try {
-        backendData = await buyerMatchingApi.getTransactionDetail(Number(txIdParam));
-      } catch {}
+      // 1. Fetch all transactions for this farmer to find active and previous orders
+      let allFarmerTxs: any[] = [];
+      if (activeFarmerId) {
+        try {
+          const res = await apiClient.get<any[]>(`/transactions?farmer_id=${activeFarmerId}`);
+          if (Array.isArray(res)) {
+            allFarmerTxs = res;
+          }
+        } catch (err) {
+          console.warn("Could not load farmer transactions list:", err);
+        }
+      }
 
-      if (backendData && localTx.quantityKg && backendData.quantity_kg === localTx.quantityKg) {
-        setTxDetail(backendData);
-        setLogisticsStatus(backendData.logistics_status || "PICKUP_SCHEDULED");
-        setPaidAmount(backendData.paid_amount || 0);
-        setPaymentStatus(backendData.payment_status || "PENDING");
-      } else {
+      // Filter previous completed orders
+      const completed = allFarmerTxs.filter(
+        (t) => t.status === "COMPLETED" || t.status === "RECEIVED" || t.status === "DELIVERED"
+      );
+      setPreviousOrders(completed);
+
+      // 2. Resolve target transaction ID
+      let targetTxId: number | null = null;
+      if (txIdParam && !isNaN(Number(txIdParam))) {
+        targetTxId = Number(txIdParam);
+      } else if (lotParam) {
+        const lotNumeric = parseInt(lotParam.replace(/\D/g, ""), 10);
+        const match = allFarmerTxs.find((t) => t.lot_id === lotNumeric);
+        if (match) targetTxId = match.id;
+      } else if (allFarmerTxs.length > 0) {
+        // Pick active (non-completed) or latest transaction
+        const activeTx = allFarmerTxs.find((t) => t.status !== "COMPLETED" && t.status !== "CANCELLED");
+        targetTxId = activeTx ? activeTx.id : allFarmerTxs[0].id;
+      } else if (localTx && localTx.id) {
+        const localNumeric = parseInt(localTx.id.replace(/\D/g, ""), 10);
+        if (localNumeric && !isNaN(localNumeric)) targetTxId = localNumeric;
+      }
+
+      // 3. Load full detail from backend
+      if (targetTxId) {
+        try {
+          const backendData = await buyerMatchingApi.getTransactionDetail(targetTxId);
+          if (backendData && backendData.id) {
+            setTxDetail(backendData);
+            setLogisticsStatus(backendData.logistics_status || "PICKUP_SCHEDULED");
+            setPaidAmount(backendData.paid_amount || 0);
+            setPaymentStatus(backendData.payment_status || "PENDING");
+            setPaymentRef(backendData.payment_reference || `TXN-SETU-${backendData.id}`);
+            return;
+          }
+        } catch (detailErr) {
+          console.warn(`Could not load detail for tx ${targetTxId}:`, detailErr);
+        }
+      }
+
+      // 4. If demo user farmer-1 and no DB tx exists, fallback to demo transaction
+      if (user?.id === "farmer-1" && localTx && localTx.quantityKg > 0) {
+        const activeLot = lots.find((l) => l.id === localTx.lotId) || lots[0];
+        const finalQty = localTx.quantityKg || activeLot?.quantityKg || 500;
+        const finalRate = localTx.pricePerKg || activeLot?.expectedPrice || 32;
+        const finalCrop = localTx.crop || activeLot?.crop || "Tomato";
+        const finalBuyer = localTx.buyerName || "Sahyadri Farmers Producer Co.";
+        const total = finalRate * finalQty;
+
         setTxDetail({
-          id: Number(txIdParam) || 1,
-          lot_id: Number((activeLot?.id || localTx.lotId || "1").replace(/[^0-9]/g, "")) || 1,
+          id: 1,
+          lot_id: 1,
+          farmer_id: 1,
+          buyer_id: 1,
           buyer_name: finalBuyer,
           buyer_organization: "Sahyadri Agro Processing Hub",
           crop_name: finalCrop,
@@ -114,9 +161,8 @@ export function TransactionPage() {
           ],
           disputes: [],
         });
-        setLogisticsStatus("PICKUP_SCHEDULED");
-        setPaidAmount(0);
-        setPaymentStatus("PENDING");
+      } else {
+        setTxDetail(null);
       }
     } finally {
       setLoading(false);
@@ -125,7 +171,7 @@ export function TransactionPage() {
 
   useEffect(() => {
     loadTransaction();
-  }, [txIdParam, localTx, lots]);
+  }, [txIdParam, lotParam, user?.id]);
 
   const handleUpdateLogistics = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -347,6 +393,75 @@ export function TransactionPage() {
   const freightCost = txDetail?.transport_cost_actual || 0;
   const handlingDeduction = 0; // Direct trade no middleman fee
   const netInHand = totalVal - freightCost - handlingDeduction;
+
+  if (loading) {
+    return (
+      <div className="wrap" style={{ maxWidth: 840, textAlign: "center", padding: "60px 20px" }}>
+        <RefreshCw size={32} className="spin" style={{ color: "var(--green-deep)", margin: "0 auto 16px" }} />
+        <h3 style={{ fontSize: 18, fontWeight: 700 }}>Loading Order & Settlement Details...</h3>
+      </div>
+    );
+  }
+
+  if (!txDetail) {
+    return (
+      <div className="wrap" style={{ maxWidth: 840 }}>
+        <div className="mb-md" style={{ paddingTop: 10 }}>
+          <Link to="/buyers" className="back-link">
+            <ArrowLeft size={14} /> {t("common.back", "Back to Marketplace")}
+          </Link>
+        </div>
+        <div className="card card-pad text-center" style={{ padding: "48px 24px", borderRadius: 16 }}>
+          <PackageCheck size={48} color="var(--green-leaf)" style={{ margin: "0 auto 16px" }} />
+          <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>No Active Order Found</h2>
+          <p style={{ color: "var(--ink-soft)", maxWidth: 480, margin: "0 auto 20px", fontSize: 14 }}>
+            You do not currently have an active trade fulfillment order. Create a lot or accept buyer offers to initiate fulfillment tracking.
+          </p>
+          <div className="flex flex-center gap-sm">
+            <Link to="/lots/new" className="btn btn-primary">
+              Create Produce Lot
+            </Link>
+            <Link to="/buyers" className="btn btn-outline">
+              Explore Buyers & Marketplace
+            </Link>
+          </div>
+        </div>
+
+        {previousOrders.length > 0 && (
+          <div style={{ marginTop: 24 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>Previous Order History</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {previousOrders.map((ord) => (
+                <div
+                  key={ord.id}
+                  className="card card-pad"
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    cursor: "pointer",
+                    padding: "12px 16px",
+                  }}
+                  onClick={() => navigate(`/transactions?id=${ord.id}`)}
+                >
+                  <div>
+                    <strong style={{ fontSize: 14 }}>Deal #{ord.id} · {ord.crop_name}</strong>
+                    <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 2 }}>
+                      Buyer: {ord.buyer_name} · {ord.quantity_kg} kg @ ₹{ord.final_price}/kg
+                    </div>
+                  </div>
+                  <div className="flex flex-center gap-sm">
+                    <span className="badge-pill badge-high" style={{ fontSize: 11 }}>{ord.status}</span>
+                    <ChevronRight size={16} color="var(--ink-soft)" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="wrap" style={{ maxWidth: 840 }}>
@@ -898,6 +1013,58 @@ export function TransactionPage() {
           })),
         }}
       />
+
+      {/* Previous Orders & Trade History */}
+      {previousOrders.length > 0 && (
+        <div className="card card-pad" style={{ marginTop: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div className="flex flex-center gap-xs">
+              <PackageCheck size={18} color="var(--green-deep)" />
+              <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0 }}>
+                Order History & Other Transactions ({previousOrders.length})
+              </h3>
+            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {previousOrders.map((ord) => (
+              <div
+                key={ord.id}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "10px 14px",
+                  borderRadius: 8,
+                  background: ord.id === txDetail?.id ? "#F4FAF5" : "#F8FAFC",
+                  border: ord.id === txDetail?.id ? "1.5px solid var(--green-deep)" : "1px solid #E2E8F0",
+                  cursor: ord.id === txDetail?.id ? "default" : "pointer",
+                }}
+                onClick={() => {
+                  if (ord.id !== txDetail?.id) {
+                    navigate(`/transactions?id=${ord.id}`);
+                  }
+                }}
+              >
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <strong style={{ fontSize: 13, color: "var(--navy)" }}>Deal #{ord.id} · {ord.crop_name}</strong>
+                    {ord.id === txDetail?.id && (
+                      <span className="badge-pill badge-high" style={{ fontSize: 10 }}>Currently Viewing</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 2 }}>
+                    Buyer: {ord.buyer_name} · {ord.quantity_kg?.toLocaleString("en-IN")} kg · Total ₹{ord.total_amount?.toLocaleString("en-IN")}
+                  </div>
+                </div>
+                <div className="flex flex-center gap-xs">
+                  <span className="badge-pill badge-high" style={{ fontSize: 11 }}>{ord.status}</span>
+                  {ord.id !== txDetail?.id && <ChevronRight size={14} color="var(--ink-soft)" />}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Verified Assurance Note */}
       <div className="card card-pad" style={{ marginTop: 20, background: "var(--cream)", border: "1px solid #EADBBE" }}>

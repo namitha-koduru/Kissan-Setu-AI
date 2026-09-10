@@ -12,7 +12,7 @@ import {
   AlertCircle,
   Eye,
 } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth, resolveFarmerId } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
 import { MASTER_CROP_CATALOG, CROP_CATEGORIES, getCropCatalogItem, searchCrops } from "../data/cropCatalog";
@@ -196,7 +196,12 @@ export function AddCropPage() {
             const netRate = Math.max(1, benchmarkRate - 2.5);
 
             // 1. Persist to Neon PostgreSQL database and obtain true persisted ID
-            const farmerId = user?.id ? parseInt(user.id.replace(/\D/g, ""), 10) || 1 : 1;
+            const farmerId = resolveFarmerId(user);
+            if (!farmerId) {
+              setIsProcessing(false);
+              setImageError("Your farmer profile could not be loaded. Please sign in again.");
+              return;
+            }
             const validAiObservation = aiObservation && !aiObservation.is_mismatch ? aiObservation : undefined;
 
             const savedCrop = await cropApi.createCrop({
@@ -212,7 +217,11 @@ export function AddCropPage() {
               ai_observation: validAiObservation,
             });
 
-            const persistedId = savedCrop?.id ? String(savedCrop.id) : `crop-${Date.now()}`;
+            if (!savedCrop || !savedCrop.id) {
+              throw new Error("Crop could not be saved to database. Please try again.");
+            }
+
+            const persistedId = String(savedCrop.id);
 
             const newCrop: CropRecord = {
               id: persistedId,
@@ -943,7 +952,7 @@ export function AddCropPage() {
                             )}
 
                             <div style={{ fontSize: "11px", color: "var(--green-deep)", fontWeight: 600 }}>
-                              ✓ Report saved with crop record. Will be monitored in decision engine.
+                              ✓ AI analysis completed. Crop details have not been saved yet.
                             </div>
                           </div>
                         )}

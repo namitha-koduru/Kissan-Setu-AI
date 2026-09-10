@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, type FormEvent } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { CheckCircle2, Package, ArrowLeft, ArrowRight, MapPin, Building2 } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth, resolveFarmerId } from "../context/AuthContext";
 import { useAppState } from "../context/AppStateContext";
 import { useLanguage } from "../context/LanguageContext";
 import { cropOptions } from "../data/demo";
@@ -80,9 +80,12 @@ export function CreateLotPage() {
 
     let backendLotId = generatedId;
 
-    const activeUserId = user?.id
-      ? (typeof user.id === "number" ? user.id : parseInt(String(user.id).replace(/\D/g, ""), 10) || 1)
-      : 1;
+    const activeUserId = resolveFarmerId(user);
+    if (!activeUserId) {
+      setStockError("Your farmer profile could not be loaded. Please sign in again.");
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       // 1. Verify stock availability
@@ -98,21 +101,51 @@ export function CreateLotPage() {
         console.warn("Stock summary check skipped:", stockErr);
       }
 
-      // 2. Get crop for crop_id
-      let targetCropId = 1;
+      // 2. Get crop for crop_id belonging to this farmer
+      let targetCropId: number | null = null;
       try {
         const farmerCrops = await cropApi.getFarmerCrops(activeUserId);
         const matched = farmerCrops.find((c) => c.name.toLowerCase() === crop.toLowerCase());
         if (matched) {
-          targetCropId = parseInt(matched.id.replace(/\D/g, ""), 10) || 1;
-        } else if (crops.length > 0) {
-          const stateMatch = crops.find((c) => c.name.toLowerCase() === crop.toLowerCase());
-          if (stateMatch) {
-            targetCropId = parseInt(stateMatch.id.replace(/\D/g, ""), 10) || 1;
-          }
+          targetCropId = parseInt(matched.id.replace(/\D/g, ""), 10) || null;
         }
       } catch (cropErr) {
-        console.warn("Could not match crop_id:", cropErr);
+        console.warn("Could not match crop_id from remote DB:", cropErr);
+      }
+
+      // Fallback to local crop state if needed
+      if (!targetCropId && crops.length > 0) {
+        const stateMatch = crops.find((c) => c.name.toLowerCase() === crop.toLowerCase());
+        if (stateMatch) {
+          targetCropId = parseInt(stateMatch.id.replace(/\D/g, ""), 10) || null;
+        }
+      }
+
+      if (!targetCropId) {
+        // Auto-register crop in database if not yet registered
+        try {
+          const autoCrop = await cropApi.createCrop({
+            farmer_id: activeUserId,
+            crop_name: crop,
+            variety: "Standard Selection",
+            quantity: qty,
+            acreage: 1.0,
+            sowing_date: harvestDate,
+            expected_harvest_date: readyDate,
+            growth_stage: "Ready to harvest",
+          });
+          if (autoCrop && autoCrop.id) {
+            targetCropId = autoCrop.id;
+          }
+        } catch (autoErr) {
+          console.warn("Could not auto-register crop for lot:", autoErr);
+        }
+      }
+
+      if (!targetCropId) {
+        setStockError(`Please add ${crop} details under "Add Crop" first before listing a harvest lot.`);
+        setIsSubmitting(false);
+        return;
       }
 
       // 3. Post to backend /lots

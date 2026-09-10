@@ -11,10 +11,11 @@ export interface TransactionBackendModel {
 }
 
 export const transactionApi = {
-  async getTransactions(): Promise<TransactionRecord[]> {
+  async getTransactions(farmerId?: number): Promise<TransactionRecord[]> {
     try {
-      const data = await apiClient.get<TransactionBackendModel[]>("/transactions");
-      if (data && data.length > 0) {
+      const url = farmerId ? `/transactions?farmer_id=${farmerId}` : "/transactions";
+      const data = await apiClient.get<TransactionBackendModel[]>(url);
+      if (Array.isArray(data)) {
         return data.map((t) => ({
           id: `tx-2026-${String(t.id).padStart(3, "0")}`,
           lotId: `KS-2026-${String(t.lot_id).padStart(3, "0")}`,
@@ -32,10 +33,10 @@ export const transactionApi = {
           ],
         }));
       }
-      return [initialTransaction];
+      return farmerId === 1 ? [initialTransaction] : [];
     } catch (error) {
-      console.warn("[transactionApi] Backend unavailable, using demo transactions fallback:", error);
-      return [initialTransaction];
+      console.warn("[transactionApi] Backend error fetching transactions:", error);
+      return farmerId === 1 ? [initialTransaction] : [];
     }
   },
 
