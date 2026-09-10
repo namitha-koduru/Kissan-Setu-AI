@@ -28,12 +28,15 @@ export function DashboardPage() {
   const [selectedCropIndex, setSelectedCropIndex] = useState(0);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [inventory, setInventory] = useState<InventorySummaryResponse | null>(null);
+  const activeFarmerId = user?.id
+    ? (typeof user.id === "number" ? user.id : parseInt(String(user.id).replace(/\D/g, ""), 10) || 1)
+    : 1;
 
   useEffect(() => {
-    inventoryApi.getSummary(1)
+    inventoryApi.getSummary(activeFarmerId)
       .then((res) => setInventory(res))
       .catch((err) => console.warn("Could not fetch farmer stock summary:", err));
-  }, []);
+  }, [user?.id]);
 
   const hasCrops = crops.length > 0;
   const preferredCropsList: string[] = Array.isArray(user?.preferredCrops)

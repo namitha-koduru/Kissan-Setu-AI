@@ -51,20 +51,63 @@ class PaymentStatusResponse(BaseModel):
     webhook_status: str
 
 
+@router.get("/diagnostic")
+def get_payment_diagnostic(db: Session = Depends(get_db)):
+    """
+    Safe diagnostic reporting Razorpay configuration state without leaking secret keys.
+    """
+    from app.database.connection import check_database_health
+    db_health = check_database_health()
+    diag = payment_service.get_diagnostics()
+    diag["database_connected"] = db_health.get("connected", False)
+    return diag
+
+
 @router.post("/create-order", response_model=CreateOrderResponse)
 async def create_payment_order(
     req: CreateOrderRequest,
+    x_user_role: Optional[str] = Header(None, alias="X-User-Role"),
+    x_user_id: Optional[str] = Header(None, alias="X-User-Id"),
     db: Session = Depends(get_db),
 ):
     """
     Creates a server-authoritative Razorpay Order from the database transaction details.
-    Guarantees payable amount matches transaction and cannot be manipulated by frontend.
+    Guarantees payable amount matches transaction and enforces buyer-only purchase authorization.
     """
+    # Role-based authorization: Farmers are sellers and cannot initiate purchase payments
+    if x_user_role and x_user_role.strip().lower() == "farmer":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Farmers are sellers and cannot initiate buyer purchase payments.",
+        )
+
+    # Transaction party verification
+    tx = db.query(Transaction).filter(Transaction.id == req.transaction_id).first()
+    if not tx:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Transaction #{req.transaction_id} not found.",
+        )
+
+    caller_id = req.buyer_id
+    if caller_id is None and x_user_id:
+        try:
+            caller_id = int(x_user_id)
+        except (ValueError, TypeError):
+            caller_id = None
+
+    # Block farmer on the transaction from paying themselves
+    if tx.farmer_id and caller_id and tx.farmer_id == caller_id and (not x_user_role or x_user_role.lower() != "buyer"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The seller cannot initiate payment for their own transaction.",
+        )
+
     try:
         result = await payment_service.create_order(
             db=db,
             transaction_id=req.transaction_id,
-            buyer_id=req.buyer_id,
+            buyer_id=caller_id,
         )
         return result
     except ValueError as val_err:

@@ -19,16 +19,45 @@ logger = logging.getLogger("kissansetu.payment")
 
 class RazorpayPaymentService:
     def __init__(self):
-        self.key_id = settings.RAZORPAY_KEY_ID
-        self.key_secret = settings.RAZORPAY_KEY_SECRET
-        self.webhook_secret = settings.RAZORPAY_WEBHOOK_SECRET
         self.base_url = "https://api.razorpay.com/v1"
         self.timeout = 20.0
 
     @property
+    def key_id(self) -> str:
+        return (settings.RAZORPAY_KEY_ID or "").strip()
+
+    @property
+    def key_secret(self) -> str:
+        return (settings.RAZORPAY_KEY_SECRET or "").strip()
+
+    @property
+    def webhook_secret(self) -> str:
+        return (settings.RAZORPAY_WEBHOOK_SECRET or "").strip()
+
+    @property
     def is_configured(self) -> bool:
         """Checks if live or valid test Razorpay credentials are set."""
-        return bool(self.key_id and self.key_secret and not self.key_id.startswith("rzp_test_placeholder"))
+        k_id = self.key_id
+        k_sec = self.key_secret
+        return bool(k_id and k_sec and not k_id.startswith("rzp_test_placeholder") and len(k_sec) >= 8)
+
+    def get_diagnostics(self) -> Dict[str, Any]:
+        """Returns safe diagnostic info without exposing secret keys."""
+        k_id = self.key_id
+        is_conf = self.is_configured
+        key_mode = "unconfigured"
+        if k_id.startswith("rzp_live_"):
+            key_mode = "live"
+        elif k_id.startswith("rzp_test_"):
+            key_mode = "test"
+        
+        return {
+            "razorpay_configured": is_conf,
+            "key_mode": key_mode,
+            "key_prefix": k_id[:8] if is_conf else "none",
+            "webhook_configured": bool(self.webhook_secret),
+            "status": "ready" if is_conf else "demo_mode",
+        }
 
     async def create_order(
         self,
@@ -53,55 +82,42 @@ class RazorpayPaymentService:
         else:
             raise ValueError("Transaction financial details are incomplete or invalid.")
 
-        # Adjust for logistics if applicable
-        if tx.transport_cost_actual and tx.transport_cost_actual > 0:
-            payable_amount = authoritative_amount  # Gross or agreed net
-        else:
-            payable_amount = authoritative_amount
-
-        # Convert to smallest currency unit (paise)
+        payable_amount = authoritative_amount
         amount_paise = int(round(payable_amount * 100))
         receipt_ref = f"rcpt_tx_{tx.id}_{int(datetime.utcnow().timestamp())}"
 
-        # 3. Check for existing open payment/order for this transaction
-        existing_payment = db.query(Payment).filter(
-            Payment.transaction_id == tx.id,
-            Payment.payment_status.in_(["Payment Pending", "Payment Processing"]),
-        ).first()
-
         order_id = ""
-        is_live_order = False
 
-        # 4. Attempt real Razorpay API order creation if configured
-        if self.is_configured:
-            try:
-                auth = (self.key_id, self.key_secret)
-                payload = {
-                    "amount": amount_paise,
-                    "currency": "INR",
-                    "receipt": receipt_ref,
-                    "notes": {
-                        "transaction_id": str(tx.id),
-                        "lot_id": str(tx.lot_id),
-                        "buyer_id": str(tx.buyer_id or buyer_id or ""),
-                    },
-                }
-                async with httpx.AsyncClient(timeout=self.timeout) as client:
-                    resp = await client.post(f"{self.base_url}/orders", json=payload, auth=auth)
-                    if resp.status_code in [200, 201]:
-                        order_data = resp.json()
-                        order_id = order_data["id"]
-                        is_live_order = True
-                    else:
-                        logger.warning(f"[Razorpay] API returned {resp.status_code}: {resp.text}. Falling back to test order.")
-            except Exception as exc:
-                logger.error(f"[Razorpay] Failed to connect to Razorpay API: {exc}. Using test order generation.")
+        # 3. Create real Razorpay API order
+        if not self.is_configured:
+            raise ValueError("Razorpay payment gateway is not configured on the server. Please set valid RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET.")
 
-        # If Razorpay keys are not configured or test fallback is used:
-        if not order_id:
-            order_id = f"order_test_{uuid.uuid4().hex[:14]}"
+        auth = (self.key_id, self.key_secret)
+        payload = {
+            "amount": amount_paise,
+            "currency": "INR",
+            "receipt": receipt_ref,
+            "notes": {
+                "transaction_id": str(tx.id),
+                "lot_id": str(tx.lot_id),
+                "buyer_id": str(tx.buyer_id or buyer_id or ""),
+            },
+        }
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                resp = await client.post(f"{self.base_url}/orders", json=payload, auth=auth)
+                if resp.status_code in [200, 201]:
+                    order_data = resp.json()
+                    order_id = order_data["id"]
+                else:
+                    err_text = resp.text
+                    logger.error(f"[Razorpay API Error] {resp.status_code}: {err_text}")
+                    raise ValueError(f"Razorpay order creation rejected by gateway ({resp.status_code}): {err_text}")
+        except httpx.RequestError as req_err:
+            logger.error(f"[Razorpay Network Error] {req_err}")
+            raise ValueError(f"Failed to connect to Razorpay payment gateway: {str(req_err)}")
 
-        # 5. Persist Payment Record
+        # 4. Persist Payment Record in Database
         payment = Payment(
             transaction_id=tx.id,
             razorpay_order_id=order_id,
@@ -121,12 +137,12 @@ class RazorpayPaymentService:
 
         return {
             "order_id": order_id,
-            "key_id": self.key_id if self.is_configured else "rzp_test_public_mode",
+            "key_id": self.key_id,
             "amount": payable_amount,
             "amount_paise": amount_paise,
             "currency": "INR",
             "transaction_id": tx.id,
-            "is_test_mode": not self.is_configured,
+            "is_test_mode": self.key_id.startswith("rzp_test_"),
             "receipt": receipt_ref,
         }
 
@@ -141,7 +157,6 @@ class RazorpayPaymentService:
         Verifies HMAC-SHA256 signature server-side before confirming payment authenticity.
         Signature: hmac_sha256(order_id + "|" + payment_id, secret)
         """
-        # Lookup payment record
         payment = db.query(Payment).filter(Payment.razorpay_order_id == order_id).first()
         if not payment:
             return False, {"error": "Payment order reference not found in database."}
@@ -152,7 +167,7 @@ class RazorpayPaymentService:
 
         is_valid = False
 
-        if self.is_configured:
+        if self.key_secret:
             # Genuine cryptographic signature verification
             try:
                 msg = f"{order_id}|{payment_id}".encode("utf-8")
@@ -166,8 +181,7 @@ class RazorpayPaymentService:
                 logger.error(f"[Razorpay] Signature verification exception: {e}")
                 is_valid = False
         else:
-            # Test Mode Verification
-            is_valid = bool(payment_id and signature and order_id)
+            is_valid = False
 
         if not is_valid:
             payment.payment_status = "Payment Failed"
@@ -285,3 +299,4 @@ class RazorpayPaymentService:
 
 
 payment_service = RazorpayPaymentService()
+

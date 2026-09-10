@@ -232,6 +232,7 @@ export function TransactionPage() {
       const order = await paymentApi.createOrder(
         txDetail.id,
         user?.id ? Number(user.id) : undefined,
+        user?.role || "buyer",
       );
       setRazorpayOrderId(order.order_id);
       setIsTestMode(order.is_test_mode);
@@ -273,13 +274,17 @@ export function TransactionPage() {
           );
           showToast("Payment verified successfully via Razorpay!");
         },
+        onError: (err: any) => {
+          console.error("Razorpay checkout error:", err);
+          showToast(`Payment failed: ${err.description || err.reason || "Checkout declined"}`);
+        },
         onDismiss: () => {
           showToast("Payment checkout closed.");
         },
       });
     } catch (err: any) {
       console.error("Razorpay initiation failure:", err);
-      showToast("Payment initiation error. Please try again.");
+      showToast(`Payment initiation error: ${err.message || "Please try again."}`);
     } finally {
       setIsPaying(false);
     }
@@ -507,7 +512,7 @@ export function TransactionPage() {
                 </div>
               </div>
             </div>
-          ) : (
+          ) : user?.role === "buyer" ? (
             <div>
               <div style={{ fontSize: 12.5, color: "var(--ink-soft)", margin: "4px 0 12px" }}>
                 Buyer authorizes payment of <strong>₹{netInHand.toLocaleString("en-IN")}</strong> via standard Razorpay Checkout gateway to lock contract.
@@ -554,6 +559,38 @@ export function TransactionPage() {
                 >
                   <span>Manual Settlement Reference</span>
                 </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div
+                style={{
+                  background: "#F8FAFC",
+                  border: "1px solid #E2E8F0",
+                  borderRadius: 8,
+                  padding: "12px 16px",
+                  marginTop: 8,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span
+                    className="badge-pill"
+                    style={{
+                      background: "rgba(217,119,6,0.12)",
+                      color: "#B45309",
+                      fontWeight: 700,
+                      fontSize: 12,
+                    }}
+                  >
+                    ⏳ Awaiting Buyer Payment
+                  </span>
+                  <span style={{ fontSize: 13, color: "var(--ink)", fontWeight: 600 }}>
+                    Invoice Amount: ₹{netInHand.toLocaleString("en-IN")}
+                  </span>
+                </div>
+                <p style={{ fontSize: 12.5, color: "var(--ink-soft)", margin: "8px 0 0" }}>
+                  As the seller, you will receive payment credit once the buyer completes digital payment or upon successful COD fulfillment.
+                </p>
               </div>
             </div>
           )}

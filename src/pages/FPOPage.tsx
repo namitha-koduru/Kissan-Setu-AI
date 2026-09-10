@@ -31,7 +31,8 @@ export function FPOPage() {
     (activeTabParam as any) || "overview",
   );
 
-  const [membersList, setMembersList] = useState(fpoFarmers);
+  const isDemoFpo = user?.email === "sahyadri.fpo@kissansetu.in" || user?.id === "demo-fpo" || user?.id === "fpo-1";
+  const [membersList, setMembersList] = useState(isDemoFpo ? fpoFarmers : []);
   const [newMemberModal, setNewMemberModal] = useState(false);
   const [newMemberName, setNewMemberName] = useState("");
   const [newMemberCrop, setNewMemberCrop] = useState("Grapes");
@@ -51,12 +52,16 @@ export function FPOPage() {
   const [offlineError, setOfflineError] = useState<string | null>(null);
   const [offlineSubmitting, setOfflineSubmitting] = useState(false);
 
+  const activeFpoId = user?.id
+    ? (typeof user.id === "number" ? user.id : parseInt(String(user.id).replace(/\D/g, ""), 10) || 1)
+    : 1;
+
   const fetchStockData = async () => {
     setLoadingStock(true);
     try {
-      const summary = await inventoryApi.getSummary(1);
+      const summary = await inventoryApi.getSummary(activeFpoId);
       setInventorySummary(summary);
-      const audit = await inventoryApi.getAuditHistory(1, 30);
+      const audit = await inventoryApi.getAuditHistory(activeFpoId, 30);
       setAuditHistory(audit);
     } catch (err) {
       console.warn("Could not fetch stock summary:", err);
@@ -67,9 +72,9 @@ export function FPOPage() {
 
   useEffect(() => {
     fetchStockData();
-  }, []);
+  }, [user?.id]);
 
-  const memberCount = user?.memberFarmerCount || 850;
+  const memberCount = user?.memberFarmerCount ?? (isDemoFpo ? 850 : membersList.length);
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +84,7 @@ export function FPOPage() {
     // 1. Record aggregation in Neon PostgreSQL database
     try {
       await inventoryApi.recordAggregation({
-        fpo_id: 1,
+        fpo_id: activeFpoId,
         crop_name: newMemberCrop,
         quantity: qty,
         member_name: newMemberName.trim(),
@@ -116,7 +121,7 @@ export function FPOPage() {
     setOfflineSubmitting(true);
     try {
       const res = await inventoryApi.recordOfflineSale({
-        farmer_id: 1,
+        farmer_id: activeFpoId,
         crop_name: offlineCrop,
         quantity: qty,
         customer_name: offlineCustomer.trim() || undefined,
@@ -140,12 +145,12 @@ export function FPOPage() {
     return lots.filter((l) => l.aggregated || l.farmerCount || true);
   }, [lots]);
 
-  // Derived stock numbers
-  const totalStockKg = inventorySummary?.total_stock ?? 1850;
-  const availableStockKg = inventorySummary?.available_to_sell ?? 925;
-  const activeLotsKg = inventorySummary?.in_active_lots ?? 600;
-  const reservedKg = inventorySummary?.reserved ?? 200;
-  const soldKg = inventorySummary?.sold ?? 725;
+  // Derived stock numbers - strictly 0 baseline for unaggregated produce
+  const totalStockKg = inventorySummary?.total_stock ?? 0;
+  const availableStockKg = inventorySummary?.available_to_sell ?? 0;
+  const activeLotsKg = inventorySummary?.in_active_lots ?? 0;
+  const reservedKg = inventorySummary?.reserved ?? 0;
+  const soldKg = inventorySummary?.sold ?? 0;
 
   return (
     <div className="wrap" style={{ paddingBottom: 60 }}>

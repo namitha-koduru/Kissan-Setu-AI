@@ -68,43 +68,29 @@ export const paymentApi = {
   /**
    * Request server-authoritative Razorpay Order creation.
    */
-  async createOrder(transactionId: number, buyerId?: number): Promise<CreateOrderResponse> {
-    try {
-      const res = await apiClient.post<CreateOrderResponse>("/payments/create-order", {
+  async createOrder(transactionId: number, buyerId?: number, userRole?: string): Promise<CreateOrderResponse> {
+    const headers: Record<string, string> = {};
+    if (userRole) {
+      headers["X-User-Role"] = userRole;
+    }
+    if (buyerId) {
+      headers["X-User-Id"] = String(buyerId);
+    }
+    return await apiClient.post<CreateOrderResponse>(
+      "/payments/create-order",
+      {
         transaction_id: transactionId,
         buyer_id: buyerId,
-      });
-      return res;
-    } catch (err) {
-      console.warn("Backend payment order creation fallback to simulated test order:", err);
-      return {
-        order_id: `order_test_${Date.now()}`,
-        key_id: "rzp_test_public_key",
-        amount: 13600,
-        amount_paise: 1360000,
-        currency: "INR",
-        transaction_id: transactionId,
-        is_test_mode: true,
-        receipt: `rcpt_tx_${transactionId}`,
-      };
-    }
+      },
+      headers
+    );
   },
 
   /**
    * Send signature verification to backend.
    */
   async verifyPayment(data: VerifyPaymentPayload): Promise<any> {
-    try {
-      return await apiClient.post("/payments/verify", data);
-    } catch (err) {
-      console.warn("Backend signature verification fallback:", err);
-      return {
-        status: "Payment Successful",
-        transaction_id: data.transaction_id,
-        order_id: data.razorpay_order_id,
-        payment_id: data.razorpay_payment_id,
-      };
-    }
+    return await apiClient.post("/payments/verify", data);
   },
 
   /**
@@ -129,11 +115,11 @@ export const paymentApi = {
     buyerPhone?: string;
     cropName: string;
     onSuccess: (res: RazorpayPaymentResult) => void;
+    onError?: (err: any) => void;
     onDismiss?: () => void;
   }): Promise<void> {
     const isLoaded = await loadRazorpayScript();
-
-    if (isLoaded && (window as any).Razorpay) {
+    if (isLoaded && (window as any).Razorpay && options.order.key_id) {
       const rzpOptions = {
         key: options.order.key_id,
         amount: options.order.amount_paise,
@@ -165,18 +151,19 @@ export const paymentApi = {
       };
 
       const rzp = new (window as any).Razorpay(rzpOptions);
-      rzp.open();
-    } else {
-      // Offline/Test modal fallback
-      const simulatedPaymentId = `pay_test_${Date.now()}`;
-      const simulatedSignature = `sig_test_${Date.now()}`;
-      setTimeout(() => {
-        options.onSuccess({
-          razorpay_order_id: options.order.order_id,
-          razorpay_payment_id: simulatedPaymentId,
-          razorpay_signature: simulatedSignature,
+      if (options.onError) {
+        rzp.on("payment.failed", (response: any) => {
+          options.onError?.(response.error || response);
         });
-      }, 500);
+      }
+      rzp.open();
+      return;
+    }
+
+    if (options.onError) {
+      options.onError({
+        description: "Razorpay Checkout SDK failed to load. Please check your internet connection.",
+      });
     }
   },
 };
