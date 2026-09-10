@@ -149,6 +149,8 @@ export interface BuyerListing {
   deadlineDate?: string;
 }
 
+export type LotStatus = "Open for Offers" | "Sold" | "Expired" | "Offer Accepted" | "Closed" | "Cancelled";
+
 export interface LotRecord {
   id: string;
   crop: string;
@@ -157,7 +159,7 @@ export interface LotRecord {
   harvestDate: string;
   location: string;
   expectedPrice: number;
-  status: "Open for Offers" | "Sold" | "Expired" | "Offer Accepted" | "Closed";
+  status: LotStatus;
   interests?: number;
   createdDate?: string;
   aggregated?: boolean;

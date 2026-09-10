@@ -128,6 +128,10 @@ class Buyer(Base):
     offers = relationship("Offer", back_populates="buyer", cascade="all, delete-orphan")
     transactions = relationship("Transaction", foreign_keys="[Transaction.buyer_id]", back_populates="buyer")
 
+    @property
+    def organization_name(self) -> Optional[str]:
+        return self.organization
+
 
 class Lot(Base):
     __tablename__ = "lots"
@@ -157,6 +161,26 @@ class Lot(Base):
     image = relationship("CropImage")
     offers = relationship("Offer", back_populates="lot", cascade="all, delete-orphan")
     transaction = relationship("Transaction", back_populates="lot", uselist=False, cascade="all, delete-orphan")
+
+    @property
+    def farmer_name(self) -> Optional[str]:
+        return self.farmer.name if self.farmer else None
+
+    @property
+    def farmer_role(self) -> Optional[str]:
+        return self.farmer.role if (self.farmer and self.farmer.role) else "Farmer"
+
+    @property
+    def crop_name(self) -> Optional[str]:
+        return self.crop.crop_name if self.crop else None
+
+    @property
+    def crop_variety(self) -> Optional[str]:
+        return self.crop.variety if self.crop else None
+
+    @property
+    def image_url(self) -> Optional[str]:
+        return self.crop.image_url if self.crop else None
 
 
 class Offer(Base):

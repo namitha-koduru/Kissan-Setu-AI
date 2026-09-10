@@ -216,7 +216,7 @@ def get_current_user_profile(
             "email": buyer.email,
             "district": "Nashik",
             "state": "Maharashtra",
-            "organization_name": buyer.organization_name or buyer.name,
+            "organization_name": getattr(buyer, "organization", None) or buyer.name,
             "buyer": BuyerResponse.model_validate(buyer),
         }
 
