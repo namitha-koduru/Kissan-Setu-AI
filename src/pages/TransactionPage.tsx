@@ -273,13 +273,17 @@ export function TransactionPage() {
           );
           showToast("Payment verified successfully via Razorpay!");
         },
+        onError: (err: any) => {
+          console.error("Razorpay checkout error:", err);
+          showToast(`Payment failed: ${err.description || err.reason || "Checkout declined"}`);
+        },
         onDismiss: () => {
           showToast("Payment checkout closed.");
         },
       });
     } catch (err: any) {
       console.error("Razorpay initiation failure:", err);
-      showToast("Payment initiation error. Please try again.");
+      showToast(`Payment initiation error: ${err.message || "Please try again."}`);
     } finally {
       setIsPaying(false);
     }

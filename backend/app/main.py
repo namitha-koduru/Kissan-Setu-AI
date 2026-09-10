@@ -113,25 +113,31 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
-# Health Check
+# Health & Diagnostics Checks
 @app.get("/api/health", tags=["Health"])
 def health_check():
+    from app.database.connection import check_database_health
+    from app.services.payment_service import payment_service
+    db_health = check_database_health()
+    payment_diag = payment_service.get_diagnostics()
+    
     return {
-        "status": "ok",
+        "status": "ok" if db_health.get("connected") else "degraded",
         "service": "KissanSetuAI",
-        "database": "connected",
-        "version": "1.0.0",
+        "version": settings.VERSION,
+        "database": "connected" if db_health.get("connected") else "disconnected",
+        "database_connected": db_health.get("connected", False),
+        "database_type": db_health.get("database_type", "unknown"),
+        "database_provider": db_health.get("provider", "unknown"),
+        "select_1": db_health.get("select_1", "FAILED"),
+        "schema_status": db_health.get("schema_status", "unknown"),
+        "payments": payment_diag,
     }
 
 
 @app.get("/health", tags=["Health"])
 def root_health_check():
-    return {
-        "status": "ok",
-        "service": "KissanSetuAI",
-        "database": "connected",
-        "version": "1.0.0",
-    }
+    return health_check()
 
 
 

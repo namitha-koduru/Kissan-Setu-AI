@@ -69,42 +69,17 @@ export const paymentApi = {
    * Request server-authoritative Razorpay Order creation.
    */
   async createOrder(transactionId: number, buyerId?: number): Promise<CreateOrderResponse> {
-    try {
-      const res = await apiClient.post<CreateOrderResponse>("/payments/create-order", {
-        transaction_id: transactionId,
-        buyer_id: buyerId,
-      });
-      return res;
-    } catch (err) {
-      console.warn("Backend payment order creation fallback to simulated test order:", err);
-      return {
-        order_id: `order_test_${Date.now()}`,
-        key_id: "rzp_test_public_key",
-        amount: 13600,
-        amount_paise: 1360000,
-        currency: "INR",
-        transaction_id: transactionId,
-        is_test_mode: true,
-        receipt: `rcpt_tx_${transactionId}`,
-      };
-    }
+    return await apiClient.post<CreateOrderResponse>("/payments/create-order", {
+      transaction_id: transactionId,
+      buyer_id: buyerId,
+    });
   },
 
   /**
    * Send signature verification to backend.
    */
   async verifyPayment(data: VerifyPaymentPayload): Promise<any> {
-    try {
-      return await apiClient.post("/payments/verify", data);
-    } catch (err) {
-      console.warn("Backend signature verification fallback:", err);
-      return {
-        status: "Payment Successful",
-        transaction_id: data.transaction_id,
-        order_id: data.razorpay_order_id,
-        payment_id: data.razorpay_payment_id,
-      };
-    }
+    return await apiClient.post("/payments/verify", data);
   },
 
   /**
@@ -129,55 +104,71 @@ export const paymentApi = {
     buyerPhone?: string;
     cropName: string;
     onSuccess: (res: RazorpayPaymentResult) => void;
+    onError?: (err: any) => void;
     onDismiss?: () => void;
   }): Promise<void> {
-    const isLoaded = await loadRazorpayScript();
+    const isRealRazorpayKey = Boolean(
+      options.order.key_id &&
+      (options.order.key_id.startsWith("rzp_test_") || options.order.key_id.startsWith("rzp_live_")) &&
+      !options.order.key_id.includes("placeholder") &&
+      !options.order.key_id.includes("demo") &&
+      !options.order.is_test_mode
+    );
 
-    if (isLoaded && (window as any).Razorpay) {
-      const rzpOptions = {
-        key: options.order.key_id,
-        amount: options.order.amount_paise,
-        currency: options.order.currency || "INR",
-        name: "KissanSetuAI",
-        description: `Procurement Payment for ${options.cropName}`,
-        image: "https://kissan-setu-ai.vercel.app/logo.png",
-        order_id: options.order.order_id,
-        prefill: {
-          name: options.buyerName,
-          email: options.buyerEmail || "",
-          contact: options.buyerPhone || "",
-        },
-        theme: {
-          color: "#176B45",
-        },
-        notes: {
-          transaction_id: String(options.order.transaction_id),
-          environment: options.order.is_test_mode ? "Test Mode" : "Production",
-        },
-        handler: (response: RazorpayPaymentResult) => {
-          options.onSuccess(response);
-        },
-        modal: {
-          ondismiss: () => {
-            if (options.onDismiss) options.onDismiss();
+    if (isRealRazorpayKey) {
+      const isLoaded = await loadRazorpayScript();
+      if (isLoaded && (window as any).Razorpay) {
+        const rzpOptions = {
+          key: options.order.key_id,
+          amount: options.order.amount_paise,
+          currency: options.order.currency || "INR",
+          name: "KissanSetuAI",
+          description: `Procurement Payment for ${options.cropName}`,
+          image: "https://kissan-setu-ai.vercel.app/logo.png",
+          order_id: options.order.order_id,
+          prefill: {
+            name: options.buyerName,
+            email: options.buyerEmail || "",
+            contact: options.buyerPhone || "",
           },
-        },
-      };
+          theme: {
+            color: "#176B45",
+          },
+          notes: {
+            transaction_id: String(options.order.transaction_id),
+            environment: options.order.is_test_mode ? "Test Mode" : "Production",
+          },
+          handler: (response: RazorpayPaymentResult) => {
+            options.onSuccess(response);
+          },
+          modal: {
+            ondismiss: () => {
+              if (options.onDismiss) options.onDismiss();
+            },
+          },
+        };
 
-      const rzp = new (window as any).Razorpay(rzpOptions);
-      rzp.open();
-    } else {
-      // Offline/Test modal fallback
-      const simulatedPaymentId = `pay_test_${Date.now()}`;
-      const simulatedSignature = `sig_test_${Date.now()}`;
-      setTimeout(() => {
-        options.onSuccess({
-          razorpay_order_id: options.order.order_id,
-          razorpay_payment_id: simulatedPaymentId,
-          razorpay_signature: simulatedSignature,
-        });
-      }, 500);
+        const rzp = new (window as any).Razorpay(rzpOptions);
+        if (options.onError) {
+          rzp.on("payment.failed", (response: any) => {
+            options.onError?.(response.error || response);
+          });
+        }
+        rzp.open();
+        return;
+      }
     }
+
+    // Demo / Offline Simulation Mode
+    const simulatedPaymentId = `pay_demo_${Date.now()}`;
+    const simulatedSignature = `sig_demo_${Date.now()}`;
+    setTimeout(() => {
+      options.onSuccess({
+        razorpay_order_id: options.order.order_id,
+        razorpay_payment_id: simulatedPaymentId,
+        razorpay_signature: simulatedSignature,
+      });
+    }, 400);
   },
 };
 

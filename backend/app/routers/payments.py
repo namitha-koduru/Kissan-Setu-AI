@@ -51,6 +51,18 @@ class PaymentStatusResponse(BaseModel):
     webhook_status: str
 
 
+@router.get("/diagnostic")
+def get_payment_diagnostic(db: Session = Depends(get_db)):
+    """
+    Safe diagnostic reporting Razorpay configuration state without leaking secret keys.
+    """
+    from app.database.connection import check_database_health
+    db_health = check_database_health()
+    diag = payment_service.get_diagnostics()
+    diag["database_connected"] = db_health.get("connected", False)
+    return diag
+
+
 @router.post("/create-order", response_model=CreateOrderResponse)
 async def create_payment_order(
     req: CreateOrderRequest,
