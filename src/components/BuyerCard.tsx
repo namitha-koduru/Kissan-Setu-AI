@@ -2,10 +2,13 @@ import { CheckCircle2, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { BuyerListing } from "../types";
 import { useLanguage } from "../context/LanguageContext";
+import { useAuth } from "../context/AuthContext";
 
 export function BuyerCard({ buyer }: { buyer: BuyerListing }) {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const isBuyer = user?.role === "buyer";
 
   return (
     <div className="buyer-card">
@@ -47,13 +50,15 @@ export function BuyerCard({ buyer }: { buyer: BuyerListing }) {
           {buyer.paymentRating || "Reliable Payer"}
         </span>
         <div style={{ display: "flex", gap: 8 }}>
-          <button
-            className="btn btn-outline btn-sm"
-            type="button"
-            onClick={() => navigate(`/lots/create?buyer=${buyer.id}`)}
-          >
-            {t("buyers.connect")}
-          </button>
+          {!isBuyer && (
+            <button
+              className="btn btn-outline btn-sm"
+              type="button"
+              onClick={() => navigate(`/lots/create?buyer=${buyer.id}`)}
+            >
+              {t("buyers.connect")}
+            </button>
+          )}
           <button
             className="btn btn-primary btn-sm"
             type="button"

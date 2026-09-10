@@ -24,7 +24,8 @@ def test_auth_farmer_login_existing_and_new():
     res2 = client.post("/api/auth/login", json={"phone": new_phone, "password": "anotherpassword"})
     assert res2.status_code == 200
     data2 = res2.json()
-    assert data2["farmer"]["phone"] == new_phone
+    from app.services.auth_validation import normalize_mobile
+    assert data2["farmer"]["phone"] == normalize_mobile(new_phone)
 
 
 def test_auth_me_endpoint():

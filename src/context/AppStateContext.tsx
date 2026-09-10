@@ -15,6 +15,7 @@ import {
   initialTransaction,
 } from "../data/demo";
 import { useAuth } from "./AuthContext";
+import { subscribeUserNotifications } from "../services/websocket";
 import type {
   CropAllocation,
   CropRecord,
@@ -294,6 +295,40 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
+  const showToast = useCallback((message: string) => {
+    const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`;
+    setToasts((prev) => [...prev, { id, message }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3800);
+  }, []);
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  // Real-time WebSocket notifications listener for authenticated user
+  useEffect(() => {
+    if (!user?.id) return;
+    const rawId = typeof user.id === "number" ? user.id : String(user.id);
+    const sub = subscribeUserNotifications(rawId, (notifData) => {
+      const newNotif: NotificationItem = {
+        id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+        title: notifData.title || "New Notification",
+        subtitle: notifData.message || notifData.body || "You have a new activity update.",
+        time: "Just now",
+        read: false,
+        type: notifData.type || "system",
+      };
+      setNotifications((prev) => [newNotif, ...prev]);
+      showToast(`${newNotif.title}: ${newNotif.subtitle}`);
+    });
+
+    return () => {
+      sub.close();
+    };
+  }, [user?.id, showToast]);
+
   // Persist crops on change
   useEffect(() => {
     if (user?.id && user.role !== "buyer") {
@@ -321,18 +356,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(getStorageKey(user.id, "tx"), JSON.stringify(transaction));
     }
   }, [transaction, user?.id]);
-
-  const showToast = useCallback((message: string) => {
-    const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`;
-    setToasts((prev) => [...prev, { id, message }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3800);
-  }, []);
-
-  const dismissToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
 
   const addCrop = useCallback(
     (crop: CropRecord) => {

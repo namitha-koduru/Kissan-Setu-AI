@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { MessageSquare, Send, X, User, Building2, RefreshCw } from "lucide-react";
+import { MessageSquare, Send, X, User, Building2, RefreshCw, CheckCircle2 } from "lucide-react";
 import apiClient from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { subscribeNegotiationRoom } from "../services/websocket";
 
 export interface NegotiationMessage {
   id?: number;
@@ -23,6 +24,9 @@ interface Props {
   lotQuantityKg?: number;
   askingPrice?: number;
   offerId?: number;
+  counterpartName?: string;
+  counterpartRole?: string;
+  counterpartLocation?: string;
   onClose: () => void;
 }
 
@@ -32,6 +36,9 @@ export function NegotiationChatModal({
   lotQuantityKg,
   askingPrice,
   offerId,
+  counterpartName,
+  counterpartRole,
+  counterpartLocation,
   onClose,
 }: Props) {
   const { user } = useAuth();
@@ -61,8 +68,21 @@ export function NegotiationChatModal({
 
   useEffect(() => {
     fetchMessages();
-    const interval = setInterval(fetchMessages, 5000);
-    return () => clearInterval(interval);
+
+    // Subscribe to Live WebSocket Room for instant zero-latency messages
+    const sub = subscribeNegotiationRoom(numericLotId, (event) => {
+      if (event.type === "NEW_MESSAGE" && event.message) {
+        setMessages((prev) => {
+          // Prevent duplicates
+          if (prev.some((m) => m.id === event.message.id)) return prev;
+          return [...prev, event.message];
+        });
+      }
+    });
+
+    return () => {
+      sub.close();
+    };
   }, [numericLotId]);
 
   useEffect(() => {
@@ -218,27 +238,37 @@ export function NegotiationChatModal({
           </div>
         </div>
 
-        {/* Lot context strip */}
+        {/* Counterpart Identity Strip */}
         <div
           style={{
             background: "#F4F8F5",
-            padding: "10px 18px",
+            padding: "8px 18px",
             borderBottom: "1px solid #E2ECE4",
             display: "flex",
             justifyContent: "space-between",
-            fontSize: "12.5px",
+            alignItems: "center",
+            fontSize: "12px",
             color: "#2C3E30",
-            fontWeight: 600,
+            flexWrap: "wrap",
+            gap: "6px",
           }}
         >
-          <div>
-            Asking: <strong>₹{askingPrice || 30}/kg</strong>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span style={{ fontSize: "14px" }}>
+              {counterpartRole === "buyer" ? "🏢" : counterpartRole === "fpo" ? "🌾" : "👨‍🌾"}
+            </span>
+            <span style={{ fontWeight: 700 }}>
+              {counterpartName || (user?.role === "buyer" ? "Producer (Farmer)" : "Institutional Procurer")}
+            </span>
+            {counterpartLocation && (
+              <span style={{ color: "#667085" }}>· 📍 {counterpartLocation}</span>
+            )}
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 3, color: "#176B45", fontWeight: 700, marginLeft: 4 }}>
+              <CheckCircle2 size={12} /> Verified Trade
+            </span>
           </div>
-          <div>
-            Batch: <strong>{lotQuantityKg || 500} kg</strong>
-          </div>
-          <div style={{ color: "#176B45" }}>
-            ✓ Verified Human-to-Human Trade
+          <div style={{ fontSize: "12px" }}>
+            Asking: <strong>₹{askingPrice || 30}/kg</strong> · {lotQuantityKg || 500} kg
           </div>
         </div>
 

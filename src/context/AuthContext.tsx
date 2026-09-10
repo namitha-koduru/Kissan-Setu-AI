@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useMemo, useState, useEffect, type ReactNode } from "react";
 import { demoUsersWithCred } from "../data/demo";
 import type { User, UserRole } from "../types";
 import apiClient from "../services/api";
@@ -64,13 +64,19 @@ export function normalizeEmail(email?: string): string {
 }
 
 export function resolveFarmerId(user: User | null): number | null {
-  if (!user || !user.id) return null;
+  if (!user) return null;
+  if (user.farmerId && typeof user.farmerId === "number" && user.farmerId > 0 && user.farmerId < 1000000000) {
+    return user.farmerId;
+  }
+  if (user.entityId && typeof user.entityId === "number" && user.entityId > 0 && user.entityId < 1000000000) {
+    return user.entityId;
+  }
+  if (!user.id) return null;
   const rawId = String(user.id).trim();
 
   // If it's a direct positive integer
   const num = Number(rawId);
   if (!isNaN(num) && num > 0 && Number.isInteger(num)) {
-    // If ID is a massive timestamp (> 1 billion), it is an invalid client timestamp ID
     if (num > 1000000000) return null;
     return num;
   }
@@ -86,6 +92,39 @@ export function resolveFarmerId(user: User | null): number | null {
   }
 
   return null;
+}
+
+export function resolveEntityId(user: User | null): number | null {
+  if (!user) return null;
+  if (user.entityId && typeof user.entityId === "number" && user.entityId > 0 && user.entityId < 1000000000) {
+    return user.entityId;
+  }
+  if (user.farmerId && typeof user.farmerId === "number" && user.farmerId > 0 && user.farmerId < 1000000000) {
+    return user.farmerId;
+  }
+  if (user.buyerId && typeof user.buyerId === "number" && user.buyerId > 0 && user.buyerId < 1000000000) {
+    return user.buyerId;
+  }
+  if (user.fpoId && typeof user.fpoId === "number" && user.fpoId > 0 && user.fpoId < 1000000000) {
+    return user.fpoId;
+  }
+  if (!user.id) return null;
+  const rawId = String(user.id).trim();
+  const num = Number(rawId);
+  if (!isNaN(num) && num > 0 && Number.isInteger(num)) {
+    if (num > 1000000000) return null;
+    return num;
+  }
+  const parsed = parseInt(rawId.replace(/\D/g, ""), 10);
+  return !isNaN(parsed) && parsed > 0 ? parsed : 1;
+}
+
+export function resolveBuyerId(user: User | null): number | null {
+  if (!user || user.role !== "buyer") return null;
+  if (user.buyerId && typeof user.buyerId === "number" && user.buyerId > 0 && user.buyerId < 1000000000) {
+    return user.buyerId;
+  }
+  return resolveEntityId(user);
 }
 
 export function readRegisteredUsers(): StoredUserWithCred[] {
@@ -158,7 +197,46 @@ function roleToTitle(role: UserRole | string): string {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => readStored());
-  const [loading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  // Authoritative session restoration on browser refresh
+  useEffect(() => {
+    const stored = readStored();
+    if (stored?.id) {
+      const eid = resolveEntityId(stored);
+      if (eid) {
+        setLoading(true);
+        apiClient
+          .get<any>(`/auth/me?user_id=${eid}&role=${stored.role || "farmer"}`)
+          .then((res) => {
+            if (res && (res.user_id || res.id)) {
+              const realId = res.farmer_id || res.buyer_id || res.fpo_id || res.user_id || res.id;
+              const updated: User = {
+                ...stored,
+                id: String(realId),
+                farmerId: res.farmer_id || (res.role === "farmer" ? Number(realId) : undefined),
+                buyerId: res.buyer_id || (res.role === "buyer" ? Number(realId) : undefined),
+                fpoId: res.fpo_id || (res.role === "fpo" ? Number(realId) : undefined),
+                entityId: Number(realId),
+                name: res.name || stored.name,
+                role: (res.role || stored.role) as UserRole,
+                district: res.district || stored.district,
+                state: res.state || stored.state,
+                organizationName: res.organization_name || stored.organizationName,
+              };
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+              setUser(updated);
+            }
+          })
+          .catch((err) => {
+            console.warn("Session profile restoration deferred:", err);
+          })
+          .finally(() => {
+            setLoading(false);
+          });
+      }
+    }
+  }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -194,7 +272,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             )} account. Please use ${roleToTitle(registeredMatch.role)} Login.`;
           }
 
-          const safeUser: User = { ...registeredMatch };
+          const parsedId = Number(registeredMatch.id) || 1;
+          const safeUser: User = {
+            ...registeredMatch,
+            id: String(parsedId),
+            farmerId: registeredMatch.role === "farmer" ? parsedId : undefined,
+            buyerId: registeredMatch.role === "buyer" ? parsedId : undefined,
+            fpoId: registeredMatch.role === "fpo" ? parsedId : undefined,
+            entityId: parsedId,
+          };
           delete (safeUser as any).passwordHash;
           delete (safeUser as any).registeredPassword;
           localStorage.setItem(STORAGE_KEY, JSON.stringify(safeUser));
@@ -221,7 +307,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             )} account. Please use ${roleToTitle(demoMatch.role)} Login.`;
           }
 
+          const demoNumeric = parseInt(demoMatch.id.replace(/\D/g, ""), 10) || 1;
           const { password: _p, ...safeUser } = demoMatch;
+          safeUser.farmerId = safeUser.role === "farmer" ? demoNumeric : undefined;
+          safeUser.buyerId = safeUser.role === "buyer" ? demoNumeric : undefined;
+          safeUser.fpoId = safeUser.role === "fpo" ? demoNumeric : undefined;
+          safeUser.entityId = demoNumeric;
+
           localStorage.setItem(STORAGE_KEY, JSON.stringify(safeUser));
           setUser(safeUser);
           return null;
@@ -237,8 +329,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (authRes && authRes.user_id) {
             const profile = authRes.buyer || authRes.farmer || {};
             const resolvedRole: UserRole = (authRes.role || requestedRole || "farmer") as UserRole;
+            const primaryId = authRes.farmer_id || authRes.buyer_id || authRes.fpo_id || authRes.user_id;
             const remoteUser: User = {
-              id: authRes.user_id,
+              id: String(primaryId),
+              farmerId: authRes.farmer_id || (resolvedRole === "farmer" ? Number(primaryId) : undefined),
+              buyerId: authRes.buyer_id || (resolvedRole === "buyer" ? Number(primaryId) : undefined),
+              fpoId: authRes.fpo_id || (resolvedRole === "fpo" ? Number(primaryId) : undefined),
+              entityId: Number(primaryId),
               name: profile.name || (resolvedRole === "buyer" ? "Registered Buyer" : "Registered User"),
               email: profile.email || cleanEmail || "",
               mobile: profile.phone || cleanMobile || "",
@@ -323,8 +420,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return "Your profile could not be registered in the database. Please try again.";
         }
 
+        const numericEntityId = Number(backendUserId);
         const createdUser: StoredUserWithCred = {
           id: backendUserId,
+          farmerId: input.role === "farmer" ? numericEntityId : undefined,
+          buyerId: input.role === "buyer" ? numericEntityId : undefined,
+          fpoId: input.role === "fpo" ? numericEntityId : undefined,
+          entityId: numericEntityId,
           name: input.name.trim(),
           email: primaryEmail,
           role: input.role,

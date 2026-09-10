@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import type { BuyerMatchResult } from "../services/buyerMatchingApi";
 import { useLanguage } from "../context/LanguageContext";
+import { useAuth } from "../context/AuthContext";
 
 interface Props {
   match: BuyerMatchResult;
@@ -20,8 +21,10 @@ interface Props {
 
 export function SmartBuyerCard({ match, cropName, quantityQtl }: Props) {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
+  const isBuyer = user?.role === "buyer";
 
   const isVerified = match.verification_status === "VERIFIED" || match.verified;
   const scoreColor =
@@ -250,18 +253,20 @@ export function SmartBuyerCard({ match, cropName, quantityQtl }: Props) {
         >
           {t("buyers.viewDetail")}
         </Link>
-        <button
-          type="button"
-          className="btn btn-primary"
-          style={{ flex: 1.2, justifyContent: "center", fontSize: "12.5px", gap: 6 }}
-          onClick={() =>
-            navigate(
-              `/lots/create?buyer=${match.buyer_id}&crop=${encodeURIComponent(cropName)}&qty=${quantityQtl * 100}&price=${match.indicative_price_per_kg}`
-            )
-          }
-        >
-          {t("buyers.connect")} <ArrowRight size={14} />
-        </button>
+        {!isBuyer && (
+          <button
+            type="button"
+            className="btn btn-primary"
+            style={{ flex: 1.2, justifyContent: "center", fontSize: "12.5px", gap: 6 }}
+            onClick={() =>
+              navigate(
+                `/lots/create?buyer=${match.buyer_id}&crop=${encodeURIComponent(cropName)}&qty=${quantityQtl * 100}&price=${match.indicative_price_per_kg}`
+              )
+            }
+          >
+            {t("buyers.connect")} <ArrowRight size={14} />
+          </button>
+        )}
       </div>
     </div>
   );

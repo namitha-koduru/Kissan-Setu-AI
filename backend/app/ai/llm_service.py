@@ -22,10 +22,43 @@ LANGUAGE_PROMPTS = {
 class LLMService:
     def __init__(self):
         self.settings = settings
-        self.provider = "ollama"
-        self.model = getattr(self.settings, "OLLAMA_MODEL", None) or "qwen2.5:3b"
+        self.provider = getattr(self.settings, "LLM_PROVIDER", "ollama")
+        self.model = (
+            getattr(self.settings, "LLM_MODEL", None)
+            or getattr(self.settings, "OLLAMA_MODEL", None)
+            or "qwen3:4b"
+        )
         self.model_name = self.model
         self.ollama_base_url = getattr(self.settings, "OLLAMA_BASE_URL", None) or "http://localhost:11434"
+
+    def detect_language(self, text: str) -> str:
+        """Detect language based on Indic Unicode scripts or common keywords."""
+        if not text:
+            return "en"
+        for char in text:
+            code = ord(char)
+            # Devanagari (Hindi, Marathi)
+            if 0x0900 <= code <= 0x097F:
+                # Check for specific Marathi marker characters/words if needed, default Hindi
+                if any(w in text for w in ["आहे", "नाही", "पिक", "बाजारभाव", "हवामान", "शेतकरी"]):
+                    return "mr"
+                return "hi"
+            # Telugu
+            elif 0x0C00 <= code <= 0x0C7F:
+                return "te"
+            # Tamil
+            elif 0x0B80 <= code <= 0x0BFF:
+                return "ta"
+            # Kannada
+            elif 0x0C80 <= code <= 0x0CFF:
+                return "kn"
+            # Bengali
+            elif 0x0980 <= code <= 0x09FF:
+                return "bn"
+            # Malayalam
+            elif 0x0D00 <= code <= 0x0D7F:
+                return "ml"
+        return "en"
 
     async def generate_response(
         self,

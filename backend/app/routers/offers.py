@@ -14,6 +14,7 @@ from app.schemas.buyer_matching import (
 from app.schemas.transaction import TransactionResponse
 from app.services.offer_intelligence_service import offer_intelligence_service
 from app.services.transaction_service import transaction_service
+from app.services.websocket_manager import websocket_manager
 
 router = APIRouter(tags=["Offers"])
 
@@ -65,7 +66,7 @@ def get_offer_history(offer_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/offers/{offer_id}/counter", response_model=OfferResponse)
-def counter_offer(offer_id: int, counter_in: CounterOfferRequest, db: Session = Depends(get_db)):
+async def counter_offer(offer_id: int, counter_in: CounterOfferRequest, db: Session = Depends(get_db)):
     """Submit a counter-offer to the buyer with updated asking price and notes."""
     updated = offer_intelligence_service.counter_offer(db=db, offer_id=offer_id, counter_data=counter_in)
     b = db.query(Buyer).filter(Buyer.id == updated.buyer_id).first()
@@ -73,22 +74,40 @@ def counter_offer(offer_id: int, counter_in: CounterOfferRequest, db: Session = 
     if b:
         res.buyer_name = b.name
         res.buyer_verified = b.verified or (b.verification_status == "VERIFIED")
+
+    # Broadcast event to lot room
+    await websocket_manager.broadcast_to_room(f"lot_{updated.lot_id}", {
+        "type": "OFFER_COUNTERED",
+        "offer_id": updated.id,
+        "lot_id": updated.lot_id,
+        "counter_price": counter_in.counter_price,
+        "notes": counter_in.counter_notes or counter_in.notes or counter_in.message,
+    })
     return res
 
 
 @router.post("/offers/{offer_id}/accept", response_model=TransactionResponse)
-def accept_offer(offer_id: int, db: Session = Depends(get_db)):
+async def accept_offer(offer_id: int, db: Session = Depends(get_db)):
     """Accept the buyer's offer and atomically generate the verified transaction contract."""
     tx = transaction_service.accept_offer_and_create_transaction(db=db, offer_id=offer_id)
     b = db.query(Buyer).filter(Buyer.id == tx.buyer_id).first() if tx.buyer_id else None
     res = TransactionResponse.model_validate(tx)
     if b:
         res.buyer_name = b.name
+
+    # Broadcast acceptance event to lot room
+    await websocket_manager.broadcast_to_room(f"lot_{tx.lot_id}", {
+        "type": "OFFER_ACCEPTED",
+        "offer_id": offer_id,
+        "lot_id": tx.lot_id,
+        "transaction_id": tx.id,
+        "status": "CONFIRMED",
+    })
     return res
 
 
 @router.post("/offers/{offer_id}/reject", response_model=OfferResponse)
-def reject_offer(offer_id: int, db: Session = Depends(get_db)):
+async def reject_offer(offer_id: int, db: Session = Depends(get_db)):
     """Reject incoming offer."""
     offer = db.query(Offer).filter(Offer.id == offer_id).first()
     if not offer:
@@ -105,11 +124,17 @@ def reject_offer(offer_id: int, db: Session = Depends(get_db)):
     if b:
         res.buyer_name = b.name
         res.buyer_verified = b.verified or (b.verification_status == "VERIFIED")
+
+    await websocket_manager.broadcast_to_room(f"lot_{offer.lot_id}", {
+        "type": "OFFER_REJECTED",
+        "offer_id": offer.id,
+        "lot_id": offer.lot_id,
+    })
     return res
 
 
 @router.post("/offers", response_model=OfferResponse, status_code=status.HTTP_201_CREATED)
-def create_offer(offer_in: OfferCreate, db: Session = Depends(get_db)):
+async def create_offer(offer_in: OfferCreate, db: Session = Depends(get_db)):
     lot = db.query(Lot).filter(Lot.id == offer_in.lot_id).first()
     if not lot:
         raise HTTPException(
@@ -131,6 +156,24 @@ def create_offer(offer_in: OfferCreate, db: Session = Depends(get_db)):
     res = OfferResponse.model_validate(offer)
     res.buyer_name = buyer.name
     res.buyer_verified = buyer.verified or (buyer.verification_status == "VERIFIED")
+
+    # Broadcast new offer to lot room
+    await websocket_manager.broadcast_to_room(f"lot_{lot.id}", {
+        "type": "OFFER_CREATED",
+        "offer_id": offer.id,
+        "lot_id": lot.id,
+        "offered_price": offer.offered_price,
+        "quantity_kg": offer.quantity_kg,
+        "buyer_name": buyer.name,
+    })
+    # Also notify seller user
+    await websocket_manager.send_to_user(str(lot.farmer_id), {
+        "type": "NOTIFICATION",
+        "title": f"New Offer: ₹{offer.offered_price}/kg",
+        "body": f"{buyer.name} made an offer for {offer.quantity_kg} kg on Lot #{lot.id}.",
+        "lot_id": lot.id,
+        "created_at": datetime.utcnow().isoformat(),
+    })
     return res
 
 

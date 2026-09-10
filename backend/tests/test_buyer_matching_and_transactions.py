@@ -113,12 +113,15 @@ def test_create_lot_and_inspect_offers(db_session: Session):
     buyer = db_session.query(Buyer).first()
 
     # Ensure stock is available for lot creation
-    inventory_service.get_or_create_inventory(
+    item = inventory_service.get_or_create_inventory(
         db=db_session,
         farmer_id=farmer.id,
         crop_name=crop.crop_name,
         initial_quantity=2000.0,
     )
+    if item.available_quantity < 1500.0:
+        item.total_quantity = round(item.total_quantity + 2000.0, 2)
+        db_session.commit()
 
     lot_payload = {
         "farmer_id": farmer.id,
@@ -136,7 +139,7 @@ def test_create_lot_and_inspect_offers(db_session: Session):
     }
 
     resp = client.post("/api/lots", json=lot_payload)
-    assert resp.status_code == 201
+    assert resp.status_code == 201, resp.text
     lot_data = resp.json()
     assert lot_data["quantity"] == 1500.0
     assert lot_data["quality_description"] == "Firm table quality red tomatoes"

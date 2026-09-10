@@ -53,6 +53,7 @@ def get_lot(lot_id: int, db: Session = Depends(get_db)):
 def create_lot(
     lot_in: LotCreate,
     x_user_role: Optional[str] = Header(None, alias="X-User-Role"),
+    x_user_id: Optional[str] = Header(None, alias="X-User-Id"),
     db: Session = Depends(get_db)
 ):
     """
@@ -65,21 +66,41 @@ def create_lot(
             detail="Lot creation is available only to Farmers and FPOs. Buyers are not permitted to list produce lots."
         )
 
-    # Verify farmer exists
+    # 1. Resolve Farmer record authoritatively
     farmer = db.query(Farmer).filter(Farmer.id == lot_in.farmer_id).first()
+    if not farmer and x_user_id:
+        try:
+            uid = int(x_user_id)
+            farmer = db.query(Farmer).filter(Farmer.id == uid).first()
+            if farmer:
+                lot_in.farmer_id = farmer.id
+        except (ValueError, TypeError):
+            pass
+
+    if not farmer and lot_in.farmer_id and lot_in.farmer_id > 1000000000:
+        phone_str = str(lot_in.farmer_id)[-10:]
+        farmer = db.query(Farmer).filter(
+            (Farmer.phone == str(lot_in.farmer_id)) |
+            (Farmer.phone == phone_str) |
+            (Farmer.phone == f"+91{phone_str}")
+        ).first()
+        if farmer:
+            lot_in.farmer_id = farmer.id
+
     if not farmer:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Farmer with ID {lot_in.farmer_id} not found"
         )
-    # Verify crop exists and belongs to this farmer
+
+    # 2. Verify crop exists and belongs to this farmer
     crop = db.query(Crop).filter(Crop.id == lot_in.crop_id).first()
     if not crop:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Crop with ID {lot_in.crop_id} not found"
         )
-    if crop.farmer_id != lot_in.farmer_id:
+    if crop.farmer_id != farmer.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cannot create lot: This crop does not belong to the authenticated farmer."

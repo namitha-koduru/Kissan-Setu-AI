@@ -75,6 +75,8 @@ class CounterOfferRequest(BaseModel):
     counter_price: float = Field(..., gt=0, description="Counter price per kg in INR")
     quantity_kg: Optional[float] = Field(None, gt=0)
     message: Optional[str] = None
+    counter_notes: Optional[str] = None
+    notes: Optional[str] = None
 
 
 class OfferHistoryItem(BaseModel):

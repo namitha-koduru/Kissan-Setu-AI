@@ -24,6 +24,10 @@ export interface CropAllocation {
 
 export interface User {
   id: string;
+  farmerId?: number;
+  buyerId?: number;
+  fpoId?: number;
+  entityId?: number;
   name: string;
   email: string;
   role: UserRole;
@@ -210,6 +214,7 @@ export interface NotificationItem {
   subtitle: string;
   time?: string;
   read?: boolean;
+  type?: string;
 }
 
 export interface OnboardingData {
