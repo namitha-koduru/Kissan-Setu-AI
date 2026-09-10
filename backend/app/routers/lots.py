@@ -32,7 +32,10 @@ def get_all_lots(
     if farmer_id:
         query = query.filter(Lot.farmer_id == farmer_id)
     if status_filter:
-        query = query.filter(Lot.status == status_filter)
+        if status_filter.lower() in ["open", "open for offers", "active"]:
+            query = query.filter(Lot.status.in_(["Open for Offers", "OPEN", "open", "Active"]))
+        else:
+            query = query.filter(Lot.status == status_filter)
     if crop_id:
         query = query.filter(Lot.crop_id == crop_id)
     return query.order_by(Lot.created_at.desc()).offset(skip).limit(limit).all()

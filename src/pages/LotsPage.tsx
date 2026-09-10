@@ -31,55 +31,55 @@ export function LotsPage() {
   const [activeTab, setActiveTab] = useState<"Active" | "Sold" | "Expired">("Active");
 
   useEffect(() => {
-    if (isBuyer) {
-      const fetchNearby = async () => {
-        try {
-          const res = await lotApi.discoverNearbyLots(user?.location || "Nashik, Maharashtra", selectedCropFilter);
-          if (Array.isArray(res) && res.length > 0) {
-            setLiveDiscoveredLots(
-              res.map((l: any) => ({
-                id: `KS-LOT-${l.id}`,
-                numericId: l.id,
-                crop: l.crop_name || l.crop || "Produce",
-                quality: l.quality || "Grade A",
-                sellerName: l.farmer_name || l.sellerName || "Registered Farmer",
-                sellerRole: l.farmer_count && l.farmer_count > 1 ? "FPO" : "Farmer",
-                quantityKg: l.quantity_kg || l.quantity || 500,
-                expectedPrice: l.asking_price || l.expectedPrice || 30,
-                location: l.location || "Farm Gate",
-                harvestDate: l.harvest_date || l.harvestDate || "2026-09-08",
-                status: l.status || "Open for Offers",
-                distanceKm: Math.round(l.distance_km || 12),
-                imageUrl: l.image_url || l.imageUrl,
-              }))
-            );
-          }
-        } catch (err) {
-          console.warn("Failed to fetch nearby lots from backend", err);
+    let isMounted = true;
+    const fetchMarketplace = async () => {
+      try {
+        const res = await lotApi.discoverNearbyLots(user?.location || "Nashik, Maharashtra", selectedCropFilter);
+        if (isMounted && Array.isArray(res)) {
+          setLiveDiscoveredLots(res);
         }
-      };
-      fetchNearby();
-    }
+      } catch (err) {
+        console.warn("Failed to fetch marketplace lots from backend", err);
+      }
+    };
+
+    fetchMarketplace();
+
+    // Auto-refresh when window regains focus to avoid stale data
+    const handleFocus = () => {
+      fetchMarketplace();
+    };
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      isMounted = false;
+      window.removeEventListener("focus", handleFocus);
+    };
   }, [isBuyer, user?.location, selectedCropFilter]);
 
   const filteredOwnLots = lots.filter((l) => {
     if (activeTab === "Active")
-      return l.status === "Open for Offers" || l.status === "Offer Accepted";
+      return l.status === "Open for Offers" || l.status === "Offer Accepted" || l.status === "OPEN" || l.status === "Active";
     if (activeTab === "Sold") return l.status === "Sold" || l.status === "Closed";
-    return l.status === "Expired";
+    return l.status === "Expired" || l.status === "Cancelled";
   });
 
   const availableSellerLots = useMemo(() => {
-    // If live lots exist from database, show them prominently
-    const combined = liveDiscoveredLots.length > 0 ? liveDiscoveredLots : allMarketplaceLots;
-    return combined.filter((l) => {
+    // Exclusively use live database lots sorted newest first
+    const sorted = [...liveDiscoveredLots].sort((a, b) => {
+      if (a.createdAt && b.createdAt) {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      return (b.numericId || 0) - (a.numericId || 0);
+    });
+
+    return sorted.filter((l) => {
       const matchCrop =
         selectedCropFilter === "All" ||
-        l.crop.toLowerCase().includes(selectedCropFilter.toLowerCase()) ||
-        selectedCropFilter.toLowerCase().includes(l.crop.toLowerCase());
+        (l.crop && l.crop.toLowerCase().includes(selectedCropFilter.toLowerCase())) ||
+        (l.crop && selectedCropFilter.toLowerCase().includes(l.crop.toLowerCase()));
       const matchGrade =
         selectedGradeFilter === "All" ||
-        l.quality.toLowerCase().includes(selectedGradeFilter.toLowerCase());
+        (l.quality && l.quality.toLowerCase().includes(selectedGradeFilter.toLowerCase()));
       return matchCrop && matchGrade;
     });
   }, [liveDiscoveredLots, selectedCropFilter, selectedGradeFilter]);
@@ -211,95 +211,102 @@ export function LotsPage() {
           </div>
 
           {/* Lots Grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
-            {availableSellerLots.map((lot) => (
-              <div
-                key={lot.id}
-                className="card card-pad"
-                style={{
-                  background: "#FFFFFF",
-                  border: "1px solid var(--line)",
-                  borderRadius: 14,
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                }}
-              >
-                <div>
-                  <div className="flex flex-between mb-xs">
-                    <span className="badge-pill badge-high" style={{ fontSize: 11 }}>
-                      {lot.sellerRole === "FPO" ? "🏛 FPO Bulk Pool" : "🌾 Farmer Lot"}
-                    </span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--sell)" }}>
-                      {lot.status}
-                    </span>
+          {availableSellerLots.length === 0 ? (
+            <EmptyState
+              title={t("lots.noLots", "No marketplace lots available")}
+              text={t("lots.openForOffers", "Newly published harvest lots from verified farmers will appear here in real-time.")}
+            />
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
+              {availableSellerLots.map((lot) => (
+                <div
+                  key={lot.id}
+                  className="card card-pad"
+                  style={{
+                    background: "#FFFFFF",
+                    border: "1px solid var(--line)",
+                    borderRadius: 14,
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <div>
+                    <div className="flex flex-between mb-xs">
+                      <span className="badge-pill badge-high" style={{ fontSize: 11 }}>
+                        {lot.sellerRole === "FPO" ? "🏛 FPO Bulk Pool" : "🌾 Farmer Lot"}
+                      </span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "var(--sell)" }}>
+                        {lot.status}
+                      </span>
+                    </div>
+
+                    <h3 style={{ fontSize: 17, fontWeight: 800, color: "var(--navy)", margin: "4px 0" }}>
+                      {lot.crop} ({lot.quality})
+                    </h3>
+
+                    <div style={{ fontSize: 12.5, color: "var(--ink-soft)", marginBottom: 10 }}>
+                      Seller: <strong>{lot.sellerName}</strong>
+                      {lot.aggregated && ` · Aggregated from ${lot.farmerCount} farmers`}
+                    </div>
+
+                    <div
+                      style={{
+                        background: "var(--bg-warm)",
+                        borderRadius: 10,
+                        padding: "10px 12px",
+                        marginBottom: 12,
+                        border: "1px solid var(--line)",
+                      }}
+                    >
+                      <div className="flex flex-between mb-xs text-sm">
+                        <span style={{ color: "var(--ink-soft)" }}>Available Volume</span>
+                        <span style={{ fontWeight: 800, color: "var(--navy)" }}>
+                          {lot.quantityKg.toLocaleString("en-IN")} kg ({(lot.quantityKg / 100).toFixed(1)} Qtl)
+                        </span>
+                      </div>
+                      <div className="flex flex-between mb-xs text-sm">
+                        <span style={{ color: "var(--ink-soft)" }}>Asking Rate</span>
+                        <span style={{ fontWeight: 800, color: "var(--green-deep)" }}>
+                          ₹{lot.expectedPrice} / kg (₹{lot.expectedPrice * 100} / Qtl)
+                        </span>
+                      </div>
+                      <div className="flex flex-between text-xs" style={{ color: "var(--ink-muted)", marginTop: 4 }}>
+                        <span className="flex flex-center gap-xs">
+                          <MapPin size={12} /> {lot.location}
+                        </span>
+                        <span>Harvest: {lot.harvestDate}</span>
+                      </div>
+                    </div>
                   </div>
 
-                  <h3 style={{ fontSize: 17, fontWeight: 800, color: "var(--navy)", margin: "4px 0" }}>
-                    {lot.crop} ({lot.quality})
-                  </h3>
-
-                  <div style={{ fontSize: 12.5, color: "var(--ink-soft)", marginBottom: 10 }}>
-                    Seller: <strong>{lot.sellerName}</strong>
-                    {lot.aggregated && ` · Aggregated from ${lot.farmerCount} farmers`}
-                  </div>
-
-                  <div
-                    style={{
-                      background: "var(--bg-warm)",
-                      borderRadius: 10,
-                      padding: "10px 12px",
-                      marginBottom: 12,
-                      border: "1px solid var(--line)",
-                    }}
-                  >
-                    <div className="flex flex-between mb-xs text-sm">
-                      <span style={{ color: "var(--ink-soft)" }}>Available Volume</span>
-                      <span style={{ fontWeight: 800, color: "var(--navy)" }}>
-                        {lot.quantityKg.toLocaleString("en-IN")} kg ({(lot.quantityKg / 100).toFixed(1)} Qtl)
-                      </span>
-                    </div>
-                    <div className="flex flex-between mb-xs text-sm">
-                      <span style={{ color: "var(--ink-soft)" }}>Asking Rate</span>
-                      <span style={{ fontWeight: 800, color: "var(--green-deep)" }}>
-                        ₹{lot.expectedPrice} / kg (₹{lot.expectedPrice * 100} / Qtl)
-                      </span>
-                    </div>
-                    <div className="flex flex-between text-xs" style={{ color: "var(--ink-muted)", marginTop: 4 }}>
-                      <span className="flex flex-center gap-xs">
-                        <MapPin size={12} /> {lot.location}
-                      </span>
-                      <span>Harvest: {lot.harvestDate}</span>
-                    </div>
+                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm flex-1"
+                      onClick={() => {
+                        setOfferModalLot(lot);
+                        setBidPrice(lot.expectedPrice);
+                        setBidQty(lot.quantityKg);
+                      }}
+                    >
+                      <Handshake size={15} />
+                      <span>{t("lots.makeOffer", "Make Offer")}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      onClick={() => setActiveChatLot(lot)}
+                      style={{ color: "var(--green-deep)", borderColor: "#D5E5D8" }}
+                      title="Bargain / Chat"
+                    >
+                      <MessageSquare size={15} />
+                    </button>
                   </div>
                 </div>
-
-                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                  <button
-                    type="button"
-                    className="btn btn-primary btn-sm flex-1"
-                    onClick={() => {
-                      setOfferModalLot(lot);
-                      setBidPrice(lot.expectedPrice);
-                      setBidQty(lot.quantityKg);
-                    }}
-                  >
-                    <Handshake size={15} />
-                    <span>{t("lots.makeOffer", "Make Offer")}</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-outline btn-sm"
-                    onClick={() => setActiveChatLot(lot)}
-                    style={{ color: "var(--green-deep)", borderColor: "#D5E5D8" }}
-                    title="Bargain / Chat"
-                  >
-                    <MessageSquare size={15} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         /* 3. FARMER / FPO VIEW — Manage Own Lots */

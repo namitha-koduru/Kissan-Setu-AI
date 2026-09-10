@@ -43,5 +43,10 @@ class LotResponse(LotBase):
     farmer_id: int
     crop_id: int
     buyer_id: Optional[int] = None
+    farmer_name: Optional[str] = None
+    farmer_role: Optional[str] = "Farmer"
+    crop_name: Optional[str] = None
+    crop_variety: Optional[str] = None
+    image_url: Optional[str] = None
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
