@@ -214,11 +214,59 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {/* 2. Farmer Primary CTAs & Quick Actions */}
+      {/* 2. Top 4 Farmer Summary Metrics */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: 12,
+          marginBottom: 20,
+        }}
+      >
+        <div className="metric-card" style={{ borderLeft: "4px solid var(--green-deep)", background: "rgba(23,107,69,0.03)" }}>
+          <div className="metric-label flex flex-between">
+            <span style={{ fontWeight: 800, color: "var(--green-deep)" }}>Available Produce</span>
+            <Layers size={16} color="var(--green-deep)" />
+          </div>
+          <div className="metric-value" style={{ color: "var(--green-deep)" }}>
+            {(inventory?.available_to_sell ?? (activeCrop?.quantityKg || 500)).toLocaleString("en-IN")} kg
+          </div>
+          <div className="metric-hint">Uncommitted stock</div>
+        </div>
+
+        <div className="metric-card" style={{ borderLeft: "4px solid #D97706" }}>
+          <div className="metric-label flex flex-between">
+            <span>Active Lots</span>
+            <Package size={16} color="#D97706" />
+          </div>
+          <div className="metric-value" style={{ color: "#D97706" }}>{lots.length}</div>
+          <div className="metric-hint">Listed for buyer bidding</div>
+        </div>
+
+        <div className="metric-card" style={{ borderLeft: "4px solid #4F46E5" }}>
+          <div className="metric-label flex flex-between">
+            <span>Pending Offers</span>
+            <Users size={16} color="#4F46E5" />
+          </div>
+          <div className="metric-value" style={{ color: "#4F46E5" }}>3</div>
+          <div className="metric-hint">Buyer bids awaiting review</div>
+        </div>
+
+        <div className="metric-card" style={{ borderLeft: "4px solid var(--navy)" }}>
+          <div className="metric-label flex flex-between">
+            <span>Active Orders</span>
+            <Truck size={16} color="var(--navy)" />
+          </div>
+          <div className="metric-value" style={{ color: "var(--navy)" }}>{hasActiveDeal ? 1 : 0}</div>
+          <div className="metric-hint">Fulfillment & logistics</div>
+        </div>
+      </div>
+
+      {/* 2.1 Farmer Primary Quick Actions */}
       <div className="card card-pad mb-lg" style={{ background: "var(--bg-warm)", border: "1px solid var(--line)" }}>
         <div className="flex flex-between flex-center flex-wrap gap-sm">
           <div className="fw-700 text-sm" style={{ color: "var(--navy)" }}>
-            🌾 {t("dashboard.quickActions", "Farmer Quick Actions")}:
+            🌾 {t("dashboard.quickActions", "Farmer Actions")}:
           </div>
           <div className="flex gap-sm flex-wrap">
             <Link to="/crops/add" className="btn btn-primary btn-sm">

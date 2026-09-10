@@ -77,16 +77,19 @@ class InventoryService:
 
     def get_farmer_inventory_summary(self, db: Session, farmer_id: int) -> Dict[str, Any]:
         """Calculates total aggregated inventory metrics and items breakdown."""
-        # Ensure items exist for any crops the farmer registered
-        crops = db.query(Crop).filter(Crop.farmer_id == farmer_id).all()
-        for c in crops:
-            self.get_or_create_inventory(
-                db=db,
-                farmer_id=farmer_id,
-                crop_name=c.crop_name,
-                initial_quantity=c.quantity,
-                variety=c.variety
-            )
+        farmer = db.query(Farmer).filter(Farmer.id == farmer_id).first()
+        is_fpo = farmer and farmer.role == "fpo"
+        # Ensure items exist for any crops the farmer registered (only for individual farmers)
+        if not is_fpo:
+            crops = db.query(Crop).filter(Crop.farmer_id == farmer_id).all()
+            for c in crops:
+                self.get_or_create_inventory(
+                    db=db,
+                    farmer_id=farmer_id,
+                    crop_name=c.crop_name,
+                    initial_quantity=c.quantity,
+                    variety=c.variety
+                )
 
         items = db.query(InventoryItem).filter(InventoryItem.farmer_id == farmer_id).all()
 

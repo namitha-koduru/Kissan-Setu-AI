@@ -316,7 +316,7 @@ export function CreateLotPage() {
         style={{ background: "#FFFFFF", borderRadius: 16, border: "1px solid var(--line)" }}
       >
         <div
-          className="flex flex-center gap-sm mb-lg"
+          className="flex flex-center gap-sm mb-md"
           style={{ borderBottom: "1px solid var(--line)", paddingBottom: 14 }}
         >
           <div
@@ -338,14 +338,39 @@ export function CreateLotPage() {
             <p style={{ fontSize: 12.5, color: "var(--ink-soft)", margin: 0 }}>
               {isFpo
                 ? t("lots.fpoCreateSubtitle", "Consolidate member smallholder volume for high-value corporate bids")
-                : t("lots.farmerCreateSubtitle", "Create an open lot to receive competitive bids from verified buyers & FPCs")}
+                : t("lots.farmerCreateSubtitle", "5-step selling flow: Select crop, verify stock, specify grade, set price, and open for buyer offers.")}
             </p>
           </div>
         </div>
 
+        {/* 5-Step Selling Stepper */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(5, 1fr)",
+            gap: 6,
+            marginBottom: 20,
+            padding: "10px 12px",
+            background: "var(--bg-warm)",
+            borderRadius: 10,
+            border: "1px solid var(--line)",
+            fontSize: 11,
+            fontWeight: 700,
+            color: "var(--ink-soft)",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ color: "var(--green-deep)" }}>1. Crop</div>
+          <div style={{ color: "var(--green-deep)" }}>2. Quantity</div>
+          <div style={{ color: "var(--green-deep)" }}>3. Quality</div>
+          <div style={{ color: "var(--green-deep)" }}>4. Pricing</div>
+          <div style={{ color: "var(--green-deep)" }}>5. Publish</div>
+        </div>
+
         <form onSubmit={handleSubmit} className="flex-col gap-md">
+          {/* Step 1: Crop */}
           <div className="field">
-            <label>{t("crops.cropName", "Select Crop")}</label>
+            <label>1. {t("crops.cropName", "Select Crop")}</label>
             <select
               value={crop}
               onChange={(e) => setCrop(e.target.value)}
@@ -360,11 +385,12 @@ export function CreateLotPage() {
             </select>
           </div>
 
+          {/* Step 2 & 3: Quantity & Quality */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div className="field">
               <label>
-                {isFpo
-                  ? t("fpo.bulkQuantity", "Total Aggregated Quantity (kg)")
+                2. {isFpo
+                  ? t("fpo.bulkQuantity", "Total Quantity (kg)")
                   : t("lots.quantity", "Quantity (kg)")}
               </label>
               <input
@@ -380,7 +406,7 @@ export function CreateLotPage() {
             </div>
 
             <div className="field">
-              <label>{t("lots.qualityGrade", "Quality Grade")}</label>
+              <label>3. {t("lots.qualityGrade", "Quality Grade")}</label>
               <select
                 value={quality}
                 onChange={(e) => setQuality(e.target.value)}

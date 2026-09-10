@@ -8,60 +8,52 @@ interface SuggestedQuestionsProps {
 
 const QUESTIONS_BY_LANG: Record<string, Array<{ icon: string; text: string }>> = {
   hi: [
-    { icon: "🍅", text: "टमाटर की फसल की तुड़ाई कब करनी चाहिए?" },
-    { icon: "🌧️", text: "क्या आगामी बारिश से मेरी फसल को नुकसान होगा?" },
-    { icon: "💧", text: "टमाटर में ड्रिप सिंचाई कितने घंटे करनी चाहिए?" },
-    { icon: "🌿", text: "पत्तियों पर कीट या धब्बे दिखने पर क्या जैविक उपचार करें?" },
-    { icon: "🏪", text: "नासिक और लासलगांव में से किस मंडी में बेहतर भाव मिलेगा?" },
+    { icon: "🍅", text: "मुझे टमाटर की फसल की तुड़ाई कब करनी चाहिए?" },
+    { icon: "⚖️", text: "क्या मुझे फसल अभी बेचनी चाहिए या रुकना चाहिए?" },
+    { icon: "💰", text: "मंडी में मुझे क्या भाव मिलने की उम्मीद है?" },
+    { icon: "🌿", text: "फसल के स्वास्थ्य और पैदावार को कैसे सुधारें?" },
   ],
   mr: [
     { icon: "🍅", text: "टोमॅटो पिकाची काढणी कधी करावी?" },
-    { icon: "🌧️", text: "पुढील दोन दिवसांतील पावसाचा पिकावर काय परिणाम होईल?" },
-    { icon: "💧", text: "ठिबक सिंचनाने पाणी देण्याचे योग्य नियोजन काय आहे?" },
-    { icon: "🌿", text: "पानांवर कीड किंवा पिवळे डाग पडल्यास काय करावे?" },
-    { icon: "🏪", text: "कोणत्या जवळच्या बाजार समितीत (APMC) जास्त नफा मिळेल?" },
+    { icon: "⚖️", text: "मी आता विकावे की थांबावे?" },
+    { icon: "💰", text: "बाजारात मला काय भाव मिळू शकतो?" },
+    { icon: "🌿", text: "पिकाचे आरोग्य आणि प्रत कशी सुधारावी?" },
   ],
   te: [
     { icon: "🍅", text: "టమోటా పంటను ఎప్పుడు కోత కోయాలి?" },
-    { icon: "🌧️", text: "వర్షం వల్ల నా పంటకు ఏదైనా నష్టం జరుగుతుందా?" },
-    { icon: "💧", text: "డ్రిప్ ద్వారా నీటిని ఎన్ని గంటలు అందించాలి?" },
-    { icon: "🌿", text: "ఆకులపై తెగుళ్లు కనిపిస్తే ఏ మందులు వాడాలి?" },
-    { icon: "🏪", text: "ఏ మార్కెట్‌లో మంచి గిట్టుబాటు ధర లభిస్తుంది?" },
+    { icon: "⚖️", text: "నేను ఇప్పుడే అమ్మాలా లేక వేచి ఉండాలా?" },
+    { icon: "💰", text: "నేను ఎలాంటి ధరను ఆశించవచ్చు?" },
+    { icon: "🌿", text: "పంట ఆరోగ్యాన్ని ఎలా మెరుగుపరచాలి?" },
   ],
   ta: [
     { icon: "🍅", text: "தக்காளி அறுவடை செய்ய சிறந்த நேரம் எது?" },
-    { icon: "🌧️", text: "மழை முன்னறிவிப்பால் பயிருக்கு ஏதேனும் பாதிப்பு ஏற்படுமா?" },
-    { icon: "💧", text: "சொட்டு நீர் பாசனத்தை எத்தனை மணி நேரம் இயக்க வேண்டும்?" },
-    { icon: "🌿", text: "இலைகளில் மஞ்சள் புள்ளிகள் இருந்தால் என்ன செய்ய வேண்டும்?" },
-    { icon: "🏪", text: "எந்த சந்தையில் அதிக வருமானம் கிடைக்கும்?" },
+    { icon: "⚖️", text: "இப்போது விற்க வேண்டுமா அல்லது காத்திருக்க வேண்டுமா?" },
+    { icon: "💰", text: "நான் என்ன விலையை எதிர்பார்க்கலாம்?" },
+    { icon: "🌿", text: "பயிர் ஆரோக்கியத்தை எவ்வாறு மேம்படுத்துவது?" },
   ],
   kn: [
     { icon: "🍅", text: "ಟೊಮೆಟೊ ಬೆಳೆಯನ್ನು ಯಾವಾಗ ಕೊಯ್ಲು ಮಾಡಬೇಕು?" },
-    { icon: "🌧️", text: "ಮಳೆಯಿಂದ ನನ್ನ ಬೆಳೆಗೆ ಹಾನಿಯಾಗಬಹುದೇ?" },
-    { icon: "💧", text: "ಹನಿ ನೀರಾವರಿ ಮೂಲಕ ಎಷ್ಟು ಗಂಟೆ ನೀರು ಹಾಯಿಸಬೇಕು?" },
-    { icon: "🌿", text: "ಎಲೆಗಳ ಮೇಲೆ ಕೀಟ ಅಥವಾ ರೋಗದ ಲಕ್ಷಣಗಳಿದ್ದರೆ ಏನು ಮಾಡಬೇಕು?" },
-    { icon: "🏪", text: "ಯಾವ ಎಪಿಎಂಸಿ ಮಾರುಕಟ್ಟೆಯಲ್ಲಿ ಉತ್ತಮ ಧಾರಣೆ ಸಿಗುತ್ತದೆ?" },
+    { icon: "⚖️", text: "ನಾನು ಈಗ ಮಾರಾಟ ಮಾಡಬೇಕೇ ಅಥವಾ ಕಾಯಬೇಕೇ?" },
+    { icon: "💰", text: "ನಾನು ಯಾವ ಬೆಲೆಯನ್ನು ನಿರೀಕ್ಷಿಸಬಹುದು?" },
+    { icon: "🌿", text: "ಬೆಳೆಯ ಆರೋಗ್ಯವನ್ನು ಹೇಗೆ ಸುಧಾರಿಸಬಹುದು?" },
   ],
   bn: [
     { icon: "🍅", text: "টমেটো ফসল কখন তোলা উচিত?" },
-    { icon: "🌧️", text: "আসন্ন বৃষ্টিতে ফসলের কি কোনো ক্ষতি হতে পারে?" },
-    { icon: "💧", text: "ড্রিপ সেচ কতক্ষণ চালানো উচিত?" },
-    { icon: "🌿", text: "পাতায় পোকা বা হলুদ দাগ দেখা দিলে কী করণীয়?" },
-    { icon: "🏪", text: "কোন বাজারে বেশি লাভজনক দাম পাওয়া যাবে?" },
+    { icon: "⚖️", text: "আমার কি এখনই বিক্রি করা উচিত নাকি অপেক্ষা করা উচিত?" },
+    { icon: "💰", text: "আমি কী দাম পেতে পারি?" },
+    { icon: "🌿", text: "ফসলের গুণমান কীভাবে উন্নত করা যায়?" },
   ],
   ml: [
-    { icon: "🍅", text: "തക്കാളി വിളവെടുക്കാൻ ഏറ്റവും അനുയോജ്യമായ സമയം എപ്പോഴാണ്?" },
-    { icon: "🌧️", text: "മഴ വിളവിനെ ബാധിക്കുമോ?" },
-    { icon: "💧", text: "ഡ്രിപ്പ് ഇറിഗേഷൻ എത്ര സമയം നൽകണം?" },
-    { icon: "🌿", text: "ഇലകളിൽ കീടബാധയോ മഞ്ഞപ്പടലോ കണ്ടാൽ എന്തുചെയ്യണം?" },
-    { icon: "🏪", text: "ഏത് മാർക്കറ്റിൽ നിന്ന് കൂടുതൽ വില ലഭിക്കും?" },
+    { icon: "🍅", text: "തക്കാളി വിളവെടുക്കാൻ അനുയോജ്യമായ സമയം എപ്പോഴാണ്?" },
+    { icon: "⚖️", text: "ഇപ്പോൾ വിൽക്കണോ അതോ കാത്തിരിക്കണോ?" },
+    { icon: "💰", text: "എനിക്ക് എന്ത് വില പ്രതീക്ഷിക്കാം?" },
+    { icon: "🌿", text: "വിളവിൻ്റെ ആരോഗ്യം എങ്ങനെ മെച്ചപ്പെടുത്താം?" },
   ],
   en: [
-    { icon: "🍅", text: "When should I harvest my tomato crop?" },
-    { icon: "🌧️", text: "Will upcoming rain affect my near-maturity crop?" },
-    { icon: "💧", text: "How often should I irrigate with drip system?" },
-    { icon: "🌿", text: "What should I do if I see pests or yellow spots on leaves?" },
-    { icon: "🏪", text: "Which nearby APMC mandi offers the best net realization?" },
+    { icon: "🍅", text: "When should I harvest my tomato?" },
+    { icon: "⚖️", text: "Should I sell now or wait?" },
+    { icon: "💰", text: "What price can I expect?" },
+    { icon: "🌿", text: "How can I improve crop health?" },
   ],
 };
 
@@ -85,11 +77,26 @@ export const SuggestedQuestions: React.FC<SuggestedQuestionsProps> = ({
   const title = TITLE_BY_LANG[language] || TITLE_BY_LANG.en;
 
   return (
-    <div style={{ marginTop: "12px", marginBottom: "16px" }}>
-      <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--ink-soft)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+    <div style={{ marginTop: 12, marginBottom: 14 }}>
+      <p
+        style={{
+          fontSize: 11.5,
+          fontWeight: 700,
+          color: "var(--ink-soft)",
+          marginBottom: 8,
+          textTransform: "uppercase",
+          letterSpacing: "0.5px",
+        }}
+      >
         💡 {title}
       </p>
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: 8,
+        }}
+      >
         {list.map((item, idx) => (
           <button
             key={idx}
@@ -97,34 +104,34 @@ export const SuggestedQuestions: React.FC<SuggestedQuestionsProps> = ({
             disabled={disabled}
             onClick={() => onSelect(item.text)}
             style={{
-              display: "inline-flex",
+              display: "flex",
               alignItems: "center",
-              gap: "6px",
-              padding: "7px 12px",
-              fontSize: "13px",
-              background: "var(--white)",
-              border: "1px solid var(--line-strong)",
-              borderRadius: "16px",
-              color: "var(--ink)",
+              gap: 8,
+              padding: "8px 12px",
+              fontSize: 12.5,
+              fontWeight: 600,
+              background: "var(--bg-warm)",
+              border: "1px solid var(--line)",
+              borderRadius: 10,
+              color: "var(--navy)",
               cursor: disabled ? "not-allowed" : "pointer",
-              boxShadow: "var(--shadow-1)",
-              transition: "all 0.15s ease",
               textAlign: "left",
+              transition: "all 0.15s ease",
             }}
             onMouseEnter={(e) => {
               if (!disabled) {
                 e.currentTarget.style.borderColor = "var(--green-deep)";
-                e.currentTarget.style.background = "var(--green-light)";
+                e.currentTarget.style.background = "#FFFFFF";
               }
             }}
             onMouseLeave={(e) => {
               if (!disabled) {
-                e.currentTarget.style.borderColor = "var(--line-strong)";
-                e.currentTarget.style.background = "var(--white)";
+                e.currentTarget.style.borderColor = "var(--line)";
+                e.currentTarget.style.background = "var(--bg-warm)";
               }
             }}
           >
-            <span>{item.icon}</span>
+            <span style={{ fontSize: 16 }}>{item.icon}</span>
             <span>{item.text}</span>
           </button>
         ))}
