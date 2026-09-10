@@ -128,6 +128,10 @@ class Buyer(Base):
     offers = relationship("Offer", back_populates="buyer", cascade="all, delete-orphan")
     transactions = relationship("Transaction", foreign_keys="[Transaction.buyer_id]", back_populates="buyer")
 
+    @property
+    def organization_name(self) -> Optional[str]:
+        return self.organization
+
 
 class Lot(Base):
     __tablename__ = "lots"

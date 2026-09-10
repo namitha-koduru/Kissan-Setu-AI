@@ -3,9 +3,15 @@
  * Connects to FastAPI Backend with configurable base URL and automatic JSON handling.
  */
 
-function normalizeApiBaseUrl(rawUrl?: string): string {
+export function normalizeApiBaseUrl(rawUrl?: string): string {
   if (!rawUrl || !rawUrl.trim()) {
-    return "http://localhost:8000/api";
+    // If running in production or hosted on Vercel/non-localhost, target Render backend
+    if (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+      return "https://kissansetu-ai-backend.onrender.com/api";
+    }
+    return import.meta.env.PROD
+      ? "https://kissansetu-ai-backend.onrender.com/api"
+      : "http://localhost:8000/api";
   }
   let sanitized = rawUrl.trim().replace(/\/+$/, "");
   // Ensure the base URL always ends with /api for backend REST routers
@@ -15,10 +21,20 @@ function normalizeApiBaseUrl(rawUrl?: string): string {
   return sanitized;
 }
 
-const API_BASE_URL = normalizeApiBaseUrl(
+export const API_BASE_URL = normalizeApiBaseUrl(
   import.meta.env.VITE_API_BASE_URL ||
   import.meta.env.VITE_API_URL
 );
+
+export function resolveServerMediaUrl(path?: string | null): string {
+  if (!path) return "";
+  if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("blob:") || path.startsWith("data:")) {
+    return path;
+  }
+  const rootUrl = API_BASE_URL.replace(/\/api\/?$/, "");
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${rootUrl}${normalizedPath}`;
+}
 
 if (typeof window !== "undefined") {
   console.info(`[KissanSetu API] Resolved API Base URL: ${API_BASE_URL}`);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Volume2, VolumeX, Play, Pause, RotateCcw } from "lucide-react";
+import { resolveServerMediaUrl } from "../../services/api";
 
 interface VoicePlaybackProps {
   audioUrl?: string | null;
@@ -21,11 +22,7 @@ export const VoicePlayback: React.FC<VoicePlaybackProps> = ({
   const [useBrowserTTS, setUseBrowserTTS] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const fullAudioUrl = audioUrl
-    ? audioUrl.startsWith("http")
-      ? audioUrl
-      : `http://localhost:8000${audioUrl}`
-    : null;
+  const fullAudioUrl = audioUrl ? resolveServerMediaUrl(audioUrl) : null;
 
   useEffect(() => {
     if (fullAudioUrl) {

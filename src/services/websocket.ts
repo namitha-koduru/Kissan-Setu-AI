@@ -4,20 +4,23 @@
  */
 
 export function getWebSocketBaseUrl(): string {
-  const envUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:8000";
-  const clean = envUrl.replace(/\/api\/?$/, "").replace(/\/+$/, "");
+  const envUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
+  let targetUrl = envUrl;
+  if (!targetUrl || !targetUrl.trim()) {
+    if (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+      targetUrl = "https://kissansetu-ai-backend.onrender.com";
+    } else {
+      targetUrl = import.meta.env.PROD ? "https://kissansetu-ai-backend.onrender.com" : "http://localhost:8000";
+    }
+  }
+  const clean = targetUrl.replace(/\/api\/?$/, "").replace(/\/+$/, "");
   if (clean.startsWith("https://")) {
     return clean.replace("https://", "wss://");
   }
   if (clean.startsWith("http://")) {
     return clean.replace("http://", "ws://");
   }
-  // If window is defined and relative
-  if (typeof window !== "undefined") {
-    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-    return `${proto}//${window.location.host}`;
-  }
-  return "ws://localhost:8000";
+  return "wss://kissansetu-ai-backend.onrender.com";
 }
 
 export interface WebSocketSubscription {

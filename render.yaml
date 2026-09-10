@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: kissansetu-backend
+    name: kissansetu-ai-backend
     env: python
     region: ohio
     plan: free

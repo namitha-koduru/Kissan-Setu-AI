@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import type { ChatMessageItem } from "../../services/chatApi";
 import { VoicePlayback } from "./VoicePlayback";
 import { Mic, ShieldCheck, BookOpen, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
+import { resolveServerMediaUrl } from "../../services/api";
 
 interface ChatMessageProps {
   message: ChatMessageItem;
@@ -164,7 +165,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
               title="Click to view full image"
             >
               <img
-                src={message.image_url.startsWith("http") || message.image_url.startsWith("blob:") ? message.image_url : `http://localhost:8000${message.image_url}`}
+                src={resolveServerMediaUrl(message.image_url)}
                 alt="Uploaded Crop"
                 style={{
                   width: "100%",
@@ -387,7 +388,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
         >
           <div style={{ position: "relative", maxWidth: "90%", maxHeight: "90%" }}>
             <img
-              src={message.image_url.startsWith("http") || message.image_url.startsWith("blob:") ? message.image_url : `http://localhost:8000${message.image_url}`}
+              src={resolveServerMediaUrl(message.image_url)}
               alt="Crop inspection preview"
               style={{
                 maxWidth: "100%",

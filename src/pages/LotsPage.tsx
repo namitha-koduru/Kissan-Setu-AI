@@ -4,7 +4,6 @@ import { Plus, MapPin, Handshake, Filter, MessageSquare } from "lucide-react";
 import { LotCard } from "../components/LotCard";
 import { EmptyState } from "../components/States";
 import { NegotiationChatModal } from "../components/NegotiationChatModal";
-import { allMarketplaceLots } from "../data/demo";
 import lotApi from "../services/lotApi";
 import apiClient from "../services/api";
 import { useAuth } from "../context/AuthContext";
@@ -58,7 +57,7 @@ export function LotsPage() {
 
   const filteredOwnLots = lots.filter((l) => {
     if (activeTab === "Active")
-      return l.status === "Open for Offers" || l.status === "Offer Accepted" || l.status === "OPEN" || l.status === "Active";
+      return l.status === "Open for Offers" || l.status === "Offer Accepted";
     if (activeTab === "Sold") return l.status === "Sold" || l.status === "Closed";
     return l.status === "Expired" || l.status === "Cancelled";
   });
@@ -325,7 +324,7 @@ export function LotsPage() {
                     if (tab === "Active")
                       return l.status === "Open for Offers" || l.status === "Offer Accepted";
                     if (tab === "Sold") return l.status === "Sold" || l.status === "Closed";
-                    return l.status === "Expired";
+                    return l.status === "Expired" || l.status === "Cancelled";
                   }).length
                 }
                 )
